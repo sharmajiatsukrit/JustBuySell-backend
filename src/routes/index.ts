@@ -12,10 +12,6 @@ routes.get("/", (_req, res) => {
 routes.use("/auth", AuthRoutes);
 routes.use("/admin", AdminRoutes);
 // routes.use("/v1", UserRoutes);
-// routes.use("/subscriber", SubscriberRoutes);
-// routes.use("/notification", NotificationRoutes);
-// routes.use("/payment", PaymentRoutes);
-// routes.use("/pubnub", PubnubRoutes);
 
 
 export default routes;

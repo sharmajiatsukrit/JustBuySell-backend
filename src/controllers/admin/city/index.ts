@@ -1,19 +1,15 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
-import validator from "validator";
-import Bcrypt from "bcryptjs";
-import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissons, User } from "../../../models";
+import { City,State } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
-import { getPostsForAdmin, getPostsForAdminBySubscriberId, getChatCount, getPostCount, postDelete } from "../../../services/Chat";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
-const fileName = "[admin][users][index.ts]";
+const fileName = "[admin][city][index.ts]";
 export default class CityController {
     public locale: string = "en";
     public emailService;
@@ -36,10 +32,10 @@ export default class CityController {
             this.locale = (locale as string) || "en";
             
                             
-            const result = await User.find({}).sort([['id', 'desc']]).lean();
+            const result = await City.find({}).sort([['id', 'desc']]).lean();
 
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -57,12 +53,11 @@ export default class CityController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.find({ id: id }).lean();
+            const result: any = await City.find({ id: id }).lean();
             console.log(result);
-            // const result = await getPostsForAdminBySubscriberId(id, req.headers.authorization);
-
+            
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -71,6 +66,7 @@ export default class CityController {
         }
     }
 
+    //add
     public async add(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[add]";
@@ -78,129 +74,56 @@ export default class CityController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
+            const { name, description, parent_id, status} = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
-            const isUserExists = await this.getExistingUser(email);
+            let result: any;
 
-            if (isUserExists.is_email_verified) {
-                throw new Error(constructResponseMsg(this.locale, "email-ar"));
-            }
-
-            // Validate email
-            const isValidEmail = validator.isEmail(email);
-
-            if (!isValidEmail) {
-                throw new Error(constructResponseMsg(this.locale, "email-iv"));
-            }
-
-            // const dePassword = decryptText(password);
-            const dePassword = password;
-
-            if (!dePassword) {
-                throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-            }
-
-            const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
-            let userData: any;
-
-            if(!isUserExists.email) {
-                userData = await User.create({
-                    first_name,
-                    last_name,
-                    email,
-                    communication_email: email,
-                    device,
-                    password: hashedPassword,
-                    ip_address,
-                    status: 1
+            result = await City.create({
+                    name:name,
+                    description:description,
+                    parent_id:parent_id,
+                    status: status
                 });
-            } else {
-                userData = {
-                    id: isUserExists.id,
-                    email: isUserExists.email,
-                    status: true,
-                    superadmin: (isUserExists.superadmin) ? true : false
-                };
-            }
-
-            const formattedUserData = await this.fetchUserDetails(userData.id);
             
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-    public async fetchUserDetails(userId: number, billing = "") {
-        try {
-            const userData: any = await User.findOne({ id: userId }, {password: false, account_status: false, subscribed_to: false});
-
-            delete userData._doc.__enc_email;
-            delete userData._doc.__enc_communication_email;
-            delete userData._doc.__enc_mobile_number;
-            delete userData._doc.__enc_city;
-
-            if (!userData) {
-                throw new Error(constructResponseMsg(this.locale, "user-nf"));
-            }
-
-            userData._doc.user_date_format = userData._doc.date_format;
-            userData._doc.user_time_format = (userData._doc.time_format === "24") ? "HH:mm" : "hh:mm a";
-            userData._doc.user_date_time_format = userData._doc.user_date_format + " " + userData._doc.user_time_format;
-
-            
-
-            // const fetchSubscriberData = await Promise.all(subscribedDetailData);
-            const formattedUserData: any = userData._doc;
-
-            
-
-           
-
-            return Promise.resolve(formattedUserData);
-        } catch (err: any) {
-            return Promise.reject(err);
-        }
-    }
-
-    private async getExistingUser(email: string): Promise<any> {
-        // Search on encrypted email field
-        const messageToSearchWith: any = new User({ email });
-        messageToSearchWith.encryptFieldsSync();
-
-        const userData: any = await User.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
-
-        if (userData) {
-            return Promise.resolve(userData._doc);
-        }
-
-        return Promise.resolve({ is_email_verified: false });
-    }
+    //Update
     public async update(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[update]";
 
-            const { user_id } = req.user;
-            Logger.info(`${fileName + fn} user_id: ${user_id}`);
+            const  id  = parseInt(req.params.id);
+            Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { first_name, last_name, email, password } = req.body;
+            const { name, description, parent_id, status} = req.body;
             
-            await User.findOneAndUpdate({ id: user_id }, {first_name:first_name,last_name:last_name,email:email});
+            let result: any = await City.findOneAndUpdate(
+                { id: id },
+                {
+                    name: name,
+                    description:description,
+                    parent_id:parent_id,
+                    status: status
+                });
 
-            const userData: any = await this.fetchUserDetails(user_id);
+            const updatedData: any = await City.find({ id: id }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-update"), userData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-    // Checked
+    // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
             const fn ="[delete]";
@@ -209,10 +132,10 @@ export default class CityController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.deleteOne({ id: id });
+            const result = await City.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -221,7 +144,7 @@ export default class CityController {
         }
     }
 
-    // Checked
+    // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
             const fn ="[status]";
@@ -230,10 +153,11 @@ export default class CityController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.findOneAndUpdate({ id: id }, {status:1}).lean();
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-status"]), result);
+            const { status } = req.body;
+            const updationstatus = await City.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updatedData: any = await City.find({ id: id }).lean();
+            if (updationstatus) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
