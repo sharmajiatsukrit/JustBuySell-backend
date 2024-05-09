@@ -74,7 +74,7 @@ export default class RolesController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, permissions, status} = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
@@ -82,7 +82,7 @@ export default class RolesController {
             result = await Roles.create({
                     name:name,
                     description:description,
-                    parent_id:parent_id,
+                    permissions:permissions,
                     status: status
                 });
             
@@ -99,19 +99,19 @@ export default class RolesController {
             const fn = "[update]";
 
             const  id  = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} category_id: ${id}`);
+            Logger.info(`${fileName + fn} role_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, permissions, status} = req.body;
             
             let result: any = await Roles.findOneAndUpdate(
                 { id: id },
                 {
-                    name: name,
+                    name:name,
                     description:description,
-                    parent_id:parent_id,
+                    permissions:permissions,
                     status: status
                 });
 

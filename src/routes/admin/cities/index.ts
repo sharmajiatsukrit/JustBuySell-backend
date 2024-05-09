@@ -1,15 +1,15 @@
 import expres, { Router } from "express";
-import UserController from "../../../controllers/admin/users";
+import CityController from "../../../controllers/admin/city";
 import { authAdmin, validateRequest } from "../../../utils/middleware";
 
 const routes: Router = expres.Router();
-const userController = new UserController();
+const cityController = new CityController();
 
-routes.get("/", authAdmin, userController.getList.bind(userController));
-routes.post("/add", validateRequest, userController.add.bind(userController));
-routes.put("/update/:id", authAdmin, userController.update.bind(userController));
-routes.get("/get-details/:id", authAdmin, userController.getDetailsById.bind(userController));
-routes.delete("/delete/:id", authAdmin, userController.delete.bind(userController));
-routes.patch("/status/:id", authAdmin, userController.status.bind(userController));
+routes.get("/list", validateRequest, cityController.getList.bind(cityController));
+routes.post("/add", validateRequest, cityController.add.bind(cityController));
+routes.put("/update/:id", validateRequest, cityController.update.bind(cityController));
+routes.get("/by-id/:id", validateRequest, cityController.getDetailsById.bind(cityController));
+routes.delete("/delete/:id", validateRequest, cityController.delete.bind(cityController));
+routes.patch("/status/:id", validateRequest, cityController.status.bind(cityController));
 
 export default routes;

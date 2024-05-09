@@ -74,15 +74,14 @@ export default class StateController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status} = req.body;
+            const { name,  country_id, status} = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await State.create({
                     name:name,
-                    description:description,
-                    parent_id:parent_id,
+                    country_id:country_id,
                     status: status
                 });
             
@@ -99,19 +98,18 @@ export default class StateController {
             const fn = "[update]";
 
             const  id  = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} category_id: ${id}`);
+            Logger.info(`${fileName + fn} state_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status} = req.body;
+            const { name,  country_id, status} = req.body;
             
             let result: any = await State.findOneAndUpdate(
                 { id: id },
                 {
-                    name: name,
-                    description:description,
-                    parent_id:parent_id,
+                    name:name,
+                    country_id:country_id,
                     status: status
                 });
 

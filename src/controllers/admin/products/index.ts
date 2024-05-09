@@ -74,7 +74,7 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, price,unit_id,category_id, status} = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
@@ -82,7 +82,9 @@ export default class ProductController {
             result = await Product.create({
                     name:name,
                     description:description,
-                    parent_id:parent_id,
+                    price:price,
+                    unit_id:unit_id,
+                    category_id:category_id,
                     status: status
                 });
             
@@ -104,14 +106,16 @@ export default class ProductController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, price,unit_id,category_id, status} = req.body;
             
             let result: any = await Product.findOneAndUpdate(
                 { id: id },
                 {
-                    name: name,
+                    name:name,
                     description:description,
-                    parent_id:parent_id,
+                    price:price,
+                    unit_id:unit_id,
+                    category_id:category_id,
                     status: status
                 });
 

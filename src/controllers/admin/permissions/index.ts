@@ -74,7 +74,7 @@ export default class PermissionController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, status} = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
@@ -82,7 +82,6 @@ export default class PermissionController {
             result = await Permissions.create({
                     name:name,
                     description:description,
-                    parent_id:parent_id,
                     status: status
                 });
             
@@ -104,14 +103,13 @@ export default class PermissionController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, status} = req.body;
             
             let result: any = await Permissions.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description:description,
-                    parent_id:parent_id,
                     status: status
                 });
 
