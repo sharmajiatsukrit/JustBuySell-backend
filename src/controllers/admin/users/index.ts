@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissons, User } from "../../../models";
+import { Roles, Permissions, User } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
