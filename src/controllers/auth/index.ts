@@ -359,7 +359,7 @@ export default class AuthController {
 
             const isUserExists = await this.checkIfUserExists(email);
             if (!isUserExists) {
-                throw new Error(constructResponseMsg(this.locale, "email-nr"));
+                throw new Error(constructResponseMsg(this.locale, "email-already-exists"));
             }
 
             const userData: any = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: email }] });
@@ -893,7 +893,7 @@ export default class AuthController {
             console.log(emailToSearchWith);
             const isUserExists = await this.checkIfUserExists(email);
             if (!isUserExists) {
-                throw new Error(constructResponseMsg(this.locale, "email-nr"));
+                throw new Error(constructResponseMsg(this.locale, "email-already-exists"));
             }
 
             const userData: any = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: email }] });
@@ -922,7 +922,7 @@ export default class AuthController {
                 formattedUserData.token = session.token;
             }
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-ls"), formattedUserData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
