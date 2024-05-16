@@ -52,5 +52,10 @@ export enum ServerMessagesEnum {
     "permission-add" = "permission-add",
     "permission-update" = "permission-update",
     "permission-delete" = "permission-delete",
-    "permission-status"="permission-status"
+    "permission-status" = "permission-status",
+    "unit-fetched" = "unit-fetched",
+    "unit-add" = "unit-add",
+    "unit-update" = "unit-update",
+    "unit-delete" = "unit-delete",
+    "unit-status"="unit-status"
 }

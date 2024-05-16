@@ -57,4 +57,9 @@ export const MessageKey: IObjectKeys = {
     "permission-update": "permission-update",
     "permission-status": "permission-status",
     "permission-delete": "permission-delete",
+    "unit-fetched": "unit-fetched",
+    "unit-add": "unit-add",
+    "unit-update": "unit-update",
+    "unit-status": "unit-status",
+    "unit-delete": "unit-delete",
 };

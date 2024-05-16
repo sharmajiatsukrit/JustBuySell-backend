@@ -11,6 +11,7 @@ import Product from "./products";
 import Country from "./country";
 import State from "./state";
 import City from "./city";
+import Unit from "./unit";
 import mongoose from 'mongoose';
 
-export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City };
+export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit };

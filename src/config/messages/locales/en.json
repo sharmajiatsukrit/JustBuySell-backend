@@ -52,5 +52,10 @@
     "permission-add":"New Permission added successfully",
     "permission-update":"Permission Updated successfully",
     "permission-delete": "Permission Deleted successfully",
-    "permission-status": "Permission Status successfully Updated"
+    "permission-status": "Permission Status successfully Updated",
+    "unit-fetched": "Unit Details Fetched",
+    "unit-add":"New Unit added successfully",
+    "unit-update":"Unit Updated successfully",
+    "unit-delete": "Unit Deleted successfully",
+    "unit-status": "Unit Status successfully Updated"
 }
