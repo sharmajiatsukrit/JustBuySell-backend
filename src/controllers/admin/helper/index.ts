@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category,Product } from "../../../models";
+import { Category,Unit } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -44,6 +44,26 @@ export default class HelperController {
         }
     }
 
+
+    public async getUnits(req: Request, res: Response): Promise<any> {
+        try {
+            const fn ="[getUnits]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            
+                            
+            const result = await Unit.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
     
 
 }

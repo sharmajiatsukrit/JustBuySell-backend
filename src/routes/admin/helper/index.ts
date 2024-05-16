@@ -6,5 +6,6 @@ const routes: Router = expres.Router();
 const helperController = new HelperController();
 
 routes.get("/get-categories", validateRequest, helperController.getCategories.bind(helperController));
+routes.get("/get-units", validateRequest, helperController.getUnits.bind(helperController));
 
 export default routes;
