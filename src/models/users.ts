@@ -63,7 +63,7 @@ const userSchema: Schema = new Schema({
 userSchema.plugin(autoIncrement, { model: 'users', field: 'id', startAt: 1 });
 
 userSchema.plugin(mongooseFieldEncryption, {
-  fields: ["email", "mobile_number", "city"], 
+  fields: [], 
   secret: process.env.JWT_SECRET,
   saltGenerator: () => { return process.env.JWT_SECRET?.slice(0, 16) }
 });
