@@ -57,5 +57,5 @@ export enum ServerMessagesEnum {
     "unit-add" = "unit-add",
     "unit-update" = "unit-update",
     "unit-delete" = "unit-delete",
-    "unit-status"="unit-status"
+    "unit-status"="unit-status",
 }

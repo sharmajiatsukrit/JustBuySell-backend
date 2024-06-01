@@ -8,6 +8,7 @@ interface ICategory extends Document {
     description: string;
     parent_id: number;
     status: boolean;
+    cat_img: string;
     created_by: number;
     updated_by: number;
 }
@@ -18,6 +19,7 @@ const categorySchema: Schema = new Schema({
     description: { type: String, default: '' },
     parent_id: { type: Number, default: 0 },
     status: { type: Boolean, default: true },
+    cat_img: { type: String, default: '' },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
 },

@@ -10,6 +10,9 @@ import CategoryRoutes from "./category";
 import ProductsRoutes from "./products";
 import UnitsRoutes from "./unit";
 import HelperRoutes from "./helper";
+import ProductRequest from "./productrequest";
+import Offers from "./offers";
+
 const routes: Router = expres.Router();
 
 // routes.use("/pubnub", PubnubRoutes);
@@ -24,4 +27,7 @@ routes.use("/units", UnitsRoutes);
 routes.use("/category", CategoryRoutes);
 routes.use("/product", ProductsRoutes);
 routes.use("/helper", HelperRoutes);
+routes.use("/productrequest", ProductRequest);
+routes.use("/offer", Offers);
+
 export default routes;

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category,Product } from "../../../models";
+import { Category, Product } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -26,12 +26,12 @@ export default class ProductController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
+
+
             const result = await Product.find({}).sort([['id', 'desc']]).lean();
 
             if (result.length > 0) {
@@ -47,15 +47,14 @@ export default class ProductController {
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
-            // Set locale
+            const fn = "[getDetailsById]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const result: any = await Product.find({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
             } else {
@@ -70,25 +69,33 @@ export default class ProductController {
     public async add(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[add]";
-            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, price,unit_id,pack,category_id, status} = req.body;
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+            const { name, description, price, unit_id, pack, category_id, status } = req.body;
 
             let result: any;
 
+            let product_image: string | undefined;
+            if (req.files && typeof req.files === 'object') {
+
+                if ('product_image' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    product_image = files['product_image'][0].path;
+                }
+            }
+
             result = await Product.create({
-                    name:name,
-                    description:description,
-                    price:price,
-                    category_id: category_id,
-                    unit_id:unit_id,
-                    pack:pack,
-                    status: status
-                });
-            
+                name: name,
+                description: description,
+                price: price,
+                category_id: category_id,
+                unit_id: unit_id,
+                pack: pack,
+                product_image: product_image,
+                status: status
+            });
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
         } catch (err: any) {
@@ -96,28 +103,28 @@ export default class ProductController {
         }
     }
 
-    //Update
+    //update
     public async update(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, price,unit_id,pack,category_id, status} = req.body;
-            
+            const { name, description, price, unit_id, pack, category_id, status } = req.body;
+
             let result: any = await Product.findOneAndUpdate(
                 { id: id },
                 {
-                    name:name,
-                    description:description,
-                    price:price,
+                    name: name,
+                    description: description,
+                    price: price,
                     unit_id: unit_id,
-                    pack:pack,
-                    category_id:category_id,
+                    pack: pack,
+                    category_id: category_id,
                     status: status
                 });
 
@@ -132,7 +139,7 @@ export default class ProductController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -153,14 +160,14 @@ export default class ProductController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Product.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await Product.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Product.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);

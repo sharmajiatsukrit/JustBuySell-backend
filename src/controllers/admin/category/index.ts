@@ -75,14 +75,23 @@ export default class CategoryController {
             this.locale = (locale as string) || "en";
 
             const { name, description, parent_id, status} = req.body;
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
+
+            let cat_img: string | undefined;
+            if (req.files && typeof req.files === 'object') {
+
+                if ('cat_img' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    cat_img = files['cat_img'][0].path;
+                }
+            }
 
             result = await Category.create({
                     name:name,
                     description:description,
                     parent_id:parent_id,
+                    cat_img:cat_img,
                     status: status
                 });
             

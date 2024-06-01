@@ -57,5 +57,14 @@
     "unit-add":"New Unit added successfully",
     "unit-update":"Unit Updated successfully",
     "unit-delete": "Unit Deleted successfully",
-    "unit-status": "Unit Status successfully Updated"
+    "unit-status": "Unit Status successfully Updated",
+    "product-requested-add": "Product Request Added",
+    "product-requested-updated": "Product Request Updated",
+    "product-requested-deleted": "Product Request Deleted",
+    "product-request-fethed": "Product Request Fethed",
+
+    "offer-add": "Offer Added Successfully",
+    "offer-update": "Offer Updated Successfully",
+    "offer-delete": "Offer Delete Successfully",
+    "offer-fetch": "Offer Fetched Successfully"
 }
