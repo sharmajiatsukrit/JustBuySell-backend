@@ -9,7 +9,7 @@ const offersController = new Offers();
 routes.post("/add", validateRequest, offersController.add.bind(offersController));
 routes.put("/update/:id", validateRequest, offersController.update.bind(offersController));
 routes.delete("/delete/:id", validateRequest, offersController.delete.bind(offersController));
-routes.get("/getList", validateRequest, offersController.getList.bind(offersController));
-routes.get("/getDetailsById/:id", validateRequest, offersController.getDetailsById.bind(offersController));
+routes.get("/get-list", validateRequest, offersController.getList.bind(offersController));
+routes.get("/get-details-byid/:id", validateRequest, offersController.getDetailsById.bind(offersController));
 
 export default routes;

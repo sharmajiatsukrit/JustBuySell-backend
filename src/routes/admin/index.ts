@@ -27,7 +27,7 @@ routes.use("/units", UnitsRoutes);
 routes.use("/category", CategoryRoutes);
 routes.use("/product", ProductsRoutes);
 routes.use("/helper", HelperRoutes);
-routes.use("/productrequest", ProductRequest);
+routes.use("/product-request", ProductRequest);
 routes.use("/offer", Offers);
 
 export default routes;
