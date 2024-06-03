@@ -37,3 +37,4 @@ productRequestSchema.plugin(autoIncrement, { model: 'productrequest', field: 'id
 const ProductRequest = model<IProductRequest>('productrequest', productRequestSchema);
 
 export default ProductRequest;
+
