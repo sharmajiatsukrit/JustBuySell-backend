@@ -107,8 +107,20 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Offers.find({}).sort([['id', 'desc']]).lean();
+            // const result = await Offers.find({}).sort([['id', 'desc']]).lean();
+            const result = await Offers.aggregate([
+                {
+                    $lookup: {
+                        from: "countries",
+                        localField: "origin",
+                        foreignField: "id",
+                        as: "countrydetails",
+                    },
+                },
+                {
+                    $sort: { id: -1 }
+                },
+            ]).exec();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
@@ -128,7 +140,20 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
             const { id } = req.params;
-            const result: any = await Offers.find({ id: id }).lean();
+            // const result: any = await Offers.find({ id: id }).lean();
+            const result = await Offers.aggregate([
+                {
+                    $match: { id: parseInt(id) },
+                },
+                {
+                    $lookup: {
+                        from: "countries",
+                        localField: "origin",
+                        foreignField: "id",
+                        as: "countrydetails",
+                    },
+                },
+            ]);
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
