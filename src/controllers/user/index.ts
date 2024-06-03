@@ -342,7 +342,7 @@ export default class AuthController {
 
 
 
-    // Checked with encryption
+    // signin with password
     public async signIn(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[signIn]";
@@ -351,9 +351,6 @@ export default class AuthController {
             this.locale = (locale as string) || "en";
 
             let { email, password } = req.body;
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
-            // Search on encrypted email field
             const emailToSearchWith: any = new User({ email: removeSpace(email) });
             emailToSearchWith.encryptFieldsSync();
 
@@ -366,21 +363,6 @@ export default class AuthController {
             if (!userData) {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
-
-            // const socialAccount: any = await Socials.findOne({ email: emailToSearchWith.email });
-            // if (socialAccount && !userData._doc.password) {
-            //     switch (socialAccount._doc.type) {
-            //         case 1:
-            //             throw new Error(constructResponseMsg(this.locale, "email-gu"));
-            //             break;
-            //         case 2:
-            //             throw new Error(constructResponseMsg(this.locale, "email-au"));
-            //             break;
-            //         default:
-            //             break;
-            //     }
-            // }
-
             const dePassword = decryptText(password);
 
             if (!dePassword) {
@@ -393,21 +375,16 @@ export default class AuthController {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
 
-            // Commented due to 2FA
-            // const formattedUserData = await this.fetchUserDetails(userData._doc.id);
-            // const session = await this.createSession(userData._doc.id, email, req, userData._doc.account_status);
-
-            // if (session) {
-            //     formattedUserData.token = session.token;
-            // }
             const otp = await this.generateOtp(userData._doc.id);
-            // this.emailService.otpEmail(userData.email, otp);
+            
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+
 
     public async signOut(req: Request, res: Response): Promise<any> {
         try {

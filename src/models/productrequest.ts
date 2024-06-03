@@ -2,10 +2,11 @@ import { Document, Schema, model } from 'mongoose';
 import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
+import Unit from './unit';
 
 interface IProductRequest extends Document {
-    productname: string;
-    tradeunit: string;
+    name: string;
+    unitid: number;
     pack: string;
     masterpack: string;
     description: string;
@@ -16,8 +17,8 @@ interface IProductRequest extends Document {
 
 const productRequestSchema: Schema = new Schema({
     
-    productname: { type: String, default: '' },
-    tradeunit: { type: String, default: '' },
+    name: { type: String, default: '' },
+    unitid: { type: Number, default: '' },
     pack: { type: String, default: '' },
     masterpack: { type: String, default: 0 },
     description: { type: String, default: 0 },
@@ -29,6 +30,7 @@ const productRequestSchema: Schema = new Schema({
     timestamps: true,
     versionKey: false
 });
+
 
 productRequestSchema.plugin(autoIncrement, { model: 'productrequest', field: 'id', startAt: 1 });
 

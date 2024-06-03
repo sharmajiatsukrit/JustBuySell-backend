@@ -1,5 +1,5 @@
 import expres, { Router } from "express";
-import AuthRoutes from "./auth";
+import AuthRoutes from "./user";
 import NotificationRoutes from "./notification";
 import AdminRoutes from "./admin";
 
@@ -9,7 +9,7 @@ routes.get("/", (_req, res) => {
     res.send("JustBuySell API v1");
 });
  
-routes.use("/auth", AuthRoutes);
+routes.use("/user", AuthRoutes);
 routes.use("/admin", AdminRoutes);
 // routes.use("/v1", UserRoutes);
 

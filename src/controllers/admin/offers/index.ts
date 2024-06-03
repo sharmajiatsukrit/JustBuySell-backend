@@ -29,15 +29,15 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, priseperunit, miniquantity, countryoforigin, pin, status } = req.body;
+            const { name, priceperunit, miniquantity, origin, pin, status } = req.body;
 
             let result: any;
 
             result = await Offers.create({
                 name: name,
-                priseperunit: priseperunit,
+                priceperunit: priceperunit,
                 miniquantity: miniquantity,
-                countryoforigin: countryoforigin,
+                origin: origin,
                 pin: pin,
                 status: status
             });
@@ -59,14 +59,14 @@ export default class ProductRequestController {
 
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, priseperunit, miniquantity, countryoforigin, pin, status } = req.body;
+            const { name, priceperunit, miniquantity, origin, pin, status } = req.body;
 
             let result: any = await Offers.findOneAndUpdate(
                 { id: id }, {
                 name: name,
-                priseperunit: priseperunit,
+                priceperunit: priceperunit,
                 miniquantity: miniquantity,
-                countryoforigin: countryoforigin,
+                origin: origin,
                 pin: pin,
                 status: status
             });
@@ -83,7 +83,6 @@ export default class ProductRequestController {
     public async delete(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[delete]";
-            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 

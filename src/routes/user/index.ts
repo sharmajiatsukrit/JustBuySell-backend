@@ -1,5 +1,5 @@
 import expres, { Router } from "express";
-import AuthController from "../../controllers/auth";
+import AuthController from "../../controllers/user";
 import { UserRouteEndPoints,AdminRouteEndPoints } from "../../enums/user";
 import { authRequest, validateRequest } from "../../utils/middleware";
 import { upload } from "../../utils/storage";

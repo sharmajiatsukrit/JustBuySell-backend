@@ -29,13 +29,13 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { productname, tradeunit, pack, masterpack, description, status } = req.body;
+            const { name, unitid, pack, masterpack, description, status } = req.body;
 
             let result: any;
 
             result = await ProductRequest.create({
-                productname: productname,
-                tradeunit: tradeunit,
+                name: name,
+                unitid: unitid,
                 pack: pack,
                 masterpack: masterpack,
                 description: description,
@@ -59,12 +59,12 @@ export default class ProductRequestController {
 
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { productname, tradeunit, pack, masterpack, description, status } = req.body;
+            const { name, unitid, pack, masterpack, description, status } = req.body;
 
             let result: any = await ProductRequest.findOneAndUpdate(
                 { id: id },{
-                    productname: productname,
-                    tradeunit: tradeunit,
+                    name: name,
+                    unitid: unitid,
                     pack: pack,
                     masterpack: masterpack,
                     description: description,
