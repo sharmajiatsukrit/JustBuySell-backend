@@ -418,50 +418,6 @@ export default class AuthController {
     }
     
 
-
-
-
-
-
-    // public async login(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[login]";
-    //         // Set locale
-    //         const { locale } = req.query;
-    //         this.locale = (locale as string) || "en";
-    
-    //         const { username } = req.body;
-    //         console.log(username);
-
-    //         const user = await User.find({ email: username });
-    //         console.log(user);
-    
-    //         // Check if the user exists by email
-    //         // const userByEmail = await User.find({ email: username });
-    //         // if (userByEmail) {
-    //         //     const otp = await this.generateOtp(userByEmail[0].id);
-    //         //     console.log(otp);
-    //         //     // return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
-    //         //     return res.status(200).json({ status: true, code: HttpCodeEnum.OK, message: 'Otp Send Successfully' });
-    //         // }
-    
-    //         // // Check if the user exists by mobile number
-    //         // const userByMobile = await User.find({ mobile_number: username });
-    //         // if (userByMobile) {
-    //         //     const otp = await this.generateOtp(userByMobile[0].id);
-    //         //     // return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
-    //         //     return res.status(200).json({ status: true, code: HttpCodeEnum.OK, message: 'Otp Send Successfully' });
-    //         // }
-    
-    //         // User not found
-    //         return serverResponse(res, HttpCodeEnum.UNAUTHORIZED, constructResponseMsg(this.locale, "user-not-found"), {});
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
-    
-
-
     public async signOut(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[signOut]";
