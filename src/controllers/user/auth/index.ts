@@ -6,21 +6,21 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions,  User } from "../../models";
-import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../utils";
-import { HttpCodeEnum } from "../../enums/server";
-import { UserData } from "../../interfaces/user";
-import { updateSeesionWithIpInfo } from "../../utils/query";
+import { Otps, Permissions, Sessions,  User } from "../../../models";
+import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
+import { HttpCodeEnum } from "../../../enums/server";
+import { UserData } from "../../../interfaces/user";
+import { updateSeesionWithIpInfo } from "../../../utils/query";
 import validate from "./validate";
-import { SessionManageData } from "../../interfaces/session";
+import { SessionManageData } from "../../../interfaces/session";
 // import { getSubscriberData, getUserEncryptedData } from "../../utils/query/subscriber";
-import EmailService from "../../utils/email";
-import { SocialType, UserInviteType, UserPermssionType } from "../../enums/user";
-import { SubscriberType } from "../../enums/subscriber";
-import Logger from "../../utils/logger";
-import ServerMessages, { ServerMessagesEnum } from "../../config/messages";
-import { uploadFile, deleteFile } from "../../utils/storage";
-import { postSoftDelete } from "../../services/Chat";
+import EmailService from "../../../utils/email";
+import { SocialType, UserInviteType, UserPermssionType } from "../../../enums/user";
+import { SubscriberType } from "../../../enums/subscriber";
+import Logger from "../../../utils/logger";
+import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import { uploadFile, deleteFile } from "../../../utils/storage";
+import { postSoftDelete } from "../../../services/Chat";
 
 const fileName = "[user][index.ts]";
 export default class AuthController {
@@ -173,10 +173,6 @@ export default class AuthController {
 
             // const fetchSubscriberData = await Promise.all(subscribedDetailData);
             const formattedUserData: any = userData._doc;
-
-            
-
-           
 
             return Promise.resolve(formattedUserData);
         } catch (err: any) {
@@ -384,6 +380,86 @@ export default class AuthController {
         }
     }
 
+    // login
+    public async login(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[login]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { username } = req.body;
+            if (!username) {
+                throw new Error(constructResponseMsg(this.locale, "email-or-phone-required"));
+            }
+    
+            let userData: any;
+            const isEmail = username.includes("@");
+            
+            if (isEmail) {
+                const emailToSearchWith: any = new User({ email: removeSpace(username) });
+                emailToSearchWith.encryptFieldsSync();
+                userData = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: username }] });
+            } else {
+                const phoneToSearchWith: any = new User({ phone_number: removeSpace(username) });
+                phoneToSearchWith.encryptFieldsSync();
+                userData = await User.findOne({ is_phone_verified: true, phone_number: phoneToSearchWith.phone_number });
+            }
+    
+            if (!userData) {
+                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+            }
+    
+            const otp = await this.generateOtp(userData._doc.id);
+    
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), { otp });
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    
+
+
+
+
+
+
+    // public async login(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[login]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+    
+    //         const { username } = req.body;
+    //         console.log(username);
+
+    //         const user = await User.find({ email: username });
+    //         console.log(user);
+    
+    //         // Check if the user exists by email
+    //         // const userByEmail = await User.find({ email: username });
+    //         // if (userByEmail) {
+    //         //     const otp = await this.generateOtp(userByEmail[0].id);
+    //         //     console.log(otp);
+    //         //     // return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
+    //         //     return res.status(200).json({ status: true, code: HttpCodeEnum.OK, message: 'Otp Send Successfully' });
+    //         // }
+    
+    //         // // Check if the user exists by mobile number
+    //         // const userByMobile = await User.find({ mobile_number: username });
+    //         // if (userByMobile) {
+    //         //     const otp = await this.generateOtp(userByMobile[0].id);
+    //         //     // return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
+    //         //     return res.status(200).json({ status: true, code: HttpCodeEnum.OK, message: 'Otp Send Successfully' });
+    //         // }
+    
+    //         // User not found
+    //         return serverResponse(res, HttpCodeEnum.UNAUTHORIZED, constructResponseMsg(this.locale, "user-not-found"), {});
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+    
 
 
     public async signOut(req: Request, res: Response): Promise<any> {

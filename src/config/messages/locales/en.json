@@ -66,5 +66,8 @@
     "offer-add": "Offer Added Successfully",
     "offer-update": "Offer Updated Successfully",
     "offer-delete": "Offer Delete Successfully",
-    "offer-fetch": "Offer Fetched Successfully"
+    "offer-fetch": "Offer Fetched Successfully",
+
+    "user-not-found": "usuario no encontrado",
+    "user-os": "Se envió un OTP a tu correo electrónico"
 }

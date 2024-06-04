@@ -66,9 +66,10 @@ export const MessageKey: IObjectKeys = {
     "product-requested-updated": "product-requested-updated",
     "product-requested-deleted": "product-requested-deleted",
     "product-request-fethed": "product-request-fethed",
-    
     "offer-add": "offer-add",
     "offer-update": "offer-update",
     "offer-delete": "offer-delete",
     "offer-fetch": "offer-fetch",
+
+    "user-not-found": "user-not-found",
 };

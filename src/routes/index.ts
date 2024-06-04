@@ -9,7 +9,7 @@ routes.get("/", (_req, res) => {
     res.send("JustBuySell API v1");
 });
  
-routes.use("/user", AuthRoutes);
+routes.use("/user-api", AuthRoutes);
 routes.use("/admin", AdminRoutes);
 // routes.use("/v1", UserRoutes);
 

@@ -59,5 +59,7 @@
     "noti-ds": "Datos de notificación",
     "no-file-provided": "No se encontró ninguna imagen",
     "invite-message": "Hola _ ha invitado a unirse a su equipo en la plataforma ArkChat. Haga clic en el enlace de invitación para registrar una nueva cuenta o iniciar sesión para unirse.",
-    "stripe-payment-sheet": "Se creó una hoja de pago"
+    "stripe-payment-sheet": "Se creó una hoja de pago",
+
+    "user-not-found": "usuario no encontrado"
 }
