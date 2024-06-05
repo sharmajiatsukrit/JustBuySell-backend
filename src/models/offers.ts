@@ -5,9 +5,9 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IOffers extends Document {
     name: string;
-    priseperunit: number;
+    priceperunit: number;
     miniquantity: number;
-    countryoforigin: string;
+    origin: number;
     pin: number;
     status: number;
     created_by: number;
@@ -15,20 +15,20 @@ interface IOffers extends Document {
 }
 
 const offersSchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
-    priseperunit: { type: Number, default: '' },
+    priceperunit: { type: Number, default: '' },
     miniquantity: { type: Number, default: '' },
-    countryoforigin: { type: String, default: 0 },
+    origin: { type: Number, default: 0 },
     pin: { type: Number, default: 0 },
     status: { type: Number, default: 0 },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 offersSchema.plugin(autoIncrement, { model: 'offers', field: 'id', startAt: 1 });
 

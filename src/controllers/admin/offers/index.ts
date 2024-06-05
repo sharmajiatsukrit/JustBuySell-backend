@@ -29,15 +29,15 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, priseperunit, miniquantity, countryoforigin, pin, status } = req.body;
+            const { name, priceperunit, miniquantity, origin, pin, status } = req.body;
 
             let result: any;
 
             result = await Offers.create({
                 name: name,
-                priseperunit: priseperunit,
+                priceperunit: priceperunit,
                 miniquantity: miniquantity,
-                countryoforigin: countryoforigin,
+                origin: origin,
                 pin: pin,
                 status: status
             });
@@ -59,14 +59,14 @@ export default class ProductRequestController {
 
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, priseperunit, miniquantity, countryoforigin, pin, status } = req.body;
+            const { name, priceperunit, miniquantity, origin, pin, status } = req.body;
 
             let result: any = await Offers.findOneAndUpdate(
                 { id: id }, {
                 name: name,
-                priseperunit: priseperunit,
+                priceperunit: priceperunit,
                 miniquantity: miniquantity,
-                countryoforigin: countryoforigin,
+                origin: origin,
                 pin: pin,
                 status: status
             });
@@ -83,7 +83,6 @@ export default class ProductRequestController {
     public async delete(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[delete]";
-            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
@@ -108,8 +107,20 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Offers.find({}).sort([['id', 'desc']]).lean();
+            // const result = await Offers.find({}).sort([['id', 'desc']]).lean();
+            const result = await Offers.aggregate([
+                {
+                    $lookup: {
+                        from: "countries",
+                        localField: "origin",
+                        foreignField: "id",
+                        as: "countrydetails",
+                    },
+                },
+                {
+                    $sort: { id: -1 }
+                },
+            ]).exec();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
@@ -129,7 +140,20 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
             const { id } = req.params;
-            const result: any = await Offers.find({ id: id }).lean();
+            // const result: any = await Offers.find({ id: id }).lean();
+            const result = await Offers.aggregate([
+                {
+                    $match: { id: parseInt(id) },
+                },
+                {
+                    $lookup: {
+                        from: "countries",
+                        localField: "origin",
+                        foreignField: "id",
+                        as: "countrydetails",
+                    },
+                },
+            ]);
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);

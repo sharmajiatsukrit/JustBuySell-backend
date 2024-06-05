@@ -6,21 +6,21 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions,  User } from "../../models";
-import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../utils";
-import { HttpCodeEnum } from "../../enums/server";
-import { UserData } from "../../interfaces/user";
-import { updateSeesionWithIpInfo } from "../../utils/query";
+import { Otps, Permissions, Sessions,  User } from "../../../models";
+import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
+import { HttpCodeEnum } from "../../../enums/server";
+import { UserData } from "../../../interfaces/user";
+import { updateSeesionWithIpInfo } from "../../../utils/query";
 import validate from "./validate";
-import { SessionManageData } from "../../interfaces/session";
+import { SessionManageData } from "../../../interfaces/session";
 // import { getSubscriberData, getUserEncryptedData } from "../../utils/query/subscriber";
-import EmailService from "../../utils/email";
-import { SocialType, UserInviteType, UserPermssionType } from "../../enums/user";
-import { SubscriberType } from "../../enums/subscriber";
-import Logger from "../../utils/logger";
-import ServerMessages, { ServerMessagesEnum } from "../../config/messages";
-import { uploadFile, deleteFile } from "../../utils/storage";
-import { postSoftDelete } from "../../services/Chat";
+import EmailService from "../../../utils/email";
+import { SocialType, UserInviteType, UserPermssionType } from "../../../enums/user";
+import { SubscriberType } from "../../../enums/subscriber";
+import Logger from "../../../utils/logger";
+import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import { uploadFile, deleteFile } from "../../../utils/storage";
+import { postSoftDelete } from "../../../services/Chat";
 
 const fileName = "[user][index.ts]";
 export default class AuthController {
@@ -173,10 +173,6 @@ export default class AuthController {
 
             // const fetchSubscriberData = await Promise.all(subscribedDetailData);
             const formattedUserData: any = userData._doc;
-
-            
-
-           
 
             return Promise.resolve(formattedUserData);
         } catch (err: any) {
@@ -342,7 +338,7 @@ export default class AuthController {
 
 
 
-    // Checked with encryption
+    // signin with password
     public async signIn(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[signIn]";
@@ -351,9 +347,6 @@ export default class AuthController {
             this.locale = (locale as string) || "en";
 
             let { email, password } = req.body;
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
-            // Search on encrypted email field
             const emailToSearchWith: any = new User({ email: removeSpace(email) });
             emailToSearchWith.encryptFieldsSync();
 
@@ -366,21 +359,6 @@ export default class AuthController {
             if (!userData) {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
-
-            // const socialAccount: any = await Socials.findOne({ email: emailToSearchWith.email });
-            // if (socialAccount && !userData._doc.password) {
-            //     switch (socialAccount._doc.type) {
-            //         case 1:
-            //             throw new Error(constructResponseMsg(this.locale, "email-gu"));
-            //             break;
-            //         case 2:
-            //             throw new Error(constructResponseMsg(this.locale, "email-au"));
-            //             break;
-            //         default:
-            //             break;
-            //     }
-            // }
-
             const dePassword = decryptText(password);
 
             if (!dePassword) {
@@ -393,21 +371,52 @@ export default class AuthController {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
 
-            // Commented due to 2FA
-            // const formattedUserData = await this.fetchUserDetails(userData._doc.id);
-            // const session = await this.createSession(userData._doc.id, email, req, userData._doc.account_status);
-
-            // if (session) {
-            //     formattedUserData.token = session.token;
-            // }
             const otp = await this.generateOtp(userData._doc.id);
-            // this.emailService.otpEmail(userData.email, otp);
+            
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    // login
+    public async login(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[login]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { username } = req.body;
+            if (!username) {
+                throw new Error(constructResponseMsg(this.locale, "email-or-phone-required"));
+            }
+    
+            let userData: any;
+            const isEmail = username.includes("@");
+            
+            if (isEmail) {
+                const emailToSearchWith: any = new User({ email: removeSpace(username) });
+                emailToSearchWith.encryptFieldsSync();
+                userData = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: username }] });
+            } else {
+                const phoneToSearchWith: any = new User({ phone_number: removeSpace(username) });
+                phoneToSearchWith.encryptFieldsSync();
+                userData = await User.findOne({ is_phone_verified: true, phone_number: phoneToSearchWith.phone_number });
+            }
+    
+            if (!userData) {
+                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+            }
+    
+            const otp = await this.generateOtp(userData._doc.id);
+    
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), { otp });
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    
 
     public async signOut(req: Request, res: Response): Promise<any> {
         try {

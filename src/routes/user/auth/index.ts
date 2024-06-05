@@ -1,14 +1,15 @@
 import expres, { Router } from "express";
-import AuthController from "../../controllers/auth";
-import { UserRouteEndPoints,AdminRouteEndPoints } from "../../enums/user";
-import { authRequest, validateRequest } from "../../utils/middleware";
-import { upload } from "../../utils/storage";
+import AuthController from "../../../controllers/user/auth";
+import { UserRouteEndPoints,AdminRouteEndPoints } from "../../../enums/user";
+import { authRequest, validateRequest } from "../../../utils/middleware";
+import { upload } from "../../../utils/storage";
 
 const routes: Router = expres.Router();
 const authController = new AuthController();
 
 // Applied authRequest to protect from misuse
 routes.post("/user/signin", authController.validate(UserRouteEndPoints.SignIn), validateRequest, authController.signIn.bind(authController));
+routes.post("/user/login", authController.validate(UserRouteEndPoints.Login), validateRequest, authController.login.bind(authController));
 routes.post("/user/register", authController.validate(UserRouteEndPoints.Register), validateRequest, authController.register.bind(authController));
 // routes.post("/signin/social", authController.validate(UserRouteEndPoints.SocialSignIn), validateRequest, authController.socialSignIn.bind(authController));
 routes.post("/user/forgetpassword", authController.validate(UserRouteEndPoints.ForgetPassword), validateRequest, authController.forgetPassword.bind(authController));

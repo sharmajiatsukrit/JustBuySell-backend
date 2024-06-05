@@ -11,11 +11,17 @@ export enum UserRouteEndPoints {
     SocialSignIn = "SocialSignIn",
     UploadUserImage="UploadUserImage",
     SignIn = "SignIn",
+    Login = "Login",
     ForgetPassword = "ForgetPassword",
     ResetPassword = "ResetPassword",
     ResetOldPassword = "ResetOldPassword",
     VERIFYEMAIL = "VERIFYEMAIL",
     Delete = "Delete",
+    Getlist="Getlist",
+    getLimitlist="getLimitlist",
+    Getlimitlist="Getlimitlist",
+    Getsearch="Getsearch",
+    Addproductrequest="Addproductrequest",
 }
 
 export enum AdminRouteEndPoints {

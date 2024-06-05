@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { ProductRequest } from "../../../models" ;
+import { ProductRequest } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -29,13 +29,13 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { productname, tradeunit, pack, masterpack, description, status } = req.body;
+            const { name, unitid, pack, masterpack, description, status } = req.body;
 
             let result: any;
 
             result = await ProductRequest.create({
-                productname: productname,
-                tradeunit: tradeunit,
+                name: name,
+                unitid: unitid,
                 pack: pack,
                 masterpack: masterpack,
                 description: description,
@@ -59,17 +59,17 @@ export default class ProductRequestController {
 
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { productname, tradeunit, pack, masterpack, description, status } = req.body;
+            const { name, unitid, pack, masterpack, description, status } = req.body;
 
             let result: any = await ProductRequest.findOneAndUpdate(
-                { id: id },{
-                    productname: productname,
-                    tradeunit: tradeunit,
-                    pack: pack,
-                    masterpack: masterpack,
-                    description: description,
-                    status: status
-                });
+                { id: id }, {
+                name: name,
+                unitid: unitid,
+                pack: pack,
+                masterpack: masterpack,
+                description: description,
+                status: status
+            });
 
             const updatedData: any = await ProductRequest.find({ id: id }).lean();
 
@@ -109,7 +109,20 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
 
-            const result = await ProductRequest.find({}).sort([['id', 'desc']]).lean();
+            // const result = await ProductRequest.find({}).sort([['id', 'desc']]).lean();
+            const result = await ProductRequest.aggregate([
+                {
+                    $lookup: {
+                        from: "units",
+                        localField: "unitid",
+                        foreignField: "id",
+                        as: "units",
+                    },
+                },
+                {
+                    $sort: { id: -1 }
+                }
+            ]).exec();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fethed"), result);
@@ -129,7 +142,20 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
             const { id } = req.params;
-            const result: any = await ProductRequest.find({ id: id }).lean();
+            // const result: any = await ProductRequest.findById( id ).lean();
+            const result = await ProductRequest.aggregate([
+                {
+                    $match: { id: parseInt(id) },
+                },
+                {
+                    $lookup: {
+                        from: "units",
+                        localField: "unitid",
+                        foreignField: "id",
+                        as: "units",
+                    },
+                },
+            ]);
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fethed"), result);

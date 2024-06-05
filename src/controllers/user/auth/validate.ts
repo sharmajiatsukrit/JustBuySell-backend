@@ -1,5 +1,5 @@
 import { body, param } from "express-validator";
-import { UserRouteEndPoints } from "../../enums/user";
+import { UserRouteEndPoints } from "../../../enums/user";
 
 export default function validate(methodName: string) {
     switch (methodName) {
