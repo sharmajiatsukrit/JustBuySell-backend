@@ -6,8 +6,6 @@ import ProductRouter from "./products"
 
 const routes: Router = expres.Router();
 
-// routes.use("/pubnub", PubnubRoutes);
-routes.use("/auth", AuthRouter);
 routes.use("/category", CatRouter);
 routes.use("/products", ProductRouter);
 

@@ -32,7 +32,20 @@ export default class ProductController {
             this.locale = (locale as string) || "en";
 
 
-            const result = await Product.find({}).sort([['id', 'desc']]).lean();
+            // const result = await Product.find({}).sort([['id', 'desc']]).lean();
+            const result = await Product.aggregate([
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "id",
+                        as: "categories",
+                    },
+                },
+                {
+                    $sort: { id: -1 }
+                }
+            ]).exec();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
@@ -51,9 +64,22 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const id = parseInt(req.params.id);
-            const result: any = await Product.find({ id: id }).lean();
-            console.log(result);
+            const { id } = req.params;
+            // const result: any = await Product.find({ id: id }).lean();
+            const result = await Product.aggregate([
+                {
+                    $match: { id: parseInt(id) },
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "id",
+                        as: "categories",
+                    },
+                },
+            ]);
+
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
@@ -72,7 +98,7 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, price, unit_id, pack, category_id, status } = req.body;
+            const { name, description, category_id, status } = req.body; // removed price, unit_id, pack
 
             let result: any;
 
@@ -88,10 +114,7 @@ export default class ProductController {
             result = await Product.create({
                 name: name,
                 description: description,
-                price: price,
                 category_id: category_id,
-                unit_id: unit_id,
-                pack: pack,
                 product_image: product_image,
                 status: status
             });
@@ -116,15 +139,22 @@ export default class ProductController {
             this.locale = (locale as string) || "en";
             const { name, description, price, unit_id, pack, category_id, status } = req.body;
 
+            let product_image: string | undefined;
+            if (req.files && typeof req.files === 'object') {
+
+                if ('product_image' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    product_image = files['product_image'][0].path;
+                }
+            }
+
             let result: any = await Product.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description: description,
-                    price: price,
-                    unit_id: unit_id,
-                    pack: pack,
                     category_id: category_id,
+                    product_image: product_image,
                     status: status
                 });
 
