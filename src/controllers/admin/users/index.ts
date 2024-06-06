@@ -79,6 +79,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
+            
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             const isUserExists = await this.getExistingUser(email);
@@ -94,7 +95,6 @@ export default class UserController {
                 throw new Error(constructResponseMsg(this.locale, "email-iv"));
             }
 
-            // const dePassword = decryptText(password);
             const dePassword = password;
 
             if (!dePassword) {

@@ -11,5 +11,6 @@ routes.put("/update/:id", validateRequest, productrequestController.update.bind(
 routes.delete("/delete/:id", validateRequest, productrequestController.delete.bind(productrequestController));
 routes.get("/get-list", validateRequest, productrequestController.getList.bind(productrequestController));
 routes.get("/get-details-byid/:id", validateRequest, productrequestController.getDetailsById.bind(productrequestController));
+routes.patch("/update-status/:id", validateRequest, productrequestController.statusUpdate.bind(productrequestController));
 
 export default routes;

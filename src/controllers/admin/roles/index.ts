@@ -53,8 +53,21 @@ export default class RolesController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Roles.find({ id: id }).lean();
-            console.log(result);
+            // const result: any = await Roles.find({ id: id }).lean();
+            const result = await Roles.aggregate([
+                {
+                    $match: { id: id },
+                },
+                {
+                    $lookup: {
+                        from: "permissions",
+                        localField: "permissions",
+                        foreignField: "id",
+                        as: "permissions",
+                    },
+                },
+            ]);
+            
             
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
