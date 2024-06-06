@@ -6,8 +6,7 @@ interface IUser extends Document {
     email: string;
     is_email_verified: boolean;
     communication_email: string;
-    first_name: string;
-    last_name: string;
+    name: string;
     profile_img_url: string;
     password: string;
     mobile_number_country_code: string;
@@ -15,9 +14,9 @@ interface IUser extends Document {
     is_mobile_number_verified: boolean;
     date_of_birth: string;
     country_code: string;
-    country: string;
-    state: string;
-    city: string;
+    country: number;
+    state: number;
+    city: number;
     address: string;
     language_code: string;
     language: string;
@@ -25,7 +24,7 @@ interface IUser extends Document {
     is_gst_verified: boolean;
     ip_address: string;
     device: string;
-    role_id: string;
+    role_id: number;
     status: number;
 }
 
@@ -42,9 +41,9 @@ const userSchema: Schema = new Schema({
     is_mobile_number_verified: { type: Boolean, default: false },
     date_of_birth: { type: String, default: '' },
     country_code: { type: String, default: '' },
-    country: { type: String, default: '' },
-    state: { type: String, default: '' },
-    city: { type: String, default: '' },
+    country: { type: Number, default: '' },
+    state: { type: Number, default: '' },
+    city: { type: Number, default: '' },
     address: { type: String, default: '' },
     language_code: { type: String, default: 'en' },
     language: { type: String, default: 'English' },
@@ -52,7 +51,7 @@ const userSchema: Schema = new Schema({
     is_gst_verified: { type: Boolean, default: false },
     device: { type: String, default: 'Android'},
     ip_address: { type: String, default: '' },
-    role_id: { type: String, default: '' },
+    role_id: { type: Number, default: '' },
     status: { type: Number, default: false }
 },
 {

@@ -30,13 +30,54 @@ export default class UserController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await User.find({}).sort([['id', 'desc']]).lean();
+
+
+            // const result = await User.find({}).sort([['id', 'desc']]).lean();
+            const result = await User.aggregate([
+                {
+                    $lookup: 
+                    {
+                        from: "cities",
+                        localField: "city",
+                        foreignField: "id",
+                        as: "cities",
+                    },
+                },
+                {
+                    $lookup: 
+                    {
+                        from: "states",
+                        localField: "state",
+                        foreignField: "id",
+                        as: "states",
+                    },
+                },
+                {
+                    $lookup: 
+                    {
+                        from: "countries",
+                        localField: "country",
+                        foreignField: "id",
+                        as: "countries",
+                    },
+                },
+                {
+                    $lookup: 
+                    {
+                        from: "roles",
+                        localField: "role_id",
+                        foreignField: "id",
+                        as: "roles",
+                    },
+                },
+                {
+                    $sort: { id: -1 }
+                }
+            ]).exec();
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
@@ -51,7 +92,7 @@ export default class UserController {
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getDetailsById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -71,6 +112,68 @@ export default class UserController {
         }
     }
 
+    // public async add(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[add]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
+
+    //         // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+
+    //         const isUserExists = await this.getExistingUser(email);
+
+    //         if (isUserExists.is_email_verified) {
+    //             throw new Error(constructResponseMsg(this.locale, "email-ar"));
+    //         }
+
+    //         // Validate email
+    //         const isValidEmail = validator.isEmail(email);
+
+    //         if (!isValidEmail) {
+    //             throw new Error(constructResponseMsg(this.locale, "email-iv"));
+    //         }
+
+    //         const dePassword = password;
+
+    //         if (!dePassword) {
+    //             throw new Error(constructResponseMsg(this.locale, "invalid-password"));
+    //         }
+
+    //         const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
+    //         let userData: any;
+
+    //         if(!isUserExists.email) {
+    //             userData = await User.create({
+    //                 first_name,
+    //                 last_name,
+    //                 email,
+    //                 communication_email: email,
+    //                 device,
+    //                 password: hashedPassword,
+    //                 ip_address,
+    //                 status: 1
+    //             });
+    //         } else {
+    //             userData = {
+    //                 id: isUserExists.id,
+    //                 email: isUserExists.email,
+    //                 status: true,
+    //                 superadmin: (isUserExists.superadmin) ? true : false
+    //             };
+    //         }
+
+    //         const formattedUserData = await this.fetchUserDetails(userData.id);
+
+
+    //         return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
     public async add(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[add]";
@@ -78,54 +181,23 @@ export default class UserController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
-            
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+            const { name, phone, email, address, city_id, state_id, country_id, role_id } = req.body;
 
-            const isUserExists = await this.getExistingUser(email);
-
-            if (isUserExists.is_email_verified) {
-                throw new Error(constructResponseMsg(this.locale, "email-ar"));
-            }
-
-            // Validate email
-            const isValidEmail = validator.isEmail(email);
-
-            if (!isValidEmail) {
-                throw new Error(constructResponseMsg(this.locale, "email-iv"));
-            }
-
-            const dePassword = password;
-
-            if (!dePassword) {
-                throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-            }
-
-            const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
-            let userData: any;
-
-            if(!isUserExists.email) {
-                userData = await User.create({
-                    first_name,
-                    last_name,
-                    email,
-                    communication_email: email,
-                    device,
-                    password: hashedPassword,
-                    ip_address,
-                    status: 1
-                });
-            } else {
-                userData = {
-                    id: isUserExists.id,
-                    email: isUserExists.email,
-                    status: true,
-                    superadmin: (isUserExists.superadmin) ? true : false
-                };
-            }
+            const userData = await User.create({
+                name,
+                mobile_number: phone,
+                email,
+                address,
+                city: city_id,
+                state: state_id,
+                country: country_id,
+                role_id,
+                type: 0,
+                status: 1,
+            });
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
-            
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
         } catch (err: any) {
@@ -135,7 +207,7 @@ export default class UserController {
 
     public async fetchUserDetails(userId: number, billing = "") {
         try {
-            const userData: any = await User.findOne({ id: userId }, {password: false, account_status: false, subscribed_to: false});
+            const userData: any = await User.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
 
             delete userData._doc.__enc_email;
             delete userData._doc.__enc_communication_email;
@@ -150,14 +222,7 @@ export default class UserController {
             userData._doc.user_time_format = (userData._doc.time_format === "24") ? "HH:mm" : "hh:mm a";
             userData._doc.user_date_time_format = userData._doc.user_date_format + " " + userData._doc.user_time_format;
 
-            
-
-            // const fetchSubscriberData = await Promise.all(subscribedDetailData);
             const formattedUserData: any = userData._doc;
-
-            
-
-           
 
             return Promise.resolve(formattedUserData);
         } catch (err: any) {
@@ -182,15 +247,15 @@ export default class UserController {
         try {
             const fn = "[update]";
 
-            const  user_id  = parseInt(req.params.id);
+            const user_id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} user_id: ${user_id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { first_name, last_name, email, password } = req.body;
-            
-            await User.findOneAndUpdate({ id: user_id }, {first_name:first_name,last_name:last_name,email:email});
+
+            await User.findOneAndUpdate({ id: user_id }, { first_name: first_name, last_name: last_name, email: email });
 
             const userData: any = await this.fetchUserDetails(user_id);
 
@@ -203,7 +268,7 @@ export default class UserController {
     // Checked
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -224,14 +289,14 @@ export default class UserController {
     // Checked
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await User.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await User.findOneAndUpdate({ id: id }, { status: status }).lean();
             const result: any = await this.fetchUserDetails(id);
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-status"]), result);
