@@ -11,5 +11,6 @@ routes.put("/update/:id", validateRequest, userController.update.bind(userContro
 routes.get("/by-id/:id", validateRequest, userController.getDetailsById.bind(userController));
 routes.delete("/delete/:id", validateRequest, userController.delete.bind(userController));
 routes.patch("/status/:id", validateRequest, userController.status.bind(userController));
+routes.patch("/changepass/:id", validateRequest, userController.changePass.bind(userController));
 
 export default routes;

@@ -68,6 +68,8 @@
     "offer-delete": "Offer Delete Successfully",
     "offer-fetch": "Offer Fetched Successfully",
 
-    "user-not-found": "usuario no encontrado",
-    "user-os": "Se envió un OTP a tu correo electrónico"
+    "incorrect-password": "Incorrect Password",
+    "password-mismatch": "New Password and confirm password not mached",
+    "password-updated": "Password Updated Successfully",
+    "update-failed": "Failed To Update Password"
 }

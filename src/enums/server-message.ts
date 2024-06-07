@@ -58,4 +58,8 @@ export enum ServerMessagesEnum {
     "unit-update" = "unit-update",
     "unit-delete" = "unit-delete",
     "unit-status"="unit-status",
+    "incorrect-password" = "incorrect-password",
+    "password-mismatch" = "password-mismatch",
+    "password-updated" = "password-updated",
+    "update-failed" = "update-failed",
 }

@@ -35,7 +35,7 @@ const userSchema: Schema = new Schema({
     first_name: { type: String, default: '' },
     last_name: { type: String, default: '' },
     profile_img_url: { type: String, default: '' },
-    password: { type: String },
+    password: { type: String, default: '' },
     mobile_number_country_code: { type: String, default: '' },
     mobile_number: { type: String, default: '' },
     is_mobile_number_verified: { type: Boolean, default: false },

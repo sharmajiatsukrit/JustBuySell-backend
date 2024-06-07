@@ -13,7 +13,7 @@ import { getPostsForAdmin, getPostsForAdminBySubscriberId, getChatCount, getPost
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
-const fileName = "[admin][users][index.ts]";
+const fileName = "[admin][customer][index.ts]";
 export default class UserController {
     public locale: string = "en";
     public emailService;
@@ -230,7 +230,7 @@ export default class UserController {
                 country: country_id,
                 role_id,
                 password,
-                type: 0,
+                type: 1,
                 status: 1,
             });
 
