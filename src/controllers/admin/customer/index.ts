@@ -39,6 +39,9 @@ export default class UserController {
             // const result = await User.find({}).sort([['id', 'desc']]).lean();
             const result = await User.aggregate([
                 {
+                    $match: { type: 1 }
+                },
+                {
                     $lookup: 
                     {
                         from: "cities",
@@ -100,7 +103,7 @@ export default class UserController {
             const id = parseInt(req.params.id);
             const result = await User.aggregate([
                 {
-                    $match: { id: id }
+                    $match: { id: id, type: 1 }
                 },
                 {
                     $lookup: {
@@ -145,68 +148,6 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-    // public async add(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[add]";
-    //         // Set locale
-    //         const { locale } = req.query;
-    //         this.locale = (locale as string) || "en";
-
-    //         const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
-
-    //         // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
-    //         const isUserExists = await this.getExistingUser(email);
-
-    //         if (isUserExists.is_email_verified) {
-    //             throw new Error(constructResponseMsg(this.locale, "email-ar"));
-    //         }
-
-    //         // Validate email
-    //         const isValidEmail = validator.isEmail(email);
-
-    //         if (!isValidEmail) {
-    //             throw new Error(constructResponseMsg(this.locale, "email-iv"));
-    //         }
-
-    //         const dePassword = password;
-
-    //         if (!dePassword) {
-    //             throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-    //         }
-
-    //         const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
-    //         let userData: any;
-
-    //         if(!isUserExists.email) {
-    //             userData = await User.create({
-    //                 first_name,
-    //                 last_name,
-    //                 email,
-    //                 communication_email: email,
-    //                 device,
-    //                 password: hashedPassword,
-    //                 ip_address,
-    //                 status: 1
-    //             });
-    //         } else {
-    //             userData = {
-    //                 id: isUserExists.id,
-    //                 email: isUserExists.email,
-    //                 status: true,
-    //                 superadmin: (isUserExists.superadmin) ? true : false
-    //             };
-    //         }
-
-    //         const formattedUserData = await this.fetchUserDetails(userData.id);
-
-
-    //         return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
 
     public async add(req: Request, res: Response): Promise<any> {
         try {
@@ -390,5 +331,44 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    public async updateProfileImg(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateProfileImg]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { id } = req.params;
+
+            let product_image: string | undefined;
+            if (req.files && typeof req.files === 'object') {
+
+                if ('product_image' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    product_image = files['product_image'][0].path;
+                }
+            }
+    
+            // Fetch the user by id
+            const user = await User.findOne({ id: id }).lean();
+    
+            if (!user) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+    
+            // Update the user's profile image
+            const updateprofile = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
+    
+            if (updateprofile) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
 
 }

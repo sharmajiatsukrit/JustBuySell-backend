@@ -71,5 +71,6 @@
     "incorrect-password": "Incorrect Password",
     "password-mismatch": "New Password and confirm password not mached",
     "password-updated": "Password Updated Successfully",
-    "update-failed": "Failed To Update Password"
+    "update-failed": "Failed To Update Password",
+    "profile-img-updated": "Profile Img updated",
 }

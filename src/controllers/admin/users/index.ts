@@ -39,6 +39,9 @@ export default class UserController {
             // const result = await User.find({}).sort([['id', 'desc']]).lean();
             const result = await User.aggregate([
                 {
+                    $match: { type: 0 }
+                },
+                {
                     $lookup: 
                     {
                         from: "cities",
@@ -100,7 +103,7 @@ export default class UserController {
             const id = parseInt(req.params.id);
             const result = await User.aggregate([
                 {
-                    $match: { id: id }
+                    $match: { id: id, type: 0 }
                 },
                 {
                     $lookup: {
@@ -390,5 +393,44 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    public async updateProfileImg(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateProfileImg]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { id } = req.params;
+
+            let product_image: string | undefined;
+            if (req.files && typeof req.files === 'object') {
+
+                if ('product_image' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    product_image = files['product_image'][0].path;
+                }
+            }
+    
+            // Fetch the user by id
+            const user = await User.findOne({ id: id }).lean();
+    
+            if (!user) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+    
+            // Update the user's profile image
+            const updationstatus = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
+    
+            if (updationstatus) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    
 
 }

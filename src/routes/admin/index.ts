@@ -12,6 +12,7 @@ import UnitsRoutes from "./unit";
 import HelperRoutes from "./helper";
 import ProductRequest from "./productrequest";
 import Offers from "./offers";
+import Customer from "./customer";
 
 const routes: Router = expres.Router();
 
@@ -29,5 +30,6 @@ routes.use("/product", ProductsRoutes);
 routes.use("/helper", HelperRoutes);
 routes.use("/product-request", ProductRequest);
 routes.use("/offer", Offers);
+routes.use("/customer", Customer);
 
 export default routes;

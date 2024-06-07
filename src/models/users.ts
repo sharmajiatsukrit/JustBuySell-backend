@@ -26,6 +26,7 @@ interface IUser extends Document {
     device: string;
     role_id: number;
     status: number;
+    type: number;
 }
 
 const userSchema: Schema = new Schema({
@@ -52,7 +53,8 @@ const userSchema: Schema = new Schema({
     device: { type: String, default: 'Android'},
     ip_address: { type: String, default: '' },
     role_id: { type: Number, default: '' },
-    status: { type: Number, default: false }
+    status: { type: Number, default: false },
+    type: {type: Number, default: ''}
 },
 {
     timestamps: true,
