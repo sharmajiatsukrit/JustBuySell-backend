@@ -149,68 +149,6 @@ export default class UserController {
         }
     }
 
-    // public async add(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[add]";
-    //         // Set locale
-    //         const { locale } = req.query;
-    //         this.locale = (locale as string) || "en";
-
-    //         const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
-
-    //         // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
-    //         const isUserExists = await this.getExistingUser(email);
-
-    //         if (isUserExists.is_email_verified) {
-    //             throw new Error(constructResponseMsg(this.locale, "email-ar"));
-    //         }
-
-    //         // Validate email
-    //         const isValidEmail = validator.isEmail(email);
-
-    //         if (!isValidEmail) {
-    //             throw new Error(constructResponseMsg(this.locale, "email-iv"));
-    //         }
-
-    //         const dePassword = password;
-
-    //         if (!dePassword) {
-    //             throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-    //         }
-
-    //         const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
-    //         let userData: any;
-
-    //         if(!isUserExists.email) {
-    //             userData = await User.create({
-    //                 first_name,
-    //                 last_name,
-    //                 email,
-    //                 communication_email: email,
-    //                 device,
-    //                 password: hashedPassword,
-    //                 ip_address,
-    //                 status: 1
-    //             });
-    //         } else {
-    //             userData = {
-    //                 id: isUserExists.id,
-    //                 email: isUserExists.email,
-    //                 status: true,
-    //                 superadmin: (isUserExists.superadmin) ? true : false
-    //             };
-    //         }
-
-    //         const formattedUserData = await this.fetchUserDetails(userData.id);
-
-
-    //         return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
-
     public async add(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[add]";

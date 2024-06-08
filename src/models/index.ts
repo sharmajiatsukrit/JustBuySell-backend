@@ -15,5 +15,6 @@ import Unit from "./unit";
 import mongoose from 'mongoose';
 import ProductRequest from './productrequest';
 import Offers from './offers';
+import Banner from './banner';
 
-export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers };
+export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner };
