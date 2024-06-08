@@ -12,6 +12,7 @@ import EmailService from "../../../utils/email";
 import { getPostsForAdmin, getPostsForAdminBySubscriberId, getChatCount, getPostCount, postDelete } from "../../../services/Chat";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import mongoose from "mongoose";
 
 const fileName = "[admin][banner][index.ts]";
 export default class BannerController {
@@ -115,14 +116,13 @@ export default class BannerController {
     public async updateBanner(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateBanner]";
-        
-            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const { id } = req.params;
-            let bannerimg: string | undefined;
+            const { id, name } = req.body;
+            console.log(name);
     
+            let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -138,7 +138,12 @@ export default class BannerController {
                 console.error("No files found in the request");
             }
     
-            const bannerUpdate = await Banner.findByIdAndUpdate(id, { bannerimg: bannerimg }, { new: true });
+            const bannerUpdateData: any = { name };
+            if (bannerimg) {
+                bannerUpdateData.bannerimg = bannerimg;
+            }
+    
+            const bannerUpdate = await Banner.findByIdAndUpdate(parseInt(id), bannerUpdateData, { new: true });
     
             if (bannerUpdate) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-update"]), {});
@@ -149,7 +154,8 @@ export default class BannerController {
             console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }    
+    }
+    
 
     public async deleteBanner(req: Request, res: Response): Promise<any> {
         try {
@@ -158,9 +164,9 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const { id } = req.params;
+            const id = parseInt(req.params.id);
     
-            const bannerDelete = await Banner.findByIdAndDelete(id);
+            const bannerDelete = await Banner.findByIdAndDelete(id.toString);
     
             if (bannerDelete) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-delete"]), {});
