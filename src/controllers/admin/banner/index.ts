@@ -74,22 +74,31 @@ export default class BannerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const { name } = req.body;
+            console.log(name);
+    
             let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
-
+    
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    bannerimg = files['product_image'][0].path;
+                    if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
+                        bannerimg = files['bannerimg'][0].path;
+                    } else {
+                        console.error("Banner image file array is empty or undefined");
+                    }
+                } else {
+                    console.error("Banner image field 'bannerimg' not found in files");
                 }
+            } else {
+                console.error("No files found in the request");
             }
-
+    
             const banneradd = await Banner.create({
                 name: name,
                 bannerimg: bannerimg
             });
-    
     
             if (banneradd) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {});
@@ -97,24 +106,36 @@ export default class BannerController {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
             }
         } catch (err: any) {
+            console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }
+    }    
+
+
     public async updateBanner(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateBanner]";
         
+            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const { id } = req.params; 
+            const { id } = req.params;
             let bannerimg: string | undefined;
     
             if (req.files && typeof req.files === 'object') {
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    bannerimg = files['bannerimg'][0].path;
+                    if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
+                        bannerimg = files['bannerimg'][0].path;
+                    } else {
+                        console.error("Banner image file array is empty or undefined");
+                    }
+                } else {
+                    console.error("Banner image field 'bannerimg' not found in files");
                 }
+            } else {
+                console.error("No files found in the request");
             }
     
             const bannerUpdate = await Banner.findByIdAndUpdate(id, { bannerimg: bannerimg }, { new: true });
@@ -125,9 +146,11 @@ export default class BannerController {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
             }
         } catch (err: any) {
+            console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }
+    }    
+
     public async deleteBanner(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[deleteBanner]";
