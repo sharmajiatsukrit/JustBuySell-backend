@@ -3,7 +3,7 @@ import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
-interface ICategory extends Document {
+interface IBanner extends Document {
     name: string;
     bannerimg: string;
     status: boolean;
@@ -11,7 +11,7 @@ interface ICategory extends Document {
     updated_by: number;
 }
 
-const categorySchema: Schema = new Schema({
+const BannerSchema: Schema = new Schema({
     
     name: { type: String, default: '' },
     bannerimg: { type: String, default: '' },
@@ -24,8 +24,8 @@ const categorySchema: Schema = new Schema({
     versionKey: false
 });
 
-categorySchema.plugin(autoIncrement, { model: 'category', field: 'id', startAt: 1 });
+BannerSchema.plugin(autoIncrement, { model: 'banner', field: 'id', startAt: 1 });
 
-const Category = model<ICategory>('category', categorySchema);
+const Banner = model<IBanner>('banner', BannerSchema);
 
-export default Category;
+export default Banner;

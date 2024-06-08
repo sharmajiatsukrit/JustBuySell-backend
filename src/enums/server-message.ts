@@ -62,5 +62,8 @@ export enum ServerMessagesEnum {
     "password-mismatch" = "password-mismatch",
     "password-updated" = "password-updated",
     "update-failed" = "update-failed",
-    "profile-img-updated" = "profile-img-updated"
+    "profile-img-updated" = "profile-img-updated",
+    "bannerimg-create" = "bannerimg-create",
+    "bannerimg-update" = "bannerimg-update",
+    "bannerimg-delete" = "bannerimg-delete"
 }

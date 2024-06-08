@@ -75,19 +75,24 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            let product_image: string | undefined;
+            const { name } = req.body;
+            let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
 
-                if ('product_image' in req.files) {
+                if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    product_image = files['product_image'][0].path;
+                    bannerimg = files['product_image'][0].path;
                 }
             }
 
-            const updationstatus = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
+            const banneradd = await Banner.create({
+                name: name,
+                bannerimg: bannerimg
+            });
     
-            if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
+    
+            if (banneradd) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
             }
@@ -95,5 +100,53 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    public async updateBanner(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateBanner]";
+        
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
     
+            const { id } = req.params; 
+            let bannerimg: string | undefined;
+    
+            if (req.files && typeof req.files === 'object') {
+                if ('bannerimg' in req.files) {
+                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+                    bannerimg = files['bannerimg'][0].path;
+                }
+            }
+    
+            const bannerUpdate = await Banner.findByIdAndUpdate(id, { bannerimg: bannerimg }, { new: true });
+    
+            if (bannerUpdate) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-update"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    public async deleteBanner(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[deleteBanner]";
+    
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { id } = req.params;
+    
+            const bannerDelete = await Banner.findByIdAndDelete(id);
+    
+            if (bannerDelete) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-delete"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
 } 
