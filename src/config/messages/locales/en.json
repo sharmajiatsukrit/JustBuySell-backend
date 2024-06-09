@@ -75,5 +75,7 @@
     "profile-img-updated": "Profile Img updated",
     "bannerimg-create": "Banner img created",
     "bannerimg-update": "Banner img updated",
-    "bannerimg-delete": "Banner img deleted"
+    "bannerimg-delete": "Banner img deleted",
+    "bannerimg-not-found": "Banner Not Found",
+    "banner-status-update": "Banner Status Updated"
 }

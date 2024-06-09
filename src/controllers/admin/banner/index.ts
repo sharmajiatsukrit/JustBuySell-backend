@@ -53,11 +53,11 @@ export default class BannerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const id = parseInt(req.params.id);
 
             const result = await Banner.findOne({ id }).lean();
-    
+
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
             } else {
@@ -75,13 +75,13 @@ export default class BannerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { name } = req.body;
             console.log(name);
-    
+
             let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
-    
+
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
                     if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
@@ -95,12 +95,12 @@ export default class BannerController {
             } else {
                 console.error("No files found in the request");
             }
-    
+
             const banneradd = await Banner.create({
                 name: name,
                 bannerimg: bannerimg
             });
-    
+
             if (banneradd) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {});
             } else {
@@ -110,18 +110,27 @@ export default class BannerController {
             console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }    
+    }
 
 
     public async updateBanner(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateBanner]";
+            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
-            const { id, name } = req.body;
-            console.log(name);
-    
+
+            const { name } = req.body;
+            const { id } = req.params;
+            // console.log(name);
+
+            // Validate ID
+            if (typeof id !== 'number') {
+                // const errorMsg = ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["invalid-id"]);
+                // return serverResponse(res, HttpCodeEnum.BADREQUEST, errorMsg, {});
+                // console.log('Id not found');
+            }
+
             let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
                 if ('bannerimg' in req.files) {
@@ -137,15 +146,23 @@ export default class BannerController {
             } else {
                 console.error("No files found in the request");
             }
-    
-            const bannerUpdateData: any = { name };
-            if (bannerimg) {
-                bannerUpdateData.bannerimg = bannerimg;
+
+            const bannerToUpdate = await Banner.findOne({ id: id });
+            if (!bannerToUpdate) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-not-found"]));
             }
-    
-            const bannerUpdate = await Banner.findByIdAndUpdate(parseInt(id), bannerUpdateData, { new: true });
-    
-            if (bannerUpdate) {
+
+            if (name) {
+                bannerToUpdate.name = name;
+            }
+
+            if (bannerimg) {
+                bannerToUpdate.bannerimg = bannerimg;
+            }
+
+            const updatedBanner = await bannerToUpdate.save();
+
+            if (updatedBanner) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-update"]), {});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
@@ -155,7 +172,6 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
 
     public async deleteBanner(req: Request, res: Response): Promise<any> {
         try {
@@ -164,18 +180,51 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const id = parseInt(req.params.id);
+            const { id } = req.params;
     
-            const bannerDelete = await Banner.findByIdAndDelete(id.toString);
+            // Find the banner by id
+            const banner = await Banner.findOne({ id: id });
     
-            if (bannerDelete) {
+            if (banner) {
+                // If banner is found, delete it
+                await banner.deleteOne();
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-delete"]), {});
             } else {
+                // If banner is not found, throw an error
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
+    public async updateBannerStatus(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateBannerStatus]";
+    
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { id } = req.params;
+            const { status } = req.body;
+    
+            // Find the banner by id
+            const banner = await Banner.findOne({ id: id });
+    
+            if (banner) {
+                // Update the status field
+                banner.status = status;
+                await banner.save();
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-status-update"]), {});
+            } else {
+                // If banner is not found, throw an error
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
 
 } 

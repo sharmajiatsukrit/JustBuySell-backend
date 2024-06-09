@@ -65,5 +65,7 @@ export enum ServerMessagesEnum {
     "profile-img-updated" = "profile-img-updated",
     "bannerimg-create" = "bannerimg-create",
     "bannerimg-update" = "bannerimg-update",
-    "bannerimg-delete" = "bannerimg-delete"
+    "bannerimg-delete" = "bannerimg-delete",
+    "bannerimg-not-found" = "bannerimg-not-found",
+    "banner-status-update" = "banner-status-update"
 }
