@@ -12,6 +12,8 @@ import UnitsRoutes from "./unit";
 import HelperRoutes from "./helper";
 import ProductRequest from "./productrequest";
 import Offers from "./offers";
+import Customer from "./customer";
+import Banner from "./banner";
 
 const routes: Router = expres.Router();
 
@@ -23,11 +25,12 @@ routes.use("/country", CountryRoutes);
 routes.use("/state", StateRoutes);
 routes.use("/city", CityRoutes);
 routes.use("/units", UnitsRoutes);
-
 routes.use("/category", CategoryRoutes);
 routes.use("/product", ProductsRoutes);
 routes.use("/helper", HelperRoutes);
 routes.use("/product-request", ProductRequest);
 routes.use("/offer", Offers);
+routes.use("/customer", Customer);
+routes.use("/banner", Banner);
 
 export default routes;

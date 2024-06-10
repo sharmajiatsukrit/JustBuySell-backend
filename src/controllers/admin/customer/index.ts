@@ -13,7 +13,7 @@ import { getPostsForAdmin, getPostsForAdminBySubscriberId, getChatCount, getPost
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
-const fileName = "[admin][users][index.ts]";
+const fileName = "[admin][customer][index.ts]";
 export default class UserController {
     public locale: string = "en";
     public emailService;
@@ -39,7 +39,7 @@ export default class UserController {
             // const result = await User.find({}).sort([['id', 'desc']]).lean();
             const result = await User.aggregate([
                 {
-                    $match: { type: 0 }
+                    $match: { type: 1 }
                 },
                 {
                     $lookup: 
@@ -103,7 +103,7 @@ export default class UserController {
             const id = parseInt(req.params.id);
             const result = await User.aggregate([
                 {
-                    $match: { id: id, type: 0 }
+                    $match: { id: id, type: 1 }
                 },
                 {
                     $lookup: {
@@ -171,7 +171,7 @@ export default class UserController {
                 country: country_id,
                 role_id,
                 password,
-                type: 0,
+                type: 1,
                 status: 1,
             });
 
@@ -358,9 +358,9 @@ export default class UserController {
             }
     
             // Update the user's profile image
-            const updationstatus = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
+            const updateprofile = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
     
-            if (updationstatus) {
+            if (updateprofile) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
@@ -369,6 +369,6 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
 }

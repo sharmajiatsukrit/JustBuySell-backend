@@ -166,4 +166,29 @@ export default class ProductRequestController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    // status update
+    public async statusUpdate(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[statusUpdate]";
+
+            const { id } = req.params;
+            Logger.info(`${fileName + fn} category_id: ${id}`);
+
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const { status } = req.body;
+
+            let result: any = await ProductRequest.findOneAndUpdate(
+                { id: id }, {
+                status: status
+            });
+
+            const updatedData: any = await ProductRequest.find({ id: id }).lean();
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-updated"), updatedData);
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 } 

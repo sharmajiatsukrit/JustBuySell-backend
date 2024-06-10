@@ -58,4 +58,14 @@ export enum ServerMessagesEnum {
     "unit-update" = "unit-update",
     "unit-delete" = "unit-delete",
     "unit-status"="unit-status",
+    "incorrect-password" = "incorrect-password",
+    "password-mismatch" = "password-mismatch",
+    "password-updated" = "password-updated",
+    "update-failed" = "update-failed",
+    "profile-img-updated" = "profile-img-updated",
+    "bannerimg-create" = "bannerimg-create",
+    "bannerimg-update" = "bannerimg-update",
+    "bannerimg-delete" = "bannerimg-delete",
+    "bannerimg-not-found" = "bannerimg-not-found",
+    "banner-status-update" = "banner-status-update"
 }
