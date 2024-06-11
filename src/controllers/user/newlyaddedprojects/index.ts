@@ -4,14 +4,14 @@ import moment from "moment";
 import { Category, Product, ProductRequest } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
-import validate from "./validate";
+import validate from "../productrequest/validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
 
 const fileName = "[user][product][index.ts]";
-export default class Productcontroller {
+export default class NewlyaddedproductsController {
     public locale: string = "en";
     public emailService;
 
@@ -71,6 +71,6 @@ export default class Productcontroller {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
 }

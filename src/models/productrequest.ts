@@ -11,6 +11,7 @@ interface IProductRequest extends Document {
     masterpack: string;
     description: string;
     status: number;
+    productImg: string;
     created_by: number;
     updated_by: number;
 }
@@ -24,7 +25,8 @@ const productRequestSchema: Schema = new Schema({
     description: { type: String, default: 0 },
     status: { type: Number, default: 0 },
     created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    updated_by: { type: Number, default: 0 },
+    productImg: { type: String, default: '' },
 },
 {
     timestamps: true,
