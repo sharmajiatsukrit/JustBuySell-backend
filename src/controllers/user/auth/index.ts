@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions,  User } from "../../../models";
+import { Otps, Permissions, Sessions, User } from "../../../models";
 import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import { UserData } from "../../../interfaces/user";
@@ -29,20 +29,20 @@ export default class AuthController {
 
     constructor() {
         this.emailService = new EmailService();
-    } 
+    }
 
     public validate(endPoint: string): ValidationChain[] {
         return validate(endPoint);
-    } 
+    }
 
     // Checked with encryption
     private async generateOtp(userId: number): Promise<number> {
-        const minNo = 100000; 
+        const minNo = 100000;
         const maxNo = 999999;
         const otp = 123456;//Math.floor(Math.random() * (maxNo - minNo + 1)) + minNo;
         const hashedOtp = await Bcrypt.hash(otp.toString(), 10);
 
-        const isOTPExist = await Otps.where({user_id: userId}).countDocuments();
+        const isOTPExist = await Otps.where({ user_id: userId }).countDocuments();
 
         const otpValidDate = moment().add(10, 'minutes');
 
@@ -55,7 +55,8 @@ export default class AuthController {
         } else {
             await Otps.findOneAndUpdate({ user_id: userId }, {
                 otp: hashedOtp,
-                valid_till: otpValidDate});
+                valid_till: otpValidDate
+            });
         }
 
         return Promise.resolve(otp);
@@ -68,13 +69,13 @@ export default class AuthController {
         if (!otpFromDB) {
             return Promise.resolve(false);
         }
-        const isValidOtp = moment(otpFromDB.valid_till).diff(moment(),'minutes') > 0 && await Bcrypt.compare(otp.toString(), otpFromDB.otp);
+        const isValidOtp = moment(otpFromDB.valid_till).diff(moment(), 'minutes') > 0 && await Bcrypt.compare(otp.toString(), otpFromDB.otp);
 
         if (!isValidOtp) {
             return Promise.resolve(false);
         }
 
-        await Otps.deleteMany({user_id: userId});
+        await Otps.deleteMany({ user_id: userId });
         return Promise.resolve(true);
     }
 
@@ -93,15 +94,15 @@ export default class AuthController {
             const expiresIn = DateTime.now().plus({ days: (remember) ? 30 : 1 }).toISO();
 
             const sessionData = await Sessions.create({
-                    user_id,
-                    status: true,
-                    ip: ipAddress,
-                    device_type: deviceDetails.device_type,
-                    device_os: deviceDetails.device_os,
-                    device_info: deviceDetails,
-                    expires_in: expiresIn,
-                    last_used: DateTime.now().toISO(),
-                });
+                user_id,
+                status: true,
+                ip: ipAddress,
+                device_type: deviceDetails.device_type,
+                device_os: deviceDetails.device_os,
+                device_info: deviceDetails,
+                expires_in: expiresIn,
+                last_used: DateTime.now().toISO(),
+            });
 
             const token: string = JWT.sign(
                 {
@@ -154,7 +155,7 @@ export default class AuthController {
     // Checked with encryption
     public async fetchUserDetails(userId: number, billing = "") {
         try {
-            const userData: any = await User.findOne({ id: userId }, {password: false, account_status: false, subscribed_to: false});
+            const userData: any = await User.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
 
             delete userData._doc.__enc_email;
             delete userData._doc.__enc_communication_email;
@@ -169,7 +170,7 @@ export default class AuthController {
             userData._doc.user_time_format = (userData._doc.time_format === "24") ? "HH:mm" : "hh:mm a";
             userData._doc.user_date_time_format = userData._doc.user_date_format + " " + userData._doc.user_time_format;
 
-            
+
 
             // const fetchSubscriberData = await Promise.all(subscribedDetailData);
             const formattedUserData: any = userData._doc;
@@ -272,7 +273,7 @@ export default class AuthController {
 
         return Promise.resolve({ is_email_verified: false });
     }
- 
+
     // Checked with encryption
     public async register(req: Request, res: Response): Promise<any> {
         try {
@@ -307,7 +308,7 @@ export default class AuthController {
             const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
             let userData: any;
 
-            if(!isUserExists.email) {
+            if (!isUserExists.email) {
                 userData = await User.create({
                     first_name,
                     last_name,
@@ -328,7 +329,7 @@ export default class AuthController {
             }
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
-            
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), formattedUserData);
         } catch (err: any) {
@@ -372,7 +373,7 @@ export default class AuthController {
             }
 
             const otp = await this.generateOtp(userData._doc.id);
-            
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
         } catch (err: any) {
@@ -386,15 +387,15 @@ export default class AuthController {
             const fn = "[login]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { username } = req.body;
             if (!username) {
                 throw new Error(constructResponseMsg(this.locale, "email-or-phone-required"));
             }
-    
+
             let userData: any;
             const isEmail = username.includes("@");
-            
+
             if (isEmail) {
                 const emailToSearchWith: any = new User({ email: removeSpace(username) });
                 emailToSearchWith.encryptFieldsSync();
@@ -404,19 +405,19 @@ export default class AuthController {
                 phoneToSearchWith.encryptFieldsSync();
                 userData = await User.findOne({ is_phone_verified: true, phone_number: phoneToSearchWith.phone_number });
             }
-    
+
             if (!userData) {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
-    
+
             const otp = await this.generateOtp(userData._doc.id);
-    
+
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), { otp });
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     public async signOut(req: Request, res: Response): Promise<any> {
         try {
@@ -464,7 +465,7 @@ export default class AuthController {
     //             "city",
     //             "tax_id",
     //             "address"
-                
+
     //         ];
     //         const encryptedKey = [
     //             "communication_email",
@@ -568,7 +569,7 @@ export default class AuthController {
     public async sendOtpMail(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[sendOtpMail]";
-            
+
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -598,13 +599,13 @@ export default class AuthController {
     // Checked with encryption
     public async verifyEmailId(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[verifyEmailId]";
+            const fn = "[verifyEmailId]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             // Req Body
-            const { email, otp, signIn = false, updateEmail = false, oldEmail, remember = false} = req.body;
+            const { email, otp, signIn = false, updateEmail = false, oldEmail, remember = false } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             // Search on encrypted email field
@@ -614,10 +615,10 @@ export default class AuthController {
             let userData: any = await User.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
 
             if (!userData) {
-                if(!updateEmail) throw new Error(constructResponseMsg(this.locale, "user-nf"));
+                if (!updateEmail) throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
 
-            if(updateEmail) {
+            if (updateEmail) {
                 userData = await User.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
             }
             delete userData._doc.__enc_email;
@@ -835,10 +836,10 @@ export default class AuthController {
             }
 
             const editData: any = {};
-            const fileName = "u-" + user_id  + "/" + file?.originalname
+            const fileName = "u-" + user_id + "/" + file?.originalname
 
             if (is_cover_image) {
-                editData.cover_img_url = await uploadFile(fileName,file?.buffer);
+                editData.cover_img_url = await uploadFile(fileName, file?.buffer);
             } else {
                 editData.profile_img_url = await uploadFile(fileName, file?.buffer);
             }
@@ -857,7 +858,7 @@ export default class AuthController {
 
             const returnUserData = await this.fetchUserDetails(user_id);
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale,"user-upload-image-successfully"), returnUserData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-upload-image-successfully"), returnUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -886,55 +887,101 @@ export default class AuthController {
 
 
     // Checked with encryption
-    public async adminSignIn(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[adminSignIn]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
+    // public async adminSignIn(req: Request, res: Response): Promise<any> {
+    //     const fn = "[adminSignIn]";
 
-            let { email, password,remember = false } = req.body;
-            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+    //     try {
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
 
-            // Search on encrypted email field
-            const emailToSearchWith: any = new User({ email: removeSpace(email) });
-            emailToSearchWith.encryptFieldsSync();
-            console.log(emailToSearchWith);
-            const isUserExists = await this.checkIfUserExists(email);
-            if (!isUserExists) {
-                throw new Error(constructResponseMsg(this.locale, "email-already-exists"));
-            }
-
-            const userData: any = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: email }] });
-            if (!userData) {
-                throw new Error(constructResponseMsg(this.locale, "user-nf"));
-            }
-
+    //         let { email, password, remember = false } = req.body;
             
 
-            const dePassword = password;
+    //         // Remove spaces from email
+    //         email = removeSpace(email);
+    //         const emailToSearchWith: any = new User({ email });
+    //         emailToSearchWith.encryptFieldsSync();
+    //         console.log(`${fn} Encrypted email: ${emailToSearchWith.email}`);
 
-            if (!dePassword) {
+    //         // Check if user exists
+    //         const isUserExists = await this.checkIfUserExists(email);
+    //         if (!isUserExists) {
+    //             throw new Error(constructResponseMsg(this.locale, "email-not-found"));
+    //         }
+
+    //         // Find user data
+    //         const userData: any = await User.findOne({
+    //             is_email_verified: true,
+    //             $or: [{ email: emailToSearchWith.email }, { communication_email: email }]
+    //         });
+    //         if (!userData) {
+    //             throw new Error(constructResponseMsg(this.locale, "user-not-found"));
+    //         }
+
+    //         // Verify password
+    //         const verifyPassword: Boolean = await Bcrypt.compare(password, userData._doc.password);
+    //         if (!verifyPassword) {
+    //             throw new Error(constructResponseMsg(this.locale, "invalid-password"));
+    //         }
+
+    //         // Fetch user details
+    //         const formattedUserData = await this.fetchUserDetails(userData.id || 0);
+
+    //         // Create session
+    //         const session = await this.createSession(userData.id || 0, email, req, userData.account_status || 0, remember);
+    //         if (session) {
+    //             formattedUserData.token = session.token;
+    //         }
+
+    //         // Return successful response
+    //         return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
+    //     } catch (err: any) {
+    //         console.error(`${fn} Error: ${err.message}`);
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
+
+    public async adminSignIn(req: Request, res: Response): Promise<any> {
+        const fn = "[adminSignIn]";
+    
+        try {
+            const { locale = "en" } = req.query;
+            this.locale = locale as string;
+    
+            let { email, password, remember = false } = req.body;
+    
+            // Remove spaces from email
+            email = removeSpace(email);
+    
+            // Check if user exists
+            const user = await User.find({ email });
+            if (!user) {
+                throw new Error(constructResponseMsg(this.locale, "user-not-found"));
+            }
+    
+            // Verify password
+            const isPasswordValid = await Bcrypt.compare(password, user[0].password);
+            if (!isPasswordValid) {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
-
-            const verifyPassword: Boolean = await Bcrypt.compare(dePassword, userData._doc.password);
-
-            if (!verifyPassword) {
-                throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-            }
-
-            const formattedUserData = await this.fetchUserDetails(userData.id || 0);
-            const session = await this.createSession(userData.id || 0, email, req, userData.account_status || 0, remember);
-
+    
+            // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
+            const formattedUserData = await this.fetchUserDetails(user[0].id);
+            const session = await this.createSession(user[0].id, email, req, user[0].status, remember);
+    
             if (session) {
                 formattedUserData.token = session.token;
             }
-
+    
+            // Return successful response
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
         } catch (err: any) {
+            console.error(`${fn} Error: ${err.message}`);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
 
 }
