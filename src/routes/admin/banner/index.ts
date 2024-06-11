@@ -14,3 +14,4 @@ routes.delete("/deletebanner/:id", validateRequest, bannerController.deleteBanne
 routes.patch("/update-status/:id", validateRequest, bannerController.updateBannerStatus.bind(bannerController));
 
 export default routes;
+   
