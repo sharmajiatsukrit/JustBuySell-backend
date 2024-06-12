@@ -155,10 +155,16 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
+    
+            // Validate password length
+            if (password.length < 8) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
+            }
+    
             const enpassword = await Bcrypt.hash(password, 10);
-
+    
             const userData = await User.create({
                 name,
                 mobile_number: phone,
@@ -172,15 +178,14 @@ export default class UserController {
                 type: 0,
                 status: 1,
             });
-
+    
             const formattedUserData = await this.fetchUserDetails(userData.id);
-
-
+    
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }
+    }  
 
     public async fetchUserDetails(userId: number, billing = "") {
         try {

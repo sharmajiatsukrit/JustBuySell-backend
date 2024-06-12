@@ -77,5 +77,7 @@
     "bannerimg-update": "Banner img updated",
     "bannerimg-delete": "Banner img deleted",
     "bannerimg-not-found": "Banner Not Found",
-    "banner-status-update": "Banner Status Updated"
+    "banner-status-update": "Banner Status Updated",
+    "password-length": "Password Must Be of 8 chracters",
+    "missing-params": "Parameters are missing"
 }

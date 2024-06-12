@@ -5,11 +5,12 @@ import { authAdmin, validateRequest } from "../../../utils/middleware";
 const routes: Router = expres.Router();
 const helperController = new HelperController();
 
-routes.get("/get-categories", validateRequest, helperController.getCategories.bind(helperController));
-routes.get("/get-units", validateRequest, helperController.getUnits.bind(helperController));
-routes.get("/get-countries", validateRequest, helperController.getCounties.bind(helperController));
-routes.get("/get-states", validateRequest, helperController.getStates.bind(helperController));
-routes.get("/get-cities", validateRequest, helperController.getCities.bind(helperController));
+routes.get("/get-categories", validateRequest, authAdmin, helperController.getCategories.bind(helperController));
+routes.get("/get-units", validateRequest, authAdmin, helperController.getUnits.bind(helperController));
+routes.get("/get-countries", validateRequest, authAdmin, helperController.getCounties.bind(helperController));
+routes.get("/get-states", validateRequest, authAdmin, helperController.getStates.bind(helperController));
+routes.get("/get-cities", validateRequest, authAdmin, helperController.getCities.bind(helperController));
 
-routes.get("/get-roles", validateRequest, helperController.getRoles.bind(helperController));
+routes.get("/get-roles", validateRequest, authAdmin, helperController.getRoles.bind(helperController));
+
 export default routes;

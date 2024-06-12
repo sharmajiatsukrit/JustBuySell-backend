@@ -7,8 +7,8 @@ import { upload } from "../../../utils/storage";
 const routes: Router = expres.Router();
 const categorycontroller = new categoryController();
 
-routes.get("/get-limit", categorycontroller.validate(UserRouteEndPoints.Getlist), validateRequest, categorycontroller.getList.bind(categorycontroller));
-routes.get("/get-limit-list", categorycontroller.validate(UserRouteEndPoints.Getlimitlist), validateRequest, categorycontroller.getLimitlist.bind(categorycontroller));
+routes.get("/get-limit", categorycontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, categorycontroller.getList.bind(categorycontroller));
+routes.get("/get-limit-list", categorycontroller.validate(UserRouteEndPoints.Getlimitlist), authRequest, validateRequest, categorycontroller.getLimitlist.bind(categorycontroller));
 
 
 export default routes;
