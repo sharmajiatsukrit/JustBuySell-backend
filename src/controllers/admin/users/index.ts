@@ -156,10 +156,8 @@ export default class UserController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, phone, email, address, city_id, state_id, country_id, role_id } = req.body;
-
-            const otp = 123456;
-            const password = await Bcrypt.hash(otp.toString(), 10);
+            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
+            const enpassword = await Bcrypt.hash(password, 10);
 
             const userData = await User.create({
                 name,
@@ -170,7 +168,7 @@ export default class UserController {
                 state: state_id,
                 country: country_id,
                 role_id,
-                password,
+                password: enpassword,
                 type: 0,
                 status: 1,
             });

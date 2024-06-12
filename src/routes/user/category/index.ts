@@ -1,6 +1,6 @@
 import expres, { Router } from "express";
 import categoryController from "../../../controllers/user/category";
-import { UserRouteEndPoints,AdminRouteEndPoints } from "../../../enums/user";
+import { UserRouteEndPoints, AdminRouteEndPoints } from "../../../enums/user";
 import { authRequest, validateRequest } from "../../../utils/middleware";
 import { upload } from "../../../utils/storage";
 

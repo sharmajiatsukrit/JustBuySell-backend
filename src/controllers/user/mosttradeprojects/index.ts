@@ -11,7 +11,7 @@ import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
 
 const fileName = "[user][product][index.ts]";
-export default class Productcontroller {
+export default class MosttradeprojectsController {
     public locale: string = "en";
     public emailService;
 
