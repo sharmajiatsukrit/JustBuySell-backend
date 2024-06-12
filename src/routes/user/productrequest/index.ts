@@ -8,6 +8,6 @@ import Fileupload from "../../../utils/middleware/multer";
 const routes: Router = expres.Router();
 const productcontroller = new ProductRequestController();
 
-routes.post("/add", Fileupload.fields([{ name: 'product_image', maxCount: 1 }]),  productcontroller.validate(UserRouteEndPoints.Addproductrequest), validateRequest, productcontroller.add.bind(productcontroller));
+routes.post("/add", Fileupload.fields([{ name: 'product_image', maxCount: 1 }]), authRequest, productcontroller.validate(UserRouteEndPoints.Addproductrequest), validateRequest, productcontroller.add.bind(productcontroller));
 
 export default routes;
