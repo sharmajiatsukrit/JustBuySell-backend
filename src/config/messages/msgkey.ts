@@ -72,4 +72,6 @@ export const MessageKey: IObjectKeys = {
     "offer-fetch": "offer-fetch",
 
     "user-not-found": "user-not-found",
+    "password-length": "password-length",
+    "missing-params": "missing-params"
 };

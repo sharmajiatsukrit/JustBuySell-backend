@@ -43,34 +43,34 @@ export default class Productcontroller {
         }
     }
 
-
-    public async getSearch(req: Request, res: Response): Promise<any> {
+    public async getbyid(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getSearch]";
+            const fn = "[getList]";
+            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
-            const { keyword } = req.query;
-    
-            if (!keyword) {
-                throw new Error("Search keyword is missing.");
-            }
-    
-            const searchResults = await Product.find({
-                $or: [
-                    { name: { $regex: keyword, $options: 'i' } },
-                ]
-            }).lean();
-    
-            if (searchResults.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), searchResults);
+
+            const { id } = req.params;
+
+            let result;
+            if (id) {
+                // Find by ID if provided
+                result = await Product.find({id}).lean();
+                if (!result) {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                // Get all products sorted by ID in descending order
+                result = await Product.find({}).sort([['id', 'desc']]).lean();
+                if (result.length === 0) {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
             }
+
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
 
 }

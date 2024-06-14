@@ -399,16 +399,28 @@ export default class AuthController {
             if (isEmail) {
                 const emailToSearchWith: any = new User({ email: removeSpace(username) });
                 emailToSearchWith.encryptFieldsSync();
-                userData = await User.findOne({ is_email_verified: true, $or: [{ email: emailToSearchWith.email }, { communication_email: username }] });
+                console.log(`${fn} - Searching for user with email:`, emailToSearchWith.email);
+                userData = await User.findOne({
+                    $or: [
+                        { email: emailToSearchWith.email },
+                        { communication_email: username }
+                    ]
+                });
             } else {
                 const phoneToSearchWith: any = new User({ phone_number: removeSpace(username) });
                 phoneToSearchWith.encryptFieldsSync();
-                userData = await User.findOne({ is_phone_verified: true, phone_number: phoneToSearchWith.phone_number });
+                console.log(`${fn} - Searching for user with phone number:`, phoneToSearchWith.phone_number);
+                userData = await User.findOne({
+                    is_phone_verified: true,
+                    phone_number: phoneToSearchWith.phone_number
+                });
             }
 
             if (!userData) {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
+
+            console.log(`${fn} - User found:`, userData);
 
             const otp = await this.generateOtp(userData._doc.id);
 
@@ -417,6 +429,7 @@ export default class AuthController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
 
 
     public async signOut(req: Request, res: Response): Promise<any> {
@@ -896,7 +909,7 @@ export default class AuthController {
     //         this.locale = (locale as string) || "en";
 
     //         let { email, password, remember = false } = req.body;
-            
+
 
     //         // Remove spaces from email
     //         email = removeSpace(email);
@@ -945,36 +958,36 @@ export default class AuthController {
 
     public async adminSignIn(req: Request, res: Response): Promise<any> {
         const fn = "[adminSignIn]";
-    
+
         try {
             const { locale = "en" } = req.query;
             this.locale = locale as string;
-    
+
             let { email, password, remember = false } = req.body;
-    
+
             // Remove spaces from email
             email = removeSpace(email);
-    
+
             // Check if user exists
             const user = await User.find({ email });
             if (!user) {
                 throw new Error(constructResponseMsg(this.locale, "user-not-found"));
             }
-    
+
             // Verify password
             const isPasswordValid = await Bcrypt.compare(password, user[0].password);
             if (!isPasswordValid) {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
-    
+
             // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
             const formattedUserData = await this.fetchUserDetails(user[0].id);
             const session = await this.createSession(user[0].id, email, req, user[0].status, remember);
-    
+
             if (session) {
                 formattedUserData.token = session.token;
             }
-    
+
             // Return successful response
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
         } catch (err: any) {
