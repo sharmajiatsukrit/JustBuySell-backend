@@ -3,20 +3,18 @@ import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
-interface IBanner extends Document {
-    name: string;
-    bannerimg: string;
-    url: string;
+interface Iproductwatch extends Document {
+    watchlistid: number;
+    productid: number;
     status: boolean;
     created_by: number;
     updated_by: number;
 }
 
-const BannerSchema: Schema = new Schema({
+const ProductwatchSchema: Schema = new Schema({
     
-    name: { type: String, default: '' },
-    bannerimg: { type: String, default: '' },
-    url: { type: String, default: '' },
+    watchlistid: { type: Number, default: '' },
+    productid: { type: Number, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
@@ -26,8 +24,8 @@ const BannerSchema: Schema = new Schema({
     versionKey: false
 });
 
-BannerSchema.plugin(autoIncrement, { model: 'banner', field: 'id', startAt: 1 });
+ProductwatchSchema.plugin(autoIncrement, { model: 'productwatch', field: 'id', startAt: 1 });
 
-const Banner = model<IBanner>('banner', BannerSchema);
+const Productwatch = model<Iproductwatch>('productwatch', ProductwatchSchema);
 
-export default Banner;
+export default Productwatch;

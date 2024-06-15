@@ -16,5 +16,7 @@ import mongoose from 'mongoose';
 import ProductRequest from './productrequest';
 import Offers from './offers';
 import Banner from './banner';
+import Watchlist from './watchlist';
+import Productwatch from './productwatch';
 
-export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner };
+export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner,Watchlist, Productwatch };

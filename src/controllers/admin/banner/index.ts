@@ -76,8 +76,7 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name } = req.body;
-            console.log(name);
+            const { name, url } = req.body;
 
             let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
@@ -98,7 +97,8 @@ export default class BannerController {
 
             const banneradd = await Banner.create({
                 name: name,
-                bannerimg: bannerimg
+                bannerimg: bannerimg,
+                url: url
             });
 
             if (banneradd) {
@@ -120,16 +120,8 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name } = req.body;
+            const { name, url } = req.body;
             const { id } = req.params;
-            // console.log(name);
-
-            // Validate ID
-            if (typeof id !== 'number') {
-                // const errorMsg = ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["invalid-id"]);
-                // return serverResponse(res, HttpCodeEnum.BADREQUEST, errorMsg, {});
-                // console.log('Id not found');
-            }
 
             let bannerimg: string | undefined;
             if (req.files && typeof req.files === 'object') {
@@ -158,6 +150,10 @@ export default class BannerController {
 
             if (bannerimg) {
                 bannerToUpdate.bannerimg = bannerimg;
+            }
+
+            if (url){
+                bannerToUpdate.url = url;
             }
 
             const updatedBanner = await bannerToUpdate.save();
@@ -225,6 +221,5 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
-} 
+}
+ 

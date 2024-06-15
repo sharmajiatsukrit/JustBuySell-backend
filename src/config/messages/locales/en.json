@@ -79,5 +79,7 @@
     "bannerimg-not-found": "Banner Not Found",
     "banner-status-update": "Banner Status Updated",
     "password-length": "Password Must Be of 8 chracters",
-    "missing-params": "Parameters are missing"
+    "missing-params": "Parameters are missing",
+    "watchlist-notfound": "Watchlist not Found",
+    "watchlist-delete": "Watchlist Deleted"
 }
