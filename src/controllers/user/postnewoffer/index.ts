@@ -64,13 +64,13 @@ export default class OfferController {
 
             let result: any = await Offers.findOneAndUpdate(
                 { id: id }, {
-                    productid: productid,
-                    priceperunit: priceperunit,
-                    miniquantity: miniquantity,
-                    origin: origin,
-                    pin: pin,
-                    type: type,
-                    status: status
+                productid: productid,
+                priceperunit: priceperunit,
+                miniquantity: miniquantity,
+                origin: origin,
+                pin: pin,
+                type: type,
+                status: status
             });
 
             const updatedData: any = await Offers.find({ id: id }).lean();
@@ -109,25 +109,55 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            // const result = await Offers.find({}).sort([['id', 'desc']]).lean();
-            const result = await Offers.aggregate([
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "origin",
-                        foreignField: "id",
-                        as: "countrydetails",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-            ]).exec();
+            const { type } = req.params;
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            if (type === "2") {
+                const result = await Offers.aggregate([
+                    {
+                        $match: { status: 1 },
+                    },
+                    {
+                        $lookup: {
+                            from: "countries",
+                            localField: "origin",
+                            foreignField: "id",
+                            as: "countrydetails",
+                        },
+                    },
+                    {
+                        $sort: { id: -1 }
+                    },
+                ]).exec();
+
+                if (result.length > 0) {
+                    return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
+                } else {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
+            }
+            else {
+                const result = await Offers.aggregate([
+                    {
+                        $match: { type: type, status: 1 },
+                    },
+                    {
+                        $lookup: {
+                            from: "countries",
+                            localField: "origin",
+                            foreignField: "id",
+                            as: "countrydetails",
+                        },
+                    },
+                    {
+                        $sort: { id: -1 }
+                    },
+                ]).exec();
+
+                if (result.length > 0) {
+                    return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
+                } else {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -166,4 +196,33 @@ export default class OfferController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    public async offerStatus(req: Request, res: Response): Promise<Response> {
+        try {
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            const { id } = req.params;
+            const { status } = req.body;
+    
+            // Find the offer by ID
+            const offer = await Offers.findOne({ id });
+            
+            // Check if the offer exists
+            if (!offer) {
+                return serverResponse(res, HttpCodeEnum.NOTFOUND, constructResponseMsg(this.locale, "offer-not-found"), {});
+            }
+    
+            // Update the status
+            offer.status = status;
+            await offer.save();
+    
+            // Respond with success
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-update"), {});
+        } catch (err: any) {
+            // Handle errors
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 } 
+
