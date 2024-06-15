@@ -18,5 +18,7 @@ import Offers from './offers';
 import Banner from './banner';
 import Watchlist from './watchlist';
 import Productwatch from './productwatch';
+import Wallet from './wallet';
+import TransctionHistory from './transctionhistory'
 
-export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner,Watchlist, Productwatch };
+export { DataBase, User,  Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner,Watchlist, Productwatch, Wallet, TransctionHistory };

@@ -11,6 +11,7 @@ import SearchRouter from "./search";
 import Offer from "./postoffer";
 import Watchlist from "./watchlist";
 import Productwatch from "./productwatch";
+import Wallet from "./wallet";
 
 const routes: Router = expres.Router();
 
@@ -24,5 +25,6 @@ routes.use("/search", SearchRouter);
 routes.use("/Offer", Offer);
 routes.use("/watchlist", Watchlist);
 routes.use("/productwatch", Productwatch);
+routes.use("/wallet", Wallet);
 
 export default routes;

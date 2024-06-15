@@ -22,6 +22,8 @@ export enum UserRouteEndPoints {
     Getlimitlist="Getlimitlist",
     Getsearch="Getsearch",
     Addproductrequest="Addproductrequest",
+    Getbyid="Getbyid",
+    Gettransbyid="Gettransbyid",
 }
 
 export enum AdminRouteEndPoints {
