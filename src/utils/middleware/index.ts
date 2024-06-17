@@ -103,6 +103,7 @@ async function authAdmin(req: Request, res: Response, next: Function): Promise<a
         const { locale } = req.query;
         const language = (locale as string) || "en";
 
+
         if (!authorization) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-it"]));
         }
@@ -133,12 +134,7 @@ async function authAdmin(req: Request, res: Response, next: Function): Promise<a
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]));
         }
 
-        if (!decoded.superadmin) {
-            throw new Error('');
-            // throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["admin-nf"]));
-        }
-
-        req.user = { user_id: decoded.user_id, email: decoded.email, superadmin: decoded.superadmin };
+        req.user = { user_id: decoded.user_id, email: decoded.email, superadmin: false };
         Logger.info("authRequest: user: " + JSON.stringify(req.user));
 
         return next();
@@ -152,19 +148,19 @@ async function authAdmin(req: Request, res: Response, next: Function): Promise<a
                 err.message = ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]);
             }
 
-            return res.status(HttpCodeEnum.OK).json({
+            return res.status(HttpCodeEnum.UNAUTHORIZED).json({
                 status: false,
                 code: HttpCodeEnum.UNAUTHORIZED,
                 message: err.message || "An error occured",
-                data: false,
+                data: [],
             });
         }
 
-        return res.status(HttpCodeEnum.OK).json({
+        return res.status(HttpCodeEnum.UNAUTHORIZED).json({
             status: false,
             code: HttpCodeEnum.UNAUTHORIZED,
             message: ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]),
-            data: false,
+            data: [],
         });
     }
 }

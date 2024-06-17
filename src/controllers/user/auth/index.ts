@@ -963,7 +963,7 @@ export default class AuthController {
             const { locale = "en" } = req.query;
             this.locale = locale as string;
 
-            let { email, password, remember = false } = req.body;
+            let { email, password, remember = true } = req.body;
 
             // Remove spaces from email
             email = removeSpace(email);
