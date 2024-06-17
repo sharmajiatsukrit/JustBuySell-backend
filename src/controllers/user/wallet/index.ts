@@ -47,8 +47,7 @@ export default class Productcontroller {
             console.log(`${fn} - Wallet created with userid: ${userid}`);
 
             // Create transaction history entry
-            const transctionid = await TransctionHistory.create({ amount: wallet, userid, trnid });
-            console.log(`${fn} - Transaction history created with trnid: ${trnid}, userid: ${userid}`);
+            const transctionid = await TransctionHistory.create({ amount: wallet, userid, trnid, type: 0 });
 
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), {});
         } catch (err: any) {
@@ -81,12 +80,12 @@ export default class Productcontroller {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Extract userid from req.user
             const { user_id: userid } = req.user;
-    
+
             const result = await Wallet.find({ userid });
-    
+
             if (result.length > 0) {
                 const filteredResult = result.map(wallet => ({
                     id: wallet.id,
@@ -111,26 +110,50 @@ export default class Productcontroller {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Extract userid from req.user
             const { user_id: userid } = req.user;
-    
-            const result = await TransctionHistory.find({ userid });
-    
-            if (result.length > 0) {
-                const filteredResult = result.map(wallet => ({
-                    id: wallet.id,
-                    amount: wallet.amount,
-                    userid: wallet.userid,
-                    trnid: wallet.trnid,
-                    status: wallet.status,
-                    createdBy: wallet.created_by,
-                    updatedBy: wallet.updated_by
-                }));
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            const { type } = req.params;
+
+            if (type === "2") {
+                const result = await TransctionHistory.find({ userid });
+
+                if (result.length > 0) {
+                    const filteredResult = result.map(wallet => ({
+                        id: wallet.id,
+                        amount: wallet.amount,
+                        userid: wallet.userid,
+                        trnid: wallet.trnid,
+                        status: wallet.status,
+                        createdBy: wallet.created_by,
+                        updatedBy: wallet.updated_by
+                    }));
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                } else {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
             }
+            else {
+                const result = await TransctionHistory.find({ userid, type });
+
+                if (result.length > 0) {
+                    const filteredResult = result.map(wallet => ({
+                        id: wallet.id,
+                        amount: wallet.amount,
+                        userid: wallet.userid,
+                        trnid: wallet.trnid,
+                        type: wallet.type,
+                        status: wallet.status,
+                        createdBy: wallet.created_by,
+                        updatedBy: wallet.updated_by
+                    }));
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                } else {
+                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                }
+            }
+
+
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
