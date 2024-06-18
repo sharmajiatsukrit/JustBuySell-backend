@@ -7,6 +7,7 @@ interface ITransctionhistory extends Document {
     amount: string;
     userid: string;
     trnid: string;
+    type: number;
     status: boolean;
     created_by: number;
     updated_by: number;
@@ -17,6 +18,7 @@ const TransactionSchema: Schema = new Schema({
     amount: { type: String, default: '' },
     userid: { type: String, default: '' },
     trnid: { type: String, default: '' },
+    type: { type: Number, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
