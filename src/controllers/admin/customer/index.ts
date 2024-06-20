@@ -222,19 +222,19 @@ export default class UserController {
 
         return Promise.resolve({ is_email_verified: false });
     }
+
     public async update(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[update]";
 
             const user_id = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} user_id: ${user_id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { first_name, last_name, email, password } = req.body;
+            const { name, phone, email, address, city_id, state_id, country_id, role_id  } = req.body;
 
-            await User.findOneAndUpdate({ id: user_id }, { first_name: first_name, last_name: last_name, email: email });
+            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
 
             const userData: any = await this.fetchUserDetails(user_id);
 
