@@ -240,9 +240,9 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { first_name, last_name, email, password } = req.body;
+            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
 
-            await User.findOneAndUpdate({ id: user_id }, { first_name: first_name, last_name: last_name, email: email });
+            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id, password });
 
             const userData: any = await this.fetchUserDetails(user_id);
 
