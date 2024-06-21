@@ -163,6 +163,12 @@ export default class UserController {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
             }
     
+            // Check if email already exists
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
+            }
+    
             const enpassword = await Bcrypt.hash(password, 10);
     
             const userData = await User.create({
@@ -185,7 +191,7 @@ export default class UserController {
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }  
+    }
 
     public async fetchUserDetails(userId: number, billing = "") {
         try {
@@ -230,7 +236,6 @@ export default class UserController {
             const fn = "[update]";
 
             const user_id = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} user_id: ${user_id}`);
 
             // Set locale
             const { locale } = req.query;

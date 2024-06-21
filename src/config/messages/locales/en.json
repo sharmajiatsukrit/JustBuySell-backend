@@ -81,5 +81,7 @@
     "password-length": "Password Must Be of 8 chracters",
     "missing-params": "Parameters are missing",
     "watchlist-notfound": "Watchlist not Found",
-    "watchlist-delete": "Watchlist Deleted"
+    "watchlist-delete": "Watchlist Deleted",
+    "token-expired": "Token Expired",
+    "token-invalid": "Token Invalid"
 }
