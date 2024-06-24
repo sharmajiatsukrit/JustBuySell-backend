@@ -163,6 +163,12 @@ export default class UserController {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
             }
     
+            // Check if email already exists
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
+            }
+    
             const enpassword = await Bcrypt.hash(password, 10);
     
             const userData = await User.create({
@@ -185,7 +191,7 @@ export default class UserController {
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }  
+    }
 
     public async fetchUserDetails(userId: number, billing = "") {
         try {
@@ -230,14 +236,13 @@ export default class UserController {
             const fn = "[update]";
 
             const user_id = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} user_id: ${user_id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { first_name, last_name, email, password } = req.body;
+            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
 
-            await User.findOneAndUpdate({ id: user_id }, { first_name: first_name, last_name: last_name, email: email });
+            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id, password });
 
             const userData: any = await this.fetchUserDetails(user_id);
 

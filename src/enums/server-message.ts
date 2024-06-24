@@ -71,4 +71,6 @@ export enum ServerMessagesEnum {
     "missing-params" = "missing-params",
     "watchlist-notfound" = "watchlist-notfound",
     "watchlist-delete" = "watchlist-delete",
+    "token-expired" = "token-expired",
+    "token-invalid" = "token-invalid",
 }

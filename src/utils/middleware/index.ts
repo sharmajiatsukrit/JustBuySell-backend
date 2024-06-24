@@ -27,13 +27,11 @@ function validateRequest(req: Request, res: Response, next: NextFunction) {
     });
 }
 
-async function authRequest(req: Request, res: Response, next: Function): Promise<any> {
+async function authRequest(req: Request, res: Response, next: NextFunction): Promise<any> {
     try {
         const { authorization } = req.headers;
-        // Fetch local
         const { locale } = req.query;
         const language = (locale as string) || "en";
-
 
         if (!authorization) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-it"]));
@@ -41,10 +39,25 @@ async function authRequest(req: Request, res: Response, next: Function): Promise
 
         // Extract token
         const token = authorization.split(" ")[1];
+        if (!token) {
+            throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-it"]));
+        }
 
-        //Decode token
+        // Decode token
         if (!process.env.JWT_SECRET) throw new Error("JWT SECRET NOT SPECIFIED");
-        const decoded: any = await JWT.verify(token, process.env.JWT_SECRET);
+        
+        let decoded: any;
+        try {
+            decoded = JWT.verify(token, process.env.JWT_SECRET);
+        } catch (err: any) {
+            if (err.name === 'TokenExpiredError') {
+                throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["token-expired"]));
+            } else if (err.name === 'JsonWebTokenError') {
+                throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["token-invalid"]));
+            } else {
+                throw new Error("Token verification failed");
+            }
+        }
 
         const sessionFetchData: SessionFetchData = {
             session_id: decoded.session_id,
@@ -70,7 +83,6 @@ async function authRequest(req: Request, res: Response, next: Function): Promise
 
         return next();
     } catch (err: any) {
-        // Fetch local
         const { locale } = req.query;
         const language = (locale as string) || "en";
 
@@ -82,7 +94,7 @@ async function authRequest(req: Request, res: Response, next: Function): Promise
             return res.status(HttpCodeEnum.UNAUTHORIZED).json({
                 status: false,
                 code: HttpCodeEnum.UNAUTHORIZED,
-                message: err.message || "An error occured",
+                message: err.message || "An error occurred",
                 data: [],
             });
         }
@@ -96,13 +108,11 @@ async function authRequest(req: Request, res: Response, next: Function): Promise
     }
 }
 
-async function authAdmin(req: Request, res: Response, next: Function): Promise<any> {
+async function authAdmin(req: Request, res: Response, next: NextFunction): Promise<any> {
     try {
         const { authorization } = req.headers;
-        // Fetch local
         const { locale } = req.query;
         const language = (locale as string) || "en";
-
 
         if (!authorization) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-it"]));
@@ -110,10 +120,27 @@ async function authAdmin(req: Request, res: Response, next: Function): Promise<a
 
         // Extract token
         const token = authorization.split(" ")[1];
+        if (!token) {
+            throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-it"]));
+        }
 
-        //Decode token
-        if (!process.env.JWT_SECRET) throw new Error("JWT SECRET NOT SPECIFIED");
-        const decoded: any = await JWT.verify(token, process.env.JWT_SECRET);
+        // Decode and verify token
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT SECRET NOT SPECIFIED");
+        }
+
+        let decoded: any;
+        try {
+            decoded = JWT.verify(token, process.env.JWT_SECRET);
+        } catch (err: any) {
+            if (err.name === 'TokenExpiredError') {
+                throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["token-expired"]));
+            } else if (err.name === 'JsonWebTokenError') {
+                throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["token-invalid"]));
+            } else {
+                throw new Error("Token verification failed");
+            }
+        }
 
         const sessionFetchData: SessionFetchData = {
             session_id: decoded.session_id,
@@ -139,27 +166,23 @@ async function authAdmin(req: Request, res: Response, next: Function): Promise<a
 
         return next();
     } catch (err: any) {
-        // Fetch local
         const { locale } = req.query;
         const language = (locale as string) || "en";
 
+        let message = ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]);
+
         if (err.name === "Error") {
             if (err.message === "SESSIONNOTFOUND") {
-                err.message = ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]);
+                message = ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]);
+            } else {
+                message = err.message || "An error occurred";
             }
-
-            return res.status(HttpCodeEnum.UNAUTHORIZED).json({
-                status: false,
-                code: HttpCodeEnum.UNAUTHORIZED,
-                message: err.message || "An error occured",
-                data: [],
-            });
         }
 
         return res.status(HttpCodeEnum.UNAUTHORIZED).json({
             status: false,
             code: HttpCodeEnum.UNAUTHORIZED,
-            message: ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]),
+            message: message,
             data: [],
         });
     }

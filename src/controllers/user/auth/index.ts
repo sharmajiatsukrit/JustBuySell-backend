@@ -281,34 +281,40 @@ export default class AuthController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const { first_name, last_name, email, password, device = "", ip_address = "" } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
+    
             const isUserExists = await this.getExistingUser(email);
-
-            if (isUserExists.is_email_verified) {
-                throw new Error(constructResponseMsg(this.locale, "email-ar"));
-            }
-
+    
             // Validate email
             const isValidEmail = validator.isEmail(email);
-
+    
             if (!isValidEmail) {
                 throw new Error(constructResponseMsg(this.locale, "email-iv"));
             }
-
+    
+            // Check if the user already exists and the email is verified
+            if (isUserExists && isUserExists.is_email_verified) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-ar"), {});
+            }
+    
+            // Check if the user already exists but the email is not verified
+            if (isUserExists && !isUserExists.is_email_verified) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-iv"), {});
+            }
+    
             // const dePassword = decryptText(password);
             const dePassword = password;
-
+    
             if (!dePassword) {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
-
+    
             const hashedPassword: string = Bcrypt.hashSync(dePassword, 10);
             let userData: any;
-
-            if (!isUserExists.email) {
+    
+            if (!isUserExists) {
                 userData = await User.create({
                     first_name,
                     last_name,
@@ -327,15 +333,14 @@ export default class AuthController {
                     superadmin: (isUserExists.superadmin) ? true : false
                 };
             }
-
+    
             const formattedUserData = await this.fetchUserDetails(userData.id);
-
-
+    
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    }
+    }    
 
 
 
@@ -958,36 +963,36 @@ export default class AuthController {
 
     public async adminSignIn(req: Request, res: Response): Promise<any> {
         const fn = "[adminSignIn]";
-
+    
         try {
             const { locale = "en" } = req.query;
             this.locale = locale as string;
-
+    
             let { email, password, remember = true } = req.body;
-
+    
             // Remove spaces from email
             email = removeSpace(email);
-
+    
             // Check if user exists
-            const user = await User.find({ email });
+            const user = await User.findOne({ email });
             if (!user) {
                 throw new Error(constructResponseMsg(this.locale, "user-not-found"));
             }
-
+    
             // Verify password
-            const isPasswordValid = await Bcrypt.compare(password, user[0].password);
+            const isPasswordValid = await Bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 throw new Error(constructResponseMsg(this.locale, "invalid-password"));
             }
-
+    
             // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
-            const formattedUserData = await this.fetchUserDetails(user[0].id);
-            const session = await this.createSession(user[0].id, email, req, user[0].status, remember);
-
+            const formattedUserData = await this.fetchUserDetails(user.id);
+            const session = await this.createSession(user.id, email, req, user.status, remember);
+    
             if (session) {
                 formattedUserData.token = session.token;
             }
-
+    
             // Return successful response
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
         } catch (err: any) {

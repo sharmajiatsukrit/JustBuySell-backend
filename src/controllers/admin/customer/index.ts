@@ -155,12 +155,22 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
-            const { name, phone, email, address, city_id, state_id, country_id, role_id } = req.body;
-
-            const otp = 123456;
-            const password = await Bcrypt.hash(otp.toString(), 10);
-
+    
+            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
+    
+            // Validate password length
+            if (password.length < 8) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
+            }
+    
+            // Check if email already exists
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
+            }
+    
+            const enpassword = await Bcrypt.hash(password, 10);
+    
             const userData = await User.create({
                 name,
                 mobile_number: phone,
@@ -170,14 +180,13 @@ export default class UserController {
                 state: state_id,
                 country: country_id,
                 role_id,
-                password,
+                password: enpassword,
                 type: 1,
                 status: 1,
             });
-
+    
             const formattedUserData = await this.fetchUserDetails(userData.id);
-
-
+    
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -222,19 +231,19 @@ export default class UserController {
 
         return Promise.resolve({ is_email_verified: false });
     }
+
     public async update(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[update]";
 
             const user_id = parseInt(req.params.id);
-            Logger.info(`${fileName + fn} user_id: ${user_id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { first_name, last_name, email, password } = req.body;
+            const { name, phone, email, address, city_id, state_id, country_id, role_id  } = req.body;
 
-            await User.findOneAndUpdate({ id: user_id }, { first_name: first_name, last_name: last_name, email: email });
+            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
 
             const userData: any = await this.fetchUserDetails(user_id);
 
