@@ -105,11 +105,17 @@ export default class ProductRequestController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-
-            // const result = await ProductRequest.find({}).sort([['id', 'desc']]).lean();
+    
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Aggregation pipeline with pagination
             const result = await ProductRequest.aggregate([
                 {
                     $lookup: {
@@ -121,11 +127,26 @@ export default class ProductRequestController {
                 },
                 {
                     $sort: { id: -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limitNumber
                 }
             ]).exec();
-
+    
+            // Get the total number of documents in the ProductRequest collection
+            const totalCount = await ProductRequest.countDocuments({});
+    
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fethed"), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    constructResponseMsg(this.locale, "product-request-fethed"),
+                    { result, totalPages }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -133,6 +154,7 @@ export default class ProductRequestController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     //get byid list
     public async getDetailsById(req: Request, res: Response): Promise<any> {

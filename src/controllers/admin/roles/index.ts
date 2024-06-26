@@ -26,16 +26,36 @@ export default class RolesController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await Roles.find({}).sort([['id', 'desc']]).lean();
-
+    
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Fetch documents with pagination
+            const result = await Roles.find({})
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+    
+            // Get the total number of documents in the Roles collection
+            const totalCount = await Roles.countDocuments({});
+    
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
+                    { result, totalPages }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -43,6 +63,7 @@ export default class RolesController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {

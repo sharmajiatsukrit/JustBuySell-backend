@@ -34,7 +34,7 @@ export default class BannerController {
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 10;
+            const limitNumber = parseInt(limit as string) || 5;
 
             const skip = (pageNumber - 1) * limitNumber;
 
@@ -48,7 +48,7 @@ export default class BannerController {
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), { result, totalPages });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), {result, totalPages} );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
