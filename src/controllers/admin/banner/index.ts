@@ -30,15 +30,25 @@ export default class BannerController {
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
-            // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
 
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
 
-            const result = await Banner.find({}).sort([['id', 'desc']]).lean();
+            const skip = (pageNumber - 1) * limitNumber;
 
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+            const result = await Banner.find({})
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            const totalCount = await Banner.countDocuments({});
+
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), { result, totalPages });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -46,6 +56,7 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
 
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
@@ -152,7 +163,7 @@ export default class BannerController {
                 bannerToUpdate.bannerimg = bannerimg;
             }
 
-            if (url){
+            if (url) {
                 bannerToUpdate.url = url;
             }
 
@@ -172,15 +183,15 @@ export default class BannerController {
     public async deleteBanner(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[deleteBanner]";
-    
+
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { id } = req.params;
-    
+
             // Find the banner by id
             const banner = await Banner.findOne({ id: id });
-    
+
             if (banner) {
                 // If banner is found, delete it
                 await banner.deleteOne();
@@ -193,25 +204,25 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
     public async updateBannerStatus(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateBannerStatus]";
-    
+
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { id } = req.params;
             const { status } = req.body;
-    
+
             // Find the banner by id
             const banner = await Banner.findOne({ id: id });
-    
+
             if (banner) {
                 // Update the status field
                 banner.status = status;
                 await banner.save();
-    
+
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-status-update"]), {});
             } else {
                 // If banner is not found, throw an error
@@ -222,4 +233,3 @@ export default class BannerController {
         }
     }
 }
- 
