@@ -41,7 +41,7 @@ export default class SearchController {
                 }).lean();
     
                 if (searchResults.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), searchResults);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), searchResults);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }
@@ -53,7 +53,7 @@ export default class SearchController {
                 }).lean();
     
                 if (searchResults.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), searchResults);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), searchResults);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }

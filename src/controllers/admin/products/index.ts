@@ -67,7 +67,7 @@ export default class ProductController {
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
                     { result, totalPages }
                 );
             } else {
@@ -104,7 +104,7 @@ export default class ProductController {
 
 
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -142,7 +142,7 @@ export default class ProductController {
             });
 
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-add"), result.doc);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -182,7 +182,7 @@ export default class ProductController {
 
             const updatedData: any = await Product.find({ id: id }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-update"), updatedData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -200,7 +200,7 @@ export default class ProductController {
             const result = await Product.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-delete"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -222,7 +222,7 @@ export default class ProductController {
             const updationstatus = await Product.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Product.find({ id: id }).lean();
             if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-status"]), updatedData);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

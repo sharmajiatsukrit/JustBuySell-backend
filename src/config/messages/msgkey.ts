@@ -62,10 +62,12 @@ export const MessageKey: IObjectKeys = {
     "unit-update": "unit-update",
     "unit-status": "unit-status",
     "unit-delete": "unit-delete",
+
     "product-requested-add": "product-requested-add",
     "product-requested-updated": "product-requested-updated",
     "product-requested-deleted": "product-requested-deleted",
     "product-request-fethed": "product-request-fethed",
+
     "offer-add": "offer-add",
     "offer-update": "offer-update",
     "offer-delete": "offer-delete",
@@ -73,5 +75,14 @@ export const MessageKey: IObjectKeys = {
 
     "user-not-found": "user-not-found",
     "password-length": "password-length",
-    "missing-params": "missing-params"
+    "missing-params": "missing-params",
+
+    "product-requested-statusupdated": "product-requested-statusupdated",
+
+    "otp-sent":"otp-sent",
+    "user-si":"user-si",
+    "user-lo": "user-lo",
+    "us-lon": "us-lon",
+    "in-otp": "in-otp"
+
 };

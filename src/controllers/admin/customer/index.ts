@@ -97,7 +97,7 @@ export default class UserController {
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]),
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]),
                     { result, totalPages }
                 );
             } else {
@@ -157,7 +157,7 @@ export default class UserController {
             ]).exec();
 
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -204,7 +204,7 @@ export default class UserController {
     
             const formattedUserData = await this.fetchUserDetails(userData.id);
     
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -264,7 +264,7 @@ export default class UserController {
 
             const userData: any = await this.fetchUserDetails(user_id);
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-update"), userData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -282,7 +282,7 @@ export default class UserController {
             const result = await User.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-deleted"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -304,7 +304,7 @@ export default class UserController {
             const updationstatus = await User.findOneAndUpdate({ id: id }, { status: status }).lean();
             const result: any = await this.fetchUserDetails(id);
             if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-status"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-status"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

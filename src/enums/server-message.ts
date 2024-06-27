@@ -23,11 +23,13 @@ export enum ServerMessagesEnum {
     "category-update" = "category-update",
     "category-delete" = "category-delete",
     "category-status" = "category-status",
+
     "product-fetched" = "product-fetched",
     "product-add" = "product-add",
     "product-update" = "product-update",
     "product-delete" = "product-delete",
     "product-status" = "product-status",
+
     "country-fetched" = "country-fetched",
     "country-add" = "country-add",
     "country-update" = "country-update",
@@ -43,16 +45,19 @@ export enum ServerMessagesEnum {
     "city-update" = "city-update",
     "city-delete" = "city-delete",
     "city-status" = "city-status",
+
     "role-fetched" = "role-fetched",
     "role-add" = "role-add",
     "role-update" = "role-update",
     "role-delete" = "role-delete",
     "role-status" = "role-status",
+
     "permission-fetched" = "permission-fetched",
     "permission-add" = "permission-add",
     "permission-update" = "permission-update",
     "permission-delete" = "permission-delete",
     "permission-status" = "permission-status",
+
     "unit-fetched" = "unit-fetched",
     "unit-add" = "unit-add",
     "unit-update" = "unit-update",
@@ -73,4 +78,25 @@ export enum ServerMessagesEnum {
     "watchlist-delete" = "watchlist-delete",
     "token-expired" = "token-expired",
     "token-invalid" = "token-invalid",
+
+    "banner-fetched" = "banner-fetched",
+
+    "customer-fetched" = "customer-fetched",
+    "customer-add" = "customer-add",
+    "customer-updated" = "customer-updated",
+    "customer-deleted" = "customer-deleted",
+    "customer-status" = "customer-status",
+
+    "productwatch-fetched" = "productwatch-fetched",
+    "productwatch-create" = "productwatch-create",
+    "productwatch-update" = "productwatch-update",
+    "productwatch-notfound" = "productwatch-notfound",
+    "productwatch-delete" = "productwatch-delete",
+    "search-fetched" = "search-fetched",
+
+    "wallet-fetched" = "wallet-fetched",
+    "wallettrans-fetched" = "wallettrans-fetched",
+    "watchlist-fetched" = "watchlist-fetched",
+    "watchlist-create" = "watchlist-create",
+    "watchlist-update" = "watchlist-update"
 }

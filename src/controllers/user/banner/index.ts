@@ -56,7 +56,7 @@ export default class BannerController {
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]),
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
                     { result, totalPages, currentPage: pageNumber }
                 );
             } else {
@@ -80,7 +80,7 @@ export default class BannerController {
             const result = await Banner.findOne({ id }).lean();
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

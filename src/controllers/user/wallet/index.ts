@@ -49,7 +49,7 @@ export default class Productcontroller {
             // Create transaction history entry
             const transctionid = await TransctionHistory.create({ amount: wallet, userid, trnid, type: 0 });
 
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), {});
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -65,7 +65,7 @@ export default class Productcontroller {
             const result = await Wallet.find({}).sort([['id', 'desc']]).lean();
 
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -95,7 +95,7 @@ export default class Productcontroller {
                     createdBy: wallet.created_by,
                     updatedBy: wallet.updated_by
                 }));
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]), filteredResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -128,7 +128,7 @@ export default class Productcontroller {
                         createdBy: wallet.created_by,
                         updatedBy: wallet.updated_by
                     }));
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallettrans-fetched"]), filteredResult);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }
@@ -147,7 +147,7 @@ export default class Productcontroller {
                         createdBy: wallet.created_by,
                         updatedBy: wallet.updated_by
                     }));
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallettrans-fetched"]), filteredResult);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }
