@@ -26,11 +26,16 @@ export default class Productwatchlist {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-
-            // const result = await Productwatch.find({}).sort([['id', 'desc']]).lean();
+    
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Aggregation pipeline with pagination
             const result = await Productwatch.aggregate([
                 {
                     $lookup: {
@@ -50,11 +55,26 @@ export default class Productwatchlist {
                 },
                 {
                     $sort: { id: -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limitNumber
                 }
             ]).exec();
-
+    
+            // Get the total number of documents in the Productwatch collection
+            const totalCount = await Productwatch.countDocuments({});
+    
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
+                    { result, totalPages }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -62,6 +82,7 @@ export default class Productwatchlist {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     public async getbyid(req: Request, res: Response): Promise<any> {
         try {
