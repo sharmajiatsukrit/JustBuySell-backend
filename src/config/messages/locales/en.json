@@ -122,5 +122,6 @@
     "watchlist-create": "Watchlist created",
     "watchlist-update": "Watchlist update",
 
-    "phone-number-required": "phone-number-required"
+    "phone-number-required": "phone-number-required",
+    "otp-verified": "Otp verified successfully"
 }

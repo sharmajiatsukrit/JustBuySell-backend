@@ -86,5 +86,6 @@ export const MessageKey: IObjectKeys = {
     "in-otp": "in-otp",
 
     "phone-number-required": "phone-number-required",
+    "otp-verified": "otp-verified"
 
 };

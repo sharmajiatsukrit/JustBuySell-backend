@@ -12,6 +12,8 @@ import Offer from "./postoffer";
 import Watchlist from "./watchlist";
 import Productwatch from "./productwatch";
 import Wallet from "./wallet";
+import Deviceid from "./deviceid";
+import Location from "./location";
 
 const routes: Router = expres.Router();
 
@@ -26,5 +28,7 @@ routes.use("/Offer", Offer);
 routes.use("/watchlist", Watchlist);
 routes.use("/productwatch", Productwatch);
 routes.use("/wallet", Wallet);
+routes.use("/firebase", Deviceid);
+routes.use("/location", Location);
 
 export default routes;

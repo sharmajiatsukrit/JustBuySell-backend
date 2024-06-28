@@ -2,7 +2,7 @@ import { Document, Schema, model } from "mongoose";
 import { autoIncrement } from "mongoose-plugin-autoinc";
 const mongooseFieldEncryption = require("mongoose-field-encryption").fieldEncryption;
 
-interface IUser extends Document {
+interface ICustomer extends Document {
     email: string;
     is_email_verified: boolean;
     communication_email: string;
@@ -29,7 +29,7 @@ interface IUser extends Document {
     type: number;
 }
 
-const userSchema: Schema = new Schema({
+const customerSchema: Schema = new Schema({
     email: { type: String },
     is_email_verified: { type: Boolean, default: false },
     communication_email: { type: String, default: '' },
@@ -38,7 +38,7 @@ const userSchema: Schema = new Schema({
     profile_img_url: { type: String, default: '' },
     password: { type: String, default: '' },
     mobile_number_country_code: { type: String, default: '' },
-    mobile_number: { type: String, default: '' },
+    mobile_number: { type: String, default: '', required: true, index: { unique: true }},
     is_mobile_number_verified: { type: Boolean, default: false },
     date_of_birth: { type: String, default: '' },
     country_code: { type: String, default: '' },
@@ -61,14 +61,14 @@ const userSchema: Schema = new Schema({
     versionKey: false
 });
 
-userSchema.plugin(autoIncrement, { model: 'customer', field: 'id', startAt: 1 });
+customerSchema.plugin(autoIncrement, { model: 'customer', field: 'id', startAt: 1 });
 
-userSchema.plugin(mongooseFieldEncryption, {
-  fields: [], 
-  secret: process.env.JWT_SECRET,
-  saltGenerator: () => { return process.env.JWT_SECRET?.slice(0, 16) }
-});
+customerSchema.plugin(mongooseFieldEncryption, {
+    fields: [], 
+    secret: process.env.JWT_SECRET,
+    saltGenerator: () => { return process.env.JWT_SECRET?.slice(0, 16) }
+  });
 
-const User = model<IUser>('users', userSchema);
+const Customer = model<ICustomer>('customer', customerSchema);
 
-export default User;
+export default Customer;
