@@ -392,48 +392,34 @@ export default class AuthController {
             const fn = "[login]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
-            const { username } = req.body;
-            if (!username) {
-                throw new Error(constructResponseMsg(this.locale, "email-or-phone-required"));
+    
+            const { mobile_number } = req.body;
+    
+            console.log(mobile_number);
+    
+            if (!mobile_number) {
+                throw new Error(constructResponseMsg(this.locale, "phone-number-required"));
             }
-
-            let userData: any;
-            const isEmail = username.includes("@");
-
-            if (isEmail) {
-                const emailToSearchWith: any = new User({ email: removeSpace(username) });
-                emailToSearchWith.encryptFieldsSync();
-                console.log(`${fn} - Searching for user with email:`, emailToSearchWith.email);
-                userData = await User.findOne({
-                    $or: [
-                        { email: emailToSearchWith.email },
-                        { communication_email: username }
-                    ]
-                });
-            } else {
-                const phoneToSearchWith: any = new User({ phone_number: removeSpace(username) });
-                phoneToSearchWith.encryptFieldsSync();
-                console.log(`${fn} - Searching for user with phone number:`, phoneToSearchWith.phone_number);
-                userData = await User.findOne({
-                    is_phone_verified: true,
-                    phone_number: phoneToSearchWith.phone_number
-                });
-            }
-
+    
+            let userData = await User.findOne({ mobile_number });
+    
             if (!userData) {
-                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+                // User does not exist, register the user
+                const newUser = await User.create({ mobile_number: mobile_number });
+                console.log("newuser", newUser);
+                userData = newUser;
             }
-
-            const otp = await this.generateOtp(userData._doc.id);
-
+    
+            // Generate OTP for the user
+            const otp = await this.generateOtp(userData.id);
+    
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), {});
+    
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
+    
 
     public async signOut(req: Request, res: Response): Promise<any> {
         try {
@@ -607,6 +593,42 @@ export default class AuthController {
             // this.emailService.otpEmail(email, otp);
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "fpi-e"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    public async verifyOtplogin(req: Request, res: Response): Promise<any> {
+        try {
+            const fn ="[verifyOtpForForgetPassword]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+    
+            // Req Body
+            const { mobile_number, otp } = req.body;
+    
+            // Search on encrypted email field
+            // const messageToSearchWith: any = new User({ mobile_number });
+    
+            const userData: any = await User.findOne({ mobile_number });
+    
+            if (!userData) {
+                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+            }
+    
+            const verifyOtp = await this.verifyOtp(userData.id || 0, otp);
+    
+            if (!verifyOtp) {
+                throw new Error(constructResponseMsg(this.locale, "in-otp"));
+            }
+    
+            // OTP is verified successfully
+            // Add your logic to allow password reset or send reset token to user
+            // const resetToken = await this.createPasswordResetToken(userData.id || 0);
+    
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), {verifyOtp});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

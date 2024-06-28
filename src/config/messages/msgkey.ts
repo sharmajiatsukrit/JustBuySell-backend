@@ -83,6 +83,8 @@ export const MessageKey: IObjectKeys = {
     "user-si":"user-si",
     "user-lo": "user-lo",
     "us-lon": "us-lon",
-    "in-otp": "in-otp"
+    "in-otp": "in-otp",
+
+    "phone-number-required": "phone-number-required",
 
 };

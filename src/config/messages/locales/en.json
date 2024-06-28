@@ -120,5 +120,7 @@
     "wallettrans-fetched": "Wallet trans fethed successfully",
     "watchlist-fetched": "Watchlist fetch",
     "watchlist-create": "Watchlist created",
-    "watchlist-update": "Watchlist update"
+    "watchlist-update": "Watchlist update",
+
+    "phone-number-required": "phone-number-required"
 }

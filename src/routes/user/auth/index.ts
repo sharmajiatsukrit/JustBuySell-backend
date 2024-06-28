@@ -10,6 +10,7 @@ const authController = new AuthController();
 // Applied authRequest to protect from misuse
 routes.post("/user/signin", authController.validate(UserRouteEndPoints.SignIn), validateRequest, authController.signIn.bind(authController));
 routes.post("/user/login", authController.validate(UserRouteEndPoints.Login), validateRequest, authController.login.bind(authController));
+routes.post("/user/verify-otp", authController.validate(UserRouteEndPoints.VERIFYEMAIL), validateRequest, authController.verifyOtplogin.bind(authController));
 routes.post("/user/register", authController.validate(UserRouteEndPoints.Register), validateRequest, authController.register.bind(authController));
 // routes.post("/signin/social", authController.validate(UserRouteEndPoints.SocialSignIn), validateRequest, authController.socialSignIn.bind(authController));
 routes.post("/user/forgetpassword", authController.validate(UserRouteEndPoints.ForgetPassword), validateRequest, authController.forgetPassword.bind(authController));
@@ -23,5 +24,6 @@ routes.get("/user/signout", authRequest, authController.signOut.bind(authControl
 
 //Admin auth
 routes.post("/admin/signin", authController.validate(AdminRouteEndPoints.SignIn), validateRequest, authController.adminSignIn.bind(authController));
+
 
 export default routes;
