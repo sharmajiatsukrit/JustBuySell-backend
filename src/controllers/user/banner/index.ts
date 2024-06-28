@@ -31,14 +31,34 @@ export default class BannerController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-
-            const result = await Banner.find({}).sort([['id', 'desc']]).lean();
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+    
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Fetch documents with pagination
+            const result = await Banner.find({})
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+    
+            // Get the total number of documents in the Banner collection
+            const totalCount = await Banner.countDocuments({});
+    
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
+                    { result, totalPages, currentPage: pageNumber }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -46,6 +66,7 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
@@ -59,7 +80,7 @@ export default class BannerController {
             const result = await Banner.findOne({ id }).lean();
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

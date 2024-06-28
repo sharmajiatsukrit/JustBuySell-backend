@@ -26,16 +26,35 @@ export default class CategoryController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
-            // Set locale
-            const { locale } = req.query;
+            const fn = "[getList]";
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await Category.find({}).sort([['id', 'desc']]).lean();
+
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+
+            // Fetch the documents with pagination
+            const result = await Category.find({})
+                .sort({ id: -1 }) // Sort by id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            // Get the total number of documents in the collection
+            const totalCount = await Category.countDocuments({});
 
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
+                    { result, totalPages }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -44,10 +63,11 @@ export default class CategoryController {
         }
     }
 
+
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getDetailsById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -55,7 +75,7 @@ export default class CategoryController {
             const id = parseInt(req.params.id);
             const result: any = await Category.find({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
             } else {
@@ -74,7 +94,7 @@ export default class CategoryController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, parent_id, status } = req.body;
 
             let result: any;
 
@@ -88,13 +108,13 @@ export default class CategoryController {
             }
 
             result = await Category.create({
-                    name:name,
-                    description:description,
-                    parent_id:parent_id,
-                    cat_img:cat_img,
-                    status: status
-                });
-            
+                name: name,
+                description: description,
+                parent_id: parent_id,
+                cat_img: cat_img,
+                status: status
+            });
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
         } catch (err: any) {
@@ -107,13 +127,13 @@ export default class CategoryController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status} = req.body;
+            const { name, description, parent_id, status } = req.body;
 
             let cat_img: string | undefined;
             if (req.files && typeof req.files === 'object') {
@@ -123,14 +143,14 @@ export default class CategoryController {
                     cat_img = files['cat_img'][0].path;
                 }
             }
-            
+
             let result: any = await Category.findOneAndUpdate(
                 { id: id },
                 {
-                    name:name,
-                    description:description,
-                    parent_id:parent_id,
-                    cat_img:cat_img,
+                    name: name,
+                    description: description,
+                    parent_id: parent_id,
+                    cat_img: cat_img,
                     status: status
                 });
 
@@ -145,7 +165,7 @@ export default class CategoryController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -166,14 +186,14 @@ export default class CategoryController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Category.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await Category.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Category.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);

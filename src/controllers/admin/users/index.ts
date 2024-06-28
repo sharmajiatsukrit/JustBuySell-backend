@@ -32,18 +32,23 @@ export default class UserController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-
-            // const result = await User.find({}).sort([['id', 'desc']]).lean();
+    
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Aggregation pipeline with pagination
             const result = await User.aggregate([
                 {
                     $match: { type: 0 }
                 },
                 {
-                    $lookup: 
-                    {
+                    $lookup: {
                         from: "cities",
                         localField: "city",
                         foreignField: "id",
@@ -51,8 +56,7 @@ export default class UserController {
                     },
                 },
                 {
-                    $lookup: 
-                    {
+                    $lookup: {
                         from: "states",
                         localField: "state",
                         foreignField: "id",
@@ -60,8 +64,7 @@ export default class UserController {
                     },
                 },
                 {
-                    $lookup: 
-                    {
+                    $lookup: {
                         from: "countries",
                         localField: "country",
                         foreignField: "id",
@@ -69,8 +72,7 @@ export default class UserController {
                     },
                 },
                 {
-                    $lookup: 
-                    {
+                    $lookup: {
                         from: "roles",
                         localField: "role_id",
                         foreignField: "id",
@@ -79,11 +81,26 @@ export default class UserController {
                 },
                 {
                     $sort: { id: -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limitNumber
                 }
             ]).exec();
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
+    
+            // Get the total number of documents in the User collection that match the filter
+            const totalCount = await User.countDocuments({ type: 0 });
+    
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]),
+                    { result, totalPages, currentPage: pageNumber }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -91,6 +108,7 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {

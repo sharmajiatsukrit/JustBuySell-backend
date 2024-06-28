@@ -49,7 +49,7 @@ export default class Productcontroller {
             // Create transaction history entry
             const transctionid = await TransctionHistory.create({ amount: wallet, userid, trnid, type: 0 });
 
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), {});
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -59,13 +59,31 @@ export default class Productcontroller {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-            const result = await Wallet.find({}).sort([['id', 'desc']]).lean();
-
+    
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10; // Default limit to 10 if not provided
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Fetch data with pagination
+            const result = await Wallet.find({})
+                .sort({ id: -1 }) // Sort by id descending
+                .skip(skip)      // Skip documents
+                .limit(limitNumber) // Limit number of documents
+    
+            const totalCount = await Wallet.countDocuments({});
+    
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]),
+                    { result, totalPages, currentPage: pageNumber }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -73,6 +91,7 @@ export default class Productcontroller {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     public async getByid(req: Request, res: Response): Promise<any> {
         try {
@@ -95,7 +114,7 @@ export default class Productcontroller {
                     createdBy: wallet.created_by,
                     updatedBy: wallet.updated_by
                 }));
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-fetched"]), filteredResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -128,7 +147,7 @@ export default class Productcontroller {
                         createdBy: wallet.created_by,
                         updatedBy: wallet.updated_by
                     }));
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallettrans-fetched"]), filteredResult);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }
@@ -147,7 +166,7 @@ export default class Productcontroller {
                         createdBy: wallet.created_by,
                         updatedBy: wallet.updated_by
                     }));
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), filteredResult);
+                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallettrans-fetched"]), filteredResult);
                 } else {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
                 }

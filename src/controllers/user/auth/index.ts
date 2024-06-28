@@ -380,7 +380,7 @@ export default class AuthController {
             const otp = await this.generateOtp(userData._doc.id);
 
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-os"), {});
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-si"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -425,11 +425,9 @@ export default class AuthController {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
 
-            console.log(`${fn} - User found:`, userData);
-
             const otp = await this.generateOtp(userData._doc.id);
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), { otp });
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -660,7 +658,7 @@ export default class AuthController {
                     formattedUserData.token = session.token;
                 }
 
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-ls"), formattedUserData);
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "us-lon"), formattedUserData);
             }
 
             if (!userData.is_email_verified) {
@@ -672,7 +670,7 @@ export default class AuthController {
 
             const userUpdatedData = await this.fetchUserDetails(userData.id || 0);
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "verify-email"), userUpdatedData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "us-lon"), userUpdatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

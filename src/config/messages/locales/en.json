@@ -1,15 +1,23 @@
 {
     "server-error": "Something went wrong. Please try after some time.",
     "no-file-provided":"No File attached",
-    "not-found": "Not data Found",
+    "not-found": "No data Found",
     "required-iv": "The required fields are missing or invalid ",
     "permission-denied": "Permission has been denied",
+
     "user-bc": "user-bc",
     "user-bl": "The user has been blocked",
     "user-dl": "The user has been deleted",
     "user-it": "The token is invalid ",
     "user-ua": "Unauthorised action",
     "user-nf": "The user cannot be found",
+    "user-os": "User registered successfully",
+    "user-si": "User logined successfully",
+    "otp-sent": "Otp send successfully",
+    "user-lo": "User logout successfully",
+    "us-lon": "User Login successfully",
+    "in-otp": "Invalid Otp",
+
     "email-already-exists": "Email Already Exists",
     "logged-in": "Successfully logged-in!",
     "invalid-password":"Invalid Password",
@@ -18,16 +26,19 @@
     "user-update":"User Updated successfully",
     "user-delete": "User Deleted successfully",
     "user-status": "User Status successfully Updated",
+
     "category-fetched": "Category Details Fetched",
     "category-add":"New Category added successfully",
     "category-update":"Category Updated successfully",
     "category-delete": "Category Deleted successfully",
     "category-status": "Category Status successfully Updated",
+
     "product-fetched": "Product Details Fetched",
     "product-add":"New Product added successfully",
     "product-update":"Product Updated successfully",
     "product-delete": "Product Deleted successfully",
     "product-status": "Product Status successfully Updated",
+
     "country-fetched": "Country Details Fetched",
     "country-add":"New Country added successfully",
     "country-update":"Country Updated successfully",
@@ -48,16 +59,19 @@
     "role-update":"Role Updated successfully",
     "role-delete": "Role Deleted successfully",
     "role-status": "Role Status successfully Updated",
+
     "permission-fetched": "Permission Details Fetched",
     "permission-add":"New Permission added successfully",
     "permission-update":"Permission Updated successfully",
     "permission-delete": "Permission Deleted successfully",
     "permission-status": "Permission Status successfully Updated",
+
     "unit-fetched": "Unit Details Fetched",
     "unit-add":"New Unit added successfully",
     "unit-update":"Unit Updated successfully",
     "unit-delete": "Unit Deleted successfully",
     "unit-status": "Unit Status successfully Updated",
+
     "product-requested-add": "Product Request Added",
     "product-requested-updated": "Product Request Updated",
     "product-requested-deleted": "Product Request Deleted",
@@ -71,17 +85,40 @@
     "incorrect-password": "Incorrect Password",
     "password-mismatch": "New Password and confirm password not mached",
     "password-updated": "Password Updated Successfully",
-    "update-failed": "Failed To Update Password",
+    "update-failed": "Failed To Update",
     "profile-img-updated": "Profile Img updated",
+
     "bannerimg-create": "Banner img created",
     "bannerimg-update": "Banner img updated",
     "bannerimg-delete": "Banner img deleted",
     "bannerimg-not-found": "Banner Not Found",
     "banner-status-update": "Banner Status Updated",
+    "banner-fetched": "Banner Fetched Successfully",
+
     "password-length": "Password Must Be of 8 chracters",
     "missing-params": "Parameters are missing",
     "watchlist-notfound": "Watchlist not Found",
     "watchlist-delete": "Watchlist Deleted",
     "token-expired": "Token Expired",
-    "token-invalid": "Token Invalid"
+    "token-invalid": "Token Invalid",
+
+    "customer-fetched": "Customer Fetched successfully",
+    "customer-add": "Customer Added successfully",
+    "customer-updated": "Customer updated successfully",
+    "customer-deleted": "customer-deleted",
+    "customer-status": "customer-status",
+
+    "product-requested-statusupdated": "Product Request Status Update",
+    "productwatch-fetched": "Product watch fetched",
+    "productwatch-create": "Product created",
+    "productwatch-update": "Product watch update",
+    "productwatch-notfound": "Product watch not found",
+    "productwatch-delete": "Product watch deleted",
+    "search-fetched": "Search Successfully",
+
+    "wallet-fetched": "Wallet Fethed successfully",
+    "wallettrans-fetched": "Wallet trans fethed successfully",
+    "watchlist-fetched": "Watchlist fetch",
+    "watchlist-create": "Watchlist created",
+    "watchlist-update": "Watchlist update"
 }

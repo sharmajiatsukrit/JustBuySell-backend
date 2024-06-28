@@ -105,64 +105,62 @@ export default class OfferController {
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
-            // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit, type } = req.query;
             this.locale = (locale as string) || "en";
+    
+            // Parse page and limit from query params, set defaults if not provided
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 5;
+    
+            let query: any = { status: 1 };
 
-            const { type } = req.params;
-
-            if (type === "2") {
-                const result = await Offers.aggregate([
-                    {
-                        $match: { status: 1 },
-                    },
-                    {
-                        $lookup: {
-                            from: "countries",
-                            localField: "origin",
-                            foreignField: "id",
-                            as: "countrydetails",
-                        },
-                    },
-                    {
-                        $sort: { id: -1 }
-                    },
-                ]).exec();
-
-                if (result.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
-                } else {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                }
+            if (type && type !== "2") {
+                query.type = type;
             }
-            else {
-                const result = await Offers.aggregate([
-                    {
-                        $match: { type: type, status: 1 },
+    
+            // Fetch the documents with pagination
+            const result = await Offers.aggregate([
+                {
+                    $match: query,
+                },
+                {
+                    $lookup: {
+                        from: "countries",
+                        localField: "origin",
+                        foreignField: "id",
+                        as: "countrydetails",
                     },
-                    {
-                        $lookup: {
-                            from: "countries",
-                            localField: "origin",
-                            foreignField: "id",
-                            as: "countrydetails",
-                        },
-                    },
-                    {
-                        $sort: { id: -1 }
-                    },
-                ]).exec();
-
-                if (result.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
-                } else {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                },
+                {
+                    $sort: { id: -1 }
+                },
+                {
+                    $skip: (pageNumber - 1) * limitNumber
+                },
+                {
+                    $limit: limitNumber
                 }
+            ]).exec();
+    
+            // Get the total number of documents that match the query
+            const totalCount = await Offers.countDocuments(query);
+    
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    constructResponseMsg(this.locale, "offer-fetch"),
+                    { result, totalPages }
+                );
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     //get byid list
     public async getDetailsById(req: Request, res: Response): Promise<any> {
