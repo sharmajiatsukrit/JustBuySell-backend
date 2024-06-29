@@ -27,14 +27,15 @@ interface ICustomer extends Document {
     role_id: number;
     status: number;
     type: number;
+    pincode: number;
+    telephonenumber: number;
 }
 
 const customerSchema: Schema = new Schema({
     email: { type: String },
     is_email_verified: { type: Boolean, default: false },
     communication_email: { type: String, default: '' },
-    first_name: { type: String, default: '' },
-    last_name: { type: String, default: '' },
+    name: { type: String, default: '' },
     profile_img_url: { type: String, default: '' },
     password: { type: String, default: '' },
     mobile_number_country_code: { type: String, default: '' },
@@ -54,7 +55,9 @@ const customerSchema: Schema = new Schema({
     ip_address: { type: String, default: '' },
     role_id: { type: Number, default: '' },
     status: { type: Number, default: false },
-    type: {type: Number, default: ''}
+    type: {type: Number, default: ''},
+    pincode: { type: Number, default: '' },
+    telephonenumber: { type: Number, default: '' }
 },
 {
     timestamps: true,

@@ -670,20 +670,20 @@ export default class AuthController {
             // Req Body
             const { mobile_number, otp, remember = true  } = req.body;
     
-            const userData = await Customer.find({ mobile_number });
+            const userData = await Customer.findOne({ mobile_number });
     
             if (!userData) {
                 throw new Error(constructResponseMsg(this.locale, "user-nf"));
             }
     
-            const verifyOtp = await this.verifyOtp(userData[0].id || 0, otp);
+            const verifyOtp = await this.verifyOtp(userData.id || 0, otp);
     
             if (!verifyOtp) {
                 throw new Error(constructResponseMsg(this.locale, "in-otp"));
             }
 
-            const formattedUserData = await this.fetchUserDetails(userData[0].id);
-            const session = await this.createSession(userData[0].id, mobile_number, req, userData[0].status, remember);
+            const formattedUserData = await this.fetchUserDetails(userData.id);
+            const session = await this.createSession(userData.id, mobile_number, req, userData.status, remember);
     
             if (session) {
                 formattedUserData.token = session.token;

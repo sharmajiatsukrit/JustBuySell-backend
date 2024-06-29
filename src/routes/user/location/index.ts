@@ -7,7 +7,7 @@ import { upload } from "../../../utils/storage";
 const routes: Router = expres.Router();
 const locationController = new LocationController();
 
-routes.post("/update-location", locationController.updateLocation.bind(locationController));
+routes.post("/update-location", authRequest, locationController.updateLocation.bind(locationController));
 
 
 export default routes;

@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissions, User } from "../../../models";
+import { Roles, Permissions, User, Customer } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -43,7 +43,7 @@ export default class UserController {
             const skip = (pageNumber - 1) * limitNumber;
     
             // Aggregation pipeline with pagination
-            const result = await User.aggregate([
+            const result = await Customer.aggregate([
                 {
                     $match: { type: 1 }
                 },
@@ -90,7 +90,7 @@ export default class UserController {
                 }
             ]).exec();
             
-            const totalCount = await User.countDocuments({ type: 1 });
+            const totalCount = await Customer.countDocuments({ type: 1 });
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
@@ -118,7 +118,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.aggregate([
+            const result = await Customer.aggregate([
                 {
                     $match: { id: id, type: 1 }
                 },
@@ -181,14 +181,14 @@ export default class UserController {
             }
     
             // Check if email already exists
-            const existingUser = await User.findOne({ email });
+            const existingUser = await Customer.findOne({ mobile_number: phone });
             if (existingUser) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
     
             const enpassword = await Bcrypt.hash(password, 10);
     
-            const userData = await User.create({
+            const userData = await Customer.create({
                 name,
                 mobile_number: phone,
                 email,
@@ -212,7 +212,7 @@ export default class UserController {
 
     public async fetchUserDetails(userId: number, billing = "") {
         try {
-            const userData: any = await User.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
+            const userData: any = await Customer.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
 
             delete userData._doc.__enc_email;
             delete userData._doc.__enc_communication_email;
@@ -240,7 +240,7 @@ export default class UserController {
         const messageToSearchWith: any = new User({ email });
         messageToSearchWith.encryptFieldsSync();
 
-        const userData: any = await User.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
+        const userData: any = await Customer.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
 
         if (userData) {
             return Promise.resolve(userData._doc);
@@ -260,9 +260,30 @@ export default class UserController {
             this.locale = (locale as string) || "en";
             const { name, phone, email, address, city_id, state_id, country_id, role_id  } = req.body;
 
-            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
+            await Customer.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
 
             const userData: any = await this.fetchUserDetails(user_id);
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async profileUpdate(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[update]";
+
+            const { user_id: userid } = req.customer;
+
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const { name, phone, email, gstnumber, telephonenumber, address, pincode  } = req.body;
+
+            await Customer.findOneAndUpdate({ id: userid }, { name, phone, email, gst_no: gstnumber, telephonenumber, address, pincode });
+
+            const userData: any = await this.fetchUserDetails(userid);
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
         } catch (err: any) {
@@ -279,7 +300,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.deleteOne({ id: id });
+            const result = await Customer.deleteOne({ id: id });
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-deleted"]), result);
@@ -301,7 +322,7 @@ export default class UserController {
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await User.findOneAndUpdate({ id: id }, { status: status }).lean();
+            const updationstatus = await Customer.findOneAndUpdate({ id: id }, { status: status }).lean();
             const result: any = await this.fetchUserDetails(id);
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-status"]), result);
@@ -324,7 +345,7 @@ export default class UserController {
             const { currentpass, newpass, confirmpass } = req.body;
     
             // Fetch the user by id
-            const user = await User.findOne({ id: id }).lean();
+            const user = await Customer.findOne({ id: id }).lean();
     
             if (!user) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -346,7 +367,7 @@ export default class UserController {
             const hashedPassword = await Bcrypt.hash(newpass, saltRounds);
     
             // Update the user's password
-            const updationstatus = await User.findOneAndUpdate({ id: id }, { password: hashedPassword }).lean();
+            const updationstatus = await Customer.findOneAndUpdate({ id: id }, { password: hashedPassword }).lean();
     
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-updated"]), {});
@@ -377,7 +398,7 @@ export default class UserController {
             }
     
             // Fetch the user by id
-            const user = await User.findOne({ id: id }).lean();
+            const user = await Customer.findOne({ id: id }).lean();
     
             if (!user) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

@@ -10,23 +10,6 @@ export default class BannerController {
 
     constructor() { }
 
-    public async addLocation(req: Request, res: Response): Promise<any> {
-        try {
-            //Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-
-            const { lat, log, address1, address2, pincode, dist, city } = req.body;
-            const { user_id: userid } = req.user;
-
-            const addlocation = await Location.create({ lat, log, address1, address2, pincode, dist, city, created_by: userid });
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "banner-feth"), {});
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message);
-        }
-    }
-
     public async updateLocation(req: Request, res: Response): Promise<any> {
         try {
             // Set locale
@@ -34,7 +17,7 @@ export default class BannerController {
             this.locale = (locale as string) || "en";
     
             const { lat, log, address1, address2, pincode, dist, city } = req.body;
-            const { user_id: userid } = req.user;
+            const { user_id: userid } = req.customer;
     
             // Check if location already exists for the user
             let existingLocation = await Location.findOne({ created_by: userid });
