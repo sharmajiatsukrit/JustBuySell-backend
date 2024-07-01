@@ -14,6 +14,7 @@ import ProductRequest from "./productrequest";
 import Offers from "./offers";
 import Customer from "./customer";
 import Banner from "./banner";
+import Help from "./help";
 
 const routes: Router = expres.Router();
 
@@ -32,5 +33,6 @@ routes.use("/product-request", ProductRequest);
 routes.use("/offer", Offers);
 routes.use("/customer", Customer);
 routes.use("/banner", Banner);
+routes.use("/help", Help);
 
 export default routes;

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
 import { HttpCodeEnum } from "../../enums/server";
 import JWT from "jsonwebtoken";
-import { fetchSession } from "../query/session";
+import { fetchSession, fetchSessionlogin } from "../query/session";
 import { SessionFetchData, SessionManageData } from "../../interfaces/session";
 import { UserAccountStatus } from "../../enums/user";
 import ServerMessages, { ServerMessagesEnum } from "../../config/messages";
@@ -64,7 +64,7 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
             user_id: decoded.user_id,
         };
 
-        const tokenSessionData: SessionManageData = await fetchSession(sessionFetchData);
+        const tokenSessionData: SessionManageData = await fetchSessionlogin(sessionFetchData);
 
         if (tokenSessionData.status === UserAccountStatus.Blocked) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-bc"]));
@@ -78,11 +78,14 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]));
         }
 
-        req.user = { user_id: decoded.user_id, email: decoded.email, superadmin: false };
+        req.customer = { user_id: decoded.user_id, phone: decoded.mobile_number, superadmin: false };
         Logger.info("authRequest: user: " + JSON.stringify(req.user));
 
         return next();
     } catch (err: any) {
+
+        console.log(err.message);
+
         const { locale } = req.query;
         const language = (locale as string) || "en";
 

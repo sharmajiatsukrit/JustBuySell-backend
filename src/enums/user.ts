@@ -24,6 +24,7 @@ export enum UserRouteEndPoints {
     Addproductrequest="Addproductrequest",
     Getbyid="Getbyid",
     Gettransbyid="Gettransbyid",
+    Verifyotplogin = "Vehicleotplogin"
 }
 
 export enum AdminRouteEndPoints {

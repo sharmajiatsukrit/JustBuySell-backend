@@ -33,6 +33,19 @@ declare global {
     }
 }
 
+declare global {
+    namespace Express {
+        interface Request {
+            customer: {
+                user_id: number;
+                phone: string;
+                superadmin: boolean;
+            };
+            context: { params: any };
+        }
+    }
+}
+
 export default class App {
     public app: express.Application;
     

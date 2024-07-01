@@ -120,5 +120,15 @@
     "wallettrans-fetched": "Wallet trans fethed successfully",
     "watchlist-fetched": "Watchlist fetch",
     "watchlist-create": "Watchlist created",
-    "watchlist-update": "Watchlist update"
+    "watchlist-update": "Watchlist update",
+
+    "phone-number-required": "phone-number-required",
+    "otp-verified": "Otp verified successfully",
+    "help-add": "Help Added successfully",
+    "help-display": "Help Display successfully",
+    "report-add": "report-add",
+    "deviceid-add": "Device Added Successfully",
+    "deviceid-update": "Device Updated successfully",
+    "location-update": "Location updated successfully",
+    "location-add": "Location Added successfully"
 }

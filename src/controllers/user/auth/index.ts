@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions, User } from "../../../models";
+import { Otps, Permissions, Sessions, User, Customer } from "../../../models";
 import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import { UserData } from "../../../interfaces/user";
@@ -80,7 +80,65 @@ export default class AuthController {
     }
 
     // Checked with encryption
-    private async createSession(user_id: number, email: string, req: Request, status: number, remember: boolean) {
+    private async createSession(user_id: number, mobile_number: number, req: Request, status: number, remember: boolean) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            if (!process.env.JWT_SECRET) {
+                throw new Error("JWT secret key undefined");
+            }
+
+            const ipAddress: string = (req.headers["X-Forwarded-For"] as string) || "";
+            const deviceDetails = getDeviceDetails(req);
+            const expiresIn = DateTime.now().plus({ days: (remember) ? 30 : 1 }).toISO();
+
+            const sessionData = await Sessions.create({
+                user_id,
+                status: true,
+                ip: ipAddress,
+                device_type: deviceDetails.device_type,
+                device_os: deviceDetails.device_os,
+                device_info: deviceDetails,
+                expires_in: expiresIn,
+                last_used: DateTime.now().toISO(),
+            });
+
+            const token: string = JWT.sign(
+                {
+                    mobile_number,
+                    user_id,
+                    session_id: sessionData.id
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: (remember) ? "30d" : "1d",
+                }
+            );
+
+            sessionData.token = token;
+            await sessionData.save();
+
+            // Store session cache
+            const dbDataBuild: SessionManageData = {
+                session_id: sessionData.id,
+                user_id: sessionData.user_id,
+                token: token,
+                status: status,
+                is_valid: sessionData.status,
+            };
+
+            updateSeesionWithIpInfo(sessionData.id, ipAddress);
+            await session.commitTransaction();
+            return sessionData;
+        } catch (err: any) {
+            session.abortTransaction();
+            session.endSession();
+            return Promise.reject(err);
+        }
+    }
+
+    private async createSessionadminLogin(user_id: number, email: string, req: Request, status: number, remember: boolean) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -155,7 +213,7 @@ export default class AuthController {
     // Checked with encryption
     public async fetchUserDetails(userId: number, billing = "") {
         try {
-            const userData: any = await User.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
+            const userData: any = await Customer.findOne({ id: userId }, { password: false, account_status: false, subscribed_to: false });
 
             delete userData._doc.__enc_email;
             delete userData._doc.__enc_communication_email;
@@ -392,48 +450,34 @@ export default class AuthController {
             const fn = "[login]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
-            const { username } = req.body;
-            if (!username) {
-                throw new Error(constructResponseMsg(this.locale, "email-or-phone-required"));
+    
+            const { mobile_number } = req.body;
+    
+            console.log(mobile_number);
+    
+            if (!mobile_number) {
+                throw new Error(constructResponseMsg(this.locale, "phone-number-required"));
             }
-
-            let userData: any;
-            const isEmail = username.includes("@");
-
-            if (isEmail) {
-                const emailToSearchWith: any = new User({ email: removeSpace(username) });
-                emailToSearchWith.encryptFieldsSync();
-                console.log(`${fn} - Searching for user with email:`, emailToSearchWith.email);
-                userData = await User.findOne({
-                    $or: [
-                        { email: emailToSearchWith.email },
-                        { communication_email: username }
-                    ]
-                });
-            } else {
-                const phoneToSearchWith: any = new User({ phone_number: removeSpace(username) });
-                phoneToSearchWith.encryptFieldsSync();
-                console.log(`${fn} - Searching for user with phone number:`, phoneToSearchWith.phone_number);
-                userData = await User.findOne({
-                    is_phone_verified: true,
-                    phone_number: phoneToSearchWith.phone_number
-                });
-            }
-
+    
+            let userData = await Customer.findOne({ mobile_number });
+    
             if (!userData) {
-                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+                // User does not exist, register the user
+                const newUser = await Customer.create({ mobile_number: mobile_number });
+                console.log("newuser", newUser);
+                userData = newUser;
             }
-
-            const otp = await this.generateOtp(userData._doc.id);
-
+    
+            // Generate OTP for the user
+            const otp = await this.generateOtp(userData.id);
+    
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), {});
+    
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
+    
 
     public async signOut(req: Request, res: Response): Promise<any> {
         try {
@@ -607,6 +651,45 @@ export default class AuthController {
             // this.emailService.otpEmail(email, otp);
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "fpi-e"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    public async verifyOtpinlogin(req: Request, res: Response): Promise<any> {
+        try {
+            const fn ="[verifyOtpForForgetPassword]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            // return res.status(200).json({ msg: 'api working ' });
+
+    
+            // Req Body
+            const { mobile_number, otp, remember = true  } = req.body;
+    
+            const userData = await Customer.findOne({ mobile_number });
+    
+            if (!userData) {
+                throw new Error(constructResponseMsg(this.locale, "user-nf"));
+            }
+    
+            const verifyOtp = await this.verifyOtp(userData.id || 0, otp);
+    
+            if (!verifyOtp) {
+                throw new Error(constructResponseMsg(this.locale, "in-otp"));
+            }
+
+            const formattedUserData = await this.fetchUserDetails(userData.id);
+            const session = await this.createSession(userData.id, mobile_number, req, userData.status, remember);
+    
+            if (session) {
+                formattedUserData.token = session.token;
+            }
+    
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), {verifyOtp, formattedUserData});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -985,7 +1068,7 @@ export default class AuthController {
     
             // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
             const formattedUserData = await this.fetchUserDetails(user.id);
-            const session = await this.createSession(user.id, email, req, user.status, remember);
+            const session = await this.createSessionadminLogin(user.id, email, req, user.status, remember);
     
             if (session) {
                 formattedUserData.token = session.token;
