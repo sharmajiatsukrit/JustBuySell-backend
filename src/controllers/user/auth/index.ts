@@ -689,7 +689,7 @@ export default class AuthController {
                 formattedUserData.token = session.token;
             }
     
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), {verifyOtp, formattedUserData});
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), formattedUserData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
