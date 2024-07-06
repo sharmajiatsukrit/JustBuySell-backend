@@ -62,6 +62,7 @@ export default class Productcontroller {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
+                                
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,

@@ -53,11 +53,22 @@ export default class BannerController {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
+                
+                // Format the data before sending the response
+                const formattedResult = result.map(item => ({
+                    name: item.name,
+                    bannerimg: item.bannerimg,
+                    url: item.url,
+                    status: item.status,
+                   
+                    // add other fields as needed
+                }));
+    
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
-                    { result, totalPages, currentPage: pageNumber }
+                    { result: formattedResult, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -66,7 +77,6 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
 
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
@@ -74,13 +84,25 @@ export default class BannerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
+            // Get the id from the request parameters and parse it as an integer
             const id = parseInt(req.params.id);
-
+    
+            // Fetch the document from the Banner collection by id
             const result = await Banner.findOne({ id }).lean();
-
+    
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), result);
+                // Format the result data
+                const formattedResult = {
+                    id: result._id,
+                    name: result.name,
+                    bannerimg: result.bannerimg,
+                    url: result.url,
+                    status: result.status,
+                    // add other fields as needed
+                };
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), formattedResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -88,7 +110,6 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
     // add
     public async addBanner(req: Request, res: Response): Promise<any> {
         try {

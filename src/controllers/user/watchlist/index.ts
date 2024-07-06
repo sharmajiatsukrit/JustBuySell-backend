@@ -45,11 +45,16 @@ export default class WatchlistController {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
+                const formattedResult = result.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    status: item.status
+                }))
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]),
-                    { result, totalPages, currentPage: pageNumber }
+                    { result: formattedResult, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -59,38 +64,57 @@ export default class WatchlistController {
         }
     }
     
-
     public async getbyid(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const { id } = req.params;
-
+    
             let result;
             if (id) {
                 // Find by ID if provided
                 result = await Watchlist.find({ id }).lean();
-                if (!result) {
+                if (result.length === 0) {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                } else {
+                    // Format the result if found in Watchlist
+                    result = result.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        status: item.status
+                        // add other fields as needed
+                    }));
                 }
             } else {
                 // Get all products sorted by ID in descending order
-                result = await Product.find({}).sort([['id', 'desc']]).lean();
+                result = await Product.find({}).sort({ id: -1 }).lean();
                 if (result.length === 0) {
                     throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                } else {
+                    // Format the product results if needed
+                    result = result.map(product => ({
+                        id: product.id,
+                        name: product.name,
+                        description: product.description,
+                        price: product.price,
+                        category_id: product.category_id,
+                        unit_id: product.unit_id,
+                        product_image: product.product_image,
+                        status: product.status
+                        // add other fields as needed
+                    }));
                 }
             }
-
+    
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-    public async addWatchlist(req: Request, res: Response): Promise<any> {
+       public async addWatchlist(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateProfileImg]";
             // Set locale

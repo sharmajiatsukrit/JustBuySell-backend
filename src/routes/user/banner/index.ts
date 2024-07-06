@@ -8,6 +8,6 @@ const routes: Router = expres.Router();
 const bannerController = new BannerController();
 
 routes.get("/getlist", bannerController.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, bannerController.getList.bind(bannerController));
-routes.get("/getbyid/:id", bannerController.validate(UserRouteEndPoints.Getlimitlist), authRequest, validateRequest, bannerController.getList.bind(bannerController));
+routes.get("/getbyid/:id", bannerController.validate(UserRouteEndPoints.Getlimitlist), authRequest, validateRequest, bannerController.getDetailsById.bind(bannerController));
 
 export default routes;

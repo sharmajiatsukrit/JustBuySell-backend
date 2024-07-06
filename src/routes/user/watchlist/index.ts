@@ -7,7 +7,7 @@ import { upload } from "../../../utils/storage";
 const routes: Router = expres.Router();
 const watchController = new WatchController(); 
 
-routes.get("/getList", watchController.validate(UserRouteEndPoints.Getsearch), authRequest, validateRequest, watchController.getList.bind(watchController));
+routes.get("/getlist", watchController.validate(UserRouteEndPoints.Getsearch), authRequest, validateRequest, watchController.getList.bind(watchController));
 routes.get("/getbyid/:id", watchController.validate(UserRouteEndPoints.Getsearch), authRequest, validateRequest, watchController.getbyid.bind(watchController));
 routes.post("/addwatchlist", watchController.validate(UserRouteEndPoints.Getsearch), authRequest, validateRequest, watchController.addWatchlist.bind(watchController));
 routes.patch("/editwatchlist/:id", watchController.validate(UserRouteEndPoints.Getsearch), authRequest, validateRequest, watchController.editWatchlist.bind(watchController));
