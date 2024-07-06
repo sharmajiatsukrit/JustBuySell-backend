@@ -69,6 +69,7 @@ export default class Productwatchlist {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
+                
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,

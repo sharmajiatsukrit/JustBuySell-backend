@@ -47,11 +47,18 @@ export default class CategoryController {
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
+                const formattedResult = result.map(item => ({
+                    name: item.name,
+                    description: item.description,
+                    cat_img: item.cat_img,
+                    parent_id: item.parent_id,
+                    status: item.status
+                }))
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
-                    { result, totalPages }
+                    { result: formattedResult, totalPages }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -61,24 +68,24 @@ export default class CategoryController {
         }
     }
 
-    public async getLimitlist(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[getList]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
+    // public async getLimitlist(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getList]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
             
-            // Find categories with a limit of 7
-            const result = await Category.find({}).sort([['id', 'desc']]).limit(7).lean();
+    //         // Find categories with a limit of 7
+    //         const result = await Category.find({}).sort([['id', 'desc']]).limit(7).lean();
     
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
+    //         if (result.length > 0) {
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
     
 }

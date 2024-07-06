@@ -100,13 +100,19 @@ export default class CategoryController {
 
             let cat_img: string | undefined;
             if (req.files && typeof req.files === 'object') {
-
                 if ('cat_img' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    cat_img = files['cat_img'][0].path;
+                    if (Array.isArray(files['cat_img']) && files['cat_img'].length > 0) {
+                        cat_img = `${process.env.APP_URL}/${files['cat_img'][0].path}`;
+                    } else {
+                        console.error("Banner image file array is empty or undefined");
+                    }
+                } else {
+                    console.error("Banner image field 'cat_img' not found in files");
                 }
+            } else {
+                console.error("No files found in the request");
             }
-
             result = await Category.create({
                 name: name,
                 description: description,
