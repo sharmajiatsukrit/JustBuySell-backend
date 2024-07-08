@@ -7,7 +7,7 @@ import { upload } from "../../../utils/storage";
 const routes: Router = expres.Router();
 const productcontroller = new ProductRequestController();
 
-routes.get("/get-list", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getList.bind(productcontroller));
+routes.get("/list", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getList.bind(productcontroller));
 routes.get("/getbyid/:id", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getbyid.bind(productcontroller));
 
 export default routes;

@@ -13,6 +13,7 @@ routes.get("/", (_req, res) => {
 routes.use("/auth", AuthRoutes);
 routes.use("/admin", AdminRoutes);
 routes.use("/user", UserRoutes);
+routes.use("/notification", NotificationRoutes);
 
 
 export default routes;
