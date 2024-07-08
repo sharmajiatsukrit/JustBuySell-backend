@@ -1,11 +1,11 @@
 import expres, { Router } from "express";
-import NotificationController from "../../controllers/notification";
-import { authRequest } from "../../utils/middleware";
+import NotificationController from "../../../controllers/notification";
+import { authRequest } from "../../../utils/middleware";
 
 const routes: Router = expres.Router();
 const notificationController = new NotificationController();
 
-routes.get("/list", authRequest, notificationController.fetchAllNotification.bind(notificationController));
+routes.get("/", authRequest, notificationController.fetchAllNotification.bind(notificationController));
 
 routes.post("/clear", authRequest, notificationController.clearNotification.bind(notificationController));
 
