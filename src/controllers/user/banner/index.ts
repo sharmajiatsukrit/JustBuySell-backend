@@ -31,44 +31,33 @@ export default class BannerController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            // Parse page and limit from query params, set defaults if not provided
-            const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
-    
-            // Calculate the number of documents to skip
-            const skip = (pageNumber - 1) * limitNumber;
-    
-            // Fetch documents with pagination
+            // Fetch all documents without pagination
             const result = await Banner.find({})
                 .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber)
                 .lean();
     
             // Get the total number of documents in the Banner collection
             const totalCount = await Banner.countDocuments({});
     
             if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                
                 // Format the data before sending the response
                 const formattedResult = result.map(item => ({
+                    id: item._id, // Assuming _id is the unique identifier in MongoDB
                     name: item.name,
-                    bannerimg: item.bannerimg,
+                    bannerimg: `${process.env.APP_URL}/${item.bannerimg}`, // Full URL of bannerimg
                     url: item.url,
                     status: item.status,
-                   
-                    // add other fields as needed
+                    // Add other fields as needed
                 }));
     
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
-                    { result: formattedResult, totalPages, currentPage: pageNumber }
+                    { result: formattedResult, totalCount }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -77,8 +66,8 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    
+        public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getDetailsById]";
             // Set locale
@@ -96,7 +85,7 @@ export default class BannerController {
                 const formattedResult = {
                     id: result._id,
                     name: result.name,
-                    bannerimg: result.bannerimg,
+                       bannerimg: `${process.env.APP_URL}/${result.bannerimg}`,
                     url: result.url,
                     status: result.status,
                     // add other fields as needed
