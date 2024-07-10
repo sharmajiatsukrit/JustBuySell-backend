@@ -30,7 +30,7 @@ export default class CategoryController {
 
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
+            const limitNumber = parseInt(limit as string) || 10;
 
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
@@ -50,7 +50,7 @@ export default class CategoryController {
                 const formattedResult = result.map(item => ({
                     name: item.name,
                     description: item.description,
-                    cat_img: item.cat_img,
+                    cat_img: `${process.env.APP_URL}/${item.cat_img}`,
                     parent_id: item.parent_id,
                     status: item.status
                 }))

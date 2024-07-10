@@ -26,29 +26,34 @@ export default class BannerController {
     public validate(endPoint: string): ValidationChain[] {
         return validate(endPoint);
     }
-
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
-            const { locale, page, limit } = req.query;
+            const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
-            const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
-
-            const skip = (pageNumber - 1) * limitNumber;
-
-            const result = await Banner.find({})
+    
+            const results = await Banner.find({})
                 .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber)
                 .lean();
-
+    
             const totalCount = await Banner.countDocuments({});
-
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), {result, totalPages} );
+    
+            if (results.length > 0) {
+                // Format the data before sending the response
+                const formattedResults = results.map(item => ({
+                    id: item._id, // Assuming _id is the unique identifier in MongoDB
+                    name: item.name,
+                    bannerimg: `${process.env.APP_URL}/${item.bannerimg}`, // Full URL of bannerimg
+                    url: item.url,
+                    // Add other fields as necessary
+                }));
+    
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
+                    { result: formattedResults, totalCount }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-not-found"]));
             }
@@ -56,21 +61,30 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
+    
+    
     public async getDetailsById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getDetailsById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const id = parseInt(req.params.id);
-
+    
             const result = await Banner.findOne({ id }).lean();
-
+    
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), result);
+                // Construct full URL for banner image
+                const imageUrl = `${process.env.APP_URL}/${result.bannerimg}`;
+    
+                // Format the result to include the full image URL
+                const formattedResult = {
+                    ...result,
+                    bannerimg: imageUrl
+                };
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]), formattedResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-not-found"]));
             }
@@ -78,6 +92,7 @@ export default class BannerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     // add
     public async addBanner(req: Request, res: Response): Promise<any> {
@@ -94,7 +109,7 @@ export default class BannerController {
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
                     if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
-                        bannerimg = `${process.env.APP_URL}/${files['bannerimg'][0].path}`;
+                        bannerimg = files['bannerimg'][0].path;  // Store only the path
                     } else {
                         console.error("Banner image file array is empty or undefined");
                     }
@@ -112,7 +127,7 @@ export default class BannerController {
             });
     
             if (banneradd) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {});
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {banneradd});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
             }
@@ -139,7 +154,7 @@ export default class BannerController {
                 if ('bannerimg' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
                     if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
-                        bannerimg = `${process.env.APP_URL}/${files['bannerimg'][0].path}`;
+                        bannerimg = files['bannerimg'][0].path;  // Store only the path
                     } else {
                         console.error("Banner image file array is empty or undefined");
                     }

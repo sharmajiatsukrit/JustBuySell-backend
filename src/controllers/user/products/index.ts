@@ -29,9 +29,9 @@ export default class Productcontroller {
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
+            const limitNumber = parseInt(limit as string) || 10;
     
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
@@ -54,6 +54,13 @@ export default class Productcontroller {
                 },
                 {
                     $limit: limitNumber
+                },
+                {
+                    $addFields: {
+                        "full_image_url": {
+                            $concat: [`${process.env.APP_URL}/`, "$product_image"]
+                        }
+                    }
                 }
             ]).exec();
     
@@ -62,12 +69,18 @@ export default class Productcontroller {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                                
+    
+                // Modify each result item to include full_image_url
+                const formattedResults = result.map(item => ({
+                    ...item,
+                    product_image: item.full_image_url,
+                }));
+    
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
-                    { result, totalPages }
+                    { result: formattedResults, totalPages }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -76,7 +89,7 @@ export default class Productcontroller {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
+    
     
     public async getbyid(req: Request, res: Response): Promise<any> {
         try {
