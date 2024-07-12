@@ -26,20 +26,19 @@ export default class CategoryController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getList]";
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
     
-            // Parse page and limit from query params, set defaults if not provided
+          
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 10; // Update limit to 10 for pagination
+            const limitNumber = parseInt(limit as string) || 10; 
     
-            // Calculate the number of documents to skip
+         
             const skip = (pageNumber - 1) * limitNumber;
     
-            // Fetch the documents with pagination and sort by id in descending order
+            // Fetch the documents with pagination and sort by _id in descending order
             const results = await Category.find({})
-                .sort({ id: -1 })
+                .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
@@ -47,23 +46,25 @@ export default class CategoryController {
             // Get the total number of documents in the Category collection
             const totalCount = await Category.countDocuments({});
     
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limitNumber);
+    
             if (results.length > 0) {
                 // Format each item in the result array
-                const formattedResults = results.map(item => ({
-                    id: item._id, // Assuming _id is the unique identifier in MongoDB
+                const formattedResults = results.map((item, index) => ({
+                    id: index + 1, // Generate a simple sequential ID starting from 1
                     name: item.name,
                     description: item.description,
-                    category_img: `${process.env.APP_URL}/${item.cat_img}`, // Full URL of category image
+                    catImg: `${process.env.APP_URL}/${item.cat_img}`, // Full URL of category image
                     status: item.status,
                     // Add more fields as necessary
                 }));
     
-                const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
-                    { result: formattedResults, totalPages }
+                    { result: formattedResults, totalCount, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -145,7 +146,7 @@ export default class CategoryController {
                 result.doc.cat_img = cat_img; // Assigning relative URL
             }
     
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"),{});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

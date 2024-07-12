@@ -61,6 +61,22 @@ export default class Productcontroller {
                             $concat: [`${process.env.APP_URL}/`, "$product_image"]
                         }
                     }
+                },
+                {
+                    $project: {
+                        _id: 0, // Exclude _id field
+                        id: 1,
+                        name: 1,
+                        description: 1,
+                        price: 1,
+                        category_id: 1,
+                        unitId: 1,
+                        pack: 1,
+                        product_image: "$full_image_url", // Rename full_image_url to product_image
+                        status: 1,
+                        categories: 1
+                        // Add other fields as needed
+                    }
                 }
             ]).exec();
     
@@ -70,17 +86,30 @@ export default class Productcontroller {
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
     
-                // Modify each result item to include full_image_url
+                // Format the data
                 const formattedResults = result.map(item => ({
-                    ...item,
-                    product_image: item.full_image_url,
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    price: item.price,
+                    categoryId: item.category_id,
+                    unitId: item.unitId,
+                    pack: item.pack,
+                    productImage: item.product_image,
+                    status: item.status,
+                    categories: item.categories.map((category: any) => ({
+                        id: category.id,
+                        name: category.name,
+                        // Add other fields as needed
+                    }))
                 }));
     
+                // Return formatted response
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
-                    { result: formattedResults, totalPages }
+                    { data: formattedResults, totalPages, currentPage: pageNumber, totalCount }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -89,6 +118,8 @@ export default class Productcontroller {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
+    
     
     
     public async getbyid(req: Request, res: Response): Promise<any> {

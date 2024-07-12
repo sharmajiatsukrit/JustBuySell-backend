@@ -30,7 +30,7 @@ export default class Productwatchlist {
             this.locale = (locale as string) || "en";
     
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
+            const limitNumber = parseInt(limit as string) || 10; // Increased limit to 10
     
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
@@ -69,12 +69,17 @@ export default class Productwatchlist {
     
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                
+    
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["productwatch-fetched"]),
-                    { result, totalPages }
+                    { 
+                        result, 
+                        totalCount,  // Corrected spelling from 'tatalCount' to 'totalCount'
+                        currentPage: pageNumber,
+                        totalPages
+                    }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -84,61 +89,57 @@ export default class Productwatchlist {
         }
     }
     
+    
 
-    public async getbyid(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[getList]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-    
-            const { id } = req.params;
-    
-            let result;
-            if (id) {
-                // Find by ID if provided
-                result = await Productwatch.aggregate([
-                    {
-                        $match: { id: parseInt(id, 10) }, // Ensure id is parsed as an integer
+    public async getById(req: Request, res: Response): Promise<any> {
+    try {
+        const fn = "[getById]";
+        // Set locale
+        const { locale } = req.query;
+        this.locale = (locale as string) || "en";
+
+        const { id } = req.params;
+
+        let result;
+        if (id) {
+            // Find by ID if provided
+            result = await Productwatch.aggregate([
+                {
+                    $match: { id: parseInt(id, 10) }, // Ensure id is parsed as an integer
+                },
+                {
+                    $lookup: {
+                        from: "watchlists",
+                        localField: "watchlistid",
+                        foreignField: "id",
+                        as: "watchlist",
                     },
-                    {
-                        $lookup: {
-                            from: "watchlists",
-                            localField: "watchlistid",
-                            foreignField: "id",
-                            as: "watchlist",
-                        },
+                },
+                {
+                    $lookup: {
+                        from: "products",
+                        localField: "productid",
+                        foreignField: "id",
+                        as: "products",
                     },
-                    {
-                        $lookup: {
-                            from: "products",
-                            localField: "productid",
-                            foreignField: "id",
-                            as: "products",
-                        },
-                    },
-                    {
-                        $sort: { id: -1 }
-                    }
-                ]).exec();
-    
-                if (!result || result.length === 0) {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                },
+                {
+                    $sort: { id: -1 }
                 }
-            } else {
-                // Get all products sorted by ID in descending order
-                result = await Product.find({}).sort([['id', 'desc']]).lean();
-                if (result.length === 0) {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                }
+            ]).exec();
+
+            if (!result || result.length === 0) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-    
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["productwatch-fetched"]), result);
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        } else {
+            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
         }
+
+        return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["productwatch-fetched"]), result);
+    } catch (err: any) {
+        return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
     }
-    
+}
 
     public async addProductWatch(req: Request, res: Response): Promise<any> {
         try {

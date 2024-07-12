@@ -24,7 +24,7 @@ const productsSchema: Schema = new Schema({
     category_id: { type: Number, default: 0 },
     unit_id: { type: Number, default: '' },
     pack: { type: String, default: '' },
-    product_image: { type: String, default: '' },
+    product_image: { type: String, default: '', required: true },
     status: { type: Boolean, default: true },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }

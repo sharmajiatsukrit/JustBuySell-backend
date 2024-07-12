@@ -32,39 +32,37 @@ export default class SearchController {
     
             const { keyword, categoryid } = req.query;
     
-            if (keyword && categoryid) {
-                const searchResults = await Product.find({
-                    $and: [
-                        { name: { $regex: keyword, $options: 'i' } },
-                        {category_id: categoryid }
-                    ]
-                }).lean();
+            let query: any = {};
     
-                if (searchResults.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), searchResults);
-                } else {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                }
-            } else if (keyword) {
-                const searchResults = await Product.find({
-                    $or: [
-                        { name: { $regex: keyword, $options: 'i' } }
-                    ]
-                }).lean();
+            if (keyword) {
+                query.name = { $regex: keyword, $options: 'i' };
+            }
     
-                if (searchResults.length > 0) {
-                    return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), searchResults);
-                } else {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                }
+            if (categoryid) {
+                query.category_id = categoryid;
+            }
+    
+            let searchResults = await Product.find(query).select('-createBy -updatedBy -createdAt -updatedAt').lean();
+    
+            if (searchResults.length > 0) {
+                // Format the response data if needed
+                const formattedResults = searchResults.map((result: any) => ({
+                    id: result._id,
+                    name: result.name,
+                    description: result.description,
+                    price: result.price,
+                    category_id: result.category_id,
+                    status: result.status,
+                    product_image: result.product_image
+                    // Add other fields you want to include
+                }));
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), formattedResults);
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["missing-params"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
-    
-
-}
+}    

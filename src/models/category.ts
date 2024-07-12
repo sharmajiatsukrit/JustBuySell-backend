@@ -14,12 +14,12 @@ interface ICategory extends Document {
 }
 
 const categorySchema: Schema = new Schema({
-    
+    id: { type: Number, required: true, unique: true },
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     parent_id: { type: Number, default: 0 },
     status: { type: Boolean, default: true },
-    cat_img: { type: String, default: '' },
+    cat_img: { type: String, default: '' , required: true},
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
 },
