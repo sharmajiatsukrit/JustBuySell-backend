@@ -25,16 +25,49 @@ export default class NewlyaddedproductsController {
 
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getList]";
-            // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-
-
-            const result = await Product.find({}).sort([['id', 'desc']]).lean();
-
+    
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+    
+            // Calculate the number of documents to skip
+            const skip = (pageNumber - 1) * limitNumber;
+    
+            // Fetch the documents with pagination and sorting
+            const result = await Product.find({})
+                .sort({ _id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+    
+            // Get the total number of documents in the Banner collection
+            const totalCount = await Product.countDocuments({});
+    
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                const totalPages = Math.ceil(totalCount / limitNumber);
+    
+                // Format the data before sending the response
+                const formattedResult = result.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    bannerimg: `${process.env.APP_URL}/${item.bannerimg}`, // Full URL of bannerimg
+                    url: item.url,
+                    status: item.status,
+                    // Add other fields as needed
+                }));
+    
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
+                    {
+                        result: formattedResult,
+                        totalCount,
+                        totalPages,
+                        currentPage: pageNumber
+                    }
+                );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -42,7 +75,7 @@ export default class NewlyaddedproductsController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
+    
 
     public async getSearch(req: Request, res: Response): Promise<any> {
         try {

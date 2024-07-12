@@ -29,32 +29,34 @@ export default class WatchlistController {
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
-    
+
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             const result = await Watchlist.find({})
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
-    
+
             const totalCount = await Watchlist.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 const formattedResult = result.map(item => ({
                     id: item.id,
                     name: item.name,
                     status: item.status
-                }))
+                    // Add other fields as needed
+                }));
+
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]),
-                    { result: formattedResult, totalPages, currentPage: pageNumber }
+                    { result: formattedResult, totalCount, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -63,7 +65,6 @@ export default class WatchlistController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
     public async getbyid(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
