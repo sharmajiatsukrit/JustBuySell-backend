@@ -32,15 +32,12 @@ export default class BannerController {
                 try {
                     const { locale } = req.query;
                     this.locale = (locale as string) || "en";
-        
-                    // Fetch all documents without pagination
-                    const result = await Banner.find({})
+            
+                    // Fetch documents where status is true, without pagination
+                    const result = await Banner.find({ status: true })
                         .sort({ id: -1 }) // Sort by id in descending order if needed
                         .lean();
-        
-                    // Get the total number of documents in the Banner collection
-                    const totalCount = await Banner.countDocuments({});
-        
+            
                     if (result.length > 0) {
                         // Format the data before sending the response
                         const formattedResult = result.map((item: any) => ({
@@ -51,12 +48,12 @@ export default class BannerController {
                             status: item.status,
                             // Add other fields as needed
                         }));
-        
+            
                         return serverResponse(
                             res,
                             HttpCodeEnum.OK,
                             ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
-                            { result: formattedResult, totalCount }
+                            formattedResult
                         );
                     } else {
                         throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -65,6 +62,7 @@ export default class BannerController {
                     return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
                 }
             }
+            
         
             public async getDetailsById(req: Request, res: Response): Promise<any> {
                 try {

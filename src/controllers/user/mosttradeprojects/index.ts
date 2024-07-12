@@ -41,7 +41,7 @@ export default class MosttradeprojectsController {
                 .limit(limitNumber)
                 .lean();
     
-            // Get the total number of documents in the Banner collection
+            // Get the total number of documents in the Product collection
             const totalCount = await Product.countDocuments({});
     
             if (result.length > 0) {
@@ -75,6 +75,7 @@ export default class MosttradeprojectsController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
     public async getSearch(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getSearch]";
