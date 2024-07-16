@@ -9,5 +9,6 @@ const productcontroller = new ProductRequestController();
 
 routes.get("/list", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getList.bind(productcontroller));
 routes.get("/getbyid/:id", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getbyid.bind(productcontroller));
+routes.get("/getbycategory/:id", productcontroller.validate(UserRouteEndPoints.Getlist), authRequest, validateRequest, productcontroller.getbycategory.bind(productcontroller));
 
 export default routes;

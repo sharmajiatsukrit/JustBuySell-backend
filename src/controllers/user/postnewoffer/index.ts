@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Offers } from "../../../models";
+import { Offers ,Product} from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-
+import mongoose from "mongoose";
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
     public locale: string = "en";
@@ -28,27 +28,30 @@ export default class OfferController {
             const fn = "[add]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-
+    
             const { productid, priceperunit, miniquantity, origin, pin, type, status } = req.body;
-
-            let result: any;
-
-            result = await Offers.create({
-                productid: productid,
-                priceperunit: priceperunit,
-                miniquantity: miniquantity,
-                origin: origin,
-                pin: pin,
-                type: type,
-                status: status
+            const productId = parseInt(productid);
+    
+            if (isNaN(productId)) {
+                throw new Error('Invalid product ID');
+            }
+    
+            const result = await Offers.create({
+                productid: productId,
+                priceperunit,
+                miniquantity,
+                origin,
+                pin,
+                type,
+                status
             });
-
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
+    
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
 
     //update
     public async update(req: Request, res: Response): Promise<any> {

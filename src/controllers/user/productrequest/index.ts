@@ -30,7 +30,7 @@ export default class ProductRequestController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, unitid, pack, masterpack, description, status } = req.body;
+            const { name, unitid,sellingunit,indivisualpacksize,indivisualpackunit,indivisualpacktype, pack, masterpackqty, masterpacktype, description, status } = req.body;
 
             let product_image: string | undefined;
             if (req.files && typeof req.files === 'object') {
@@ -44,16 +44,20 @@ export default class ProductRequestController {
             let result: any;
 
             result = await ProductRequest.create({
-                name: name,
-                unitid: unitid,
-                pack: pack,
-                masterpack: masterpack,
-                description: description,
-                status: status,
+                name:name,
+                sellingunit:sellingunit,
+                indivisualpacksize:indivisualpacksize,
+                indivisualpackunit:indivisualpackunit,
+                indivisualpacktype:indivisualpacktype,
+                unitid:unitid,
+                pack:pack,
+                masterpackqty:masterpackqty,
+                masterpacktype:masterpacktype,
+                description:description,
                 productImg: product_image,
             });
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-add"), result.doc);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-add"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

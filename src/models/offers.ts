@@ -4,7 +4,7 @@ import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IOffers extends Document {
-    productid: string;
+    productid: number;
     priceperunit: number;
     miniquantity: number;
     origin: number;
@@ -16,21 +16,19 @@ interface IOffers extends Document {
 }
 
 const offersSchema: Schema = new Schema({
-
-    productid: { type: String, default: '' },
+    productid: { type: Number, required: true },
     priceperunit: { type: Number, default: '' },
     miniquantity: { type: Number, default: '' },
     origin: { type: Number, default: 0 },
     pin: { type: Number, default: 0 },
     status: { type: Number, default: 0 },
-    type: { type: String, default:0 },
+    type: { type: String, default: 0 },
     created_by: { type: Number, default: 0 },
     updated_by: { type: Number, default: 0 }
-},
-    {
-        timestamps: true,
-        versionKey: false
-    });
+}, {
+    timestamps: true,
+    versionKey: false
+});
 
 offersSchema.plugin(autoIncrement, { model: 'offers', field: 'id', startAt: 1 });
 
