@@ -72,24 +72,4 @@ export default class CategoryController {
     }
 }
 
-    // public async getLimitlist(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getList]";
-    //         // Set locale
-    //         const { locale } = req.query;
-    //         this.locale = (locale as string) || "en";
-            
-    //         // Find categories with a limit of 7
-    //         const result = await Category.find({}).sort([['id', 'desc']]).limit(7).lean();
-    
-    //         if (result.length > 0) {
-    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
-    //         } else {
-    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-    //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
-    
     
