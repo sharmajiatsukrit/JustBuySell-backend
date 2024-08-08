@@ -13,8 +13,8 @@ interface IBanner extends Document {
 }
 
 const BannerSchema: Schema = new Schema({
-    name: { type: String, default: '' },
-    banner: { type: String, default: '', required: true },
+    name: { type: String, default: '', required: true },
+    banner: { type: String, default: '' },
     external_url: { type: String, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
