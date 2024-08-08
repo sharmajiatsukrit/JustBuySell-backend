@@ -4,10 +4,11 @@ interface IObjectKeys {
 
 export const MessageKey: IObjectKeys = {
     "server-error": "server-error",
-    "no-file-provided":"no-file-provided",
+    "no-file-provided": "no-file-provided",
     "not-found": "not-found",
     "required-iv": "required-iv",
     "permission-denied": "permission-denied",
+    "user-os": "user-os",
     "user-bc": "user-bc",
     "user-bl": "user-bl",
     "user-dl": "user-dl",
@@ -16,7 +17,7 @@ export const MessageKey: IObjectKeys = {
     "user-nf": "user-nf",
     "email-already-exists": "email-already-exists",
     "invalid-password": "invalid-password",
-    "logged-in":"logged-in",
+    "logged-in": "logged-in",
     "user-fetched": "user-fetched",
     "user-add": "user-add",
     "user-update": "user-update",
@@ -79,8 +80,8 @@ export const MessageKey: IObjectKeys = {
 
     "product-requested-statusupdated": "product-requested-statusupdated",
 
-    "otp-sent":"otp-sent",
-    "user-si":"user-si",
+    "otp-sent": "otp-sent",
+    "user-si": "user-si",
     "user-lo": "user-lo",
     "us-lon": "us-lon",
     "in-otp": "in-otp",

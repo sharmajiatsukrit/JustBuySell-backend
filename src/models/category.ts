@@ -14,19 +14,18 @@ interface ICategory extends Document {
 }
 
 const categorySchema: Schema = new Schema({
-    id: { type: Number, required: true, unique: true },
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     parent_id: { type: Number, default: 0 },
     status: { type: Boolean, default: true },
-    cat_img: { type: String, default: '' , required: true},
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    cat_img: { type: String, default: '', required: true },
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 categorySchema.plugin(autoIncrement, { model: 'category', field: 'id', startAt: 1 });
 

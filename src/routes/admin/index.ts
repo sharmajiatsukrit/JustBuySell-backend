@@ -1,5 +1,6 @@
 import expres, { Router } from "express";
 import { authAdmin, validateRequest } from "../../utils/middleware";
+import AuthRoutes from "../admin/auth";
 import UsersRoutes from "./users";
 import RolesRoutes from "./roles";
 import PermissionsRoutes from "./permissions";
@@ -17,8 +18,7 @@ import Banner from "./banner";
 import Help from "./help";
 
 const routes: Router = expres.Router();
-
-// routes.use("/pubnub", PubnubRoutes);
+routes.use("/auth", AuthRoutes);
 routes.use("/users", UsersRoutes);
 routes.use("/roles", RolesRoutes);
 routes.use("/permissions", PermissionsRoutes);

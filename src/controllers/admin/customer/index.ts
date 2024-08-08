@@ -32,73 +32,91 @@ export default class UserController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             // Aggregation pipeline with pagination
-            const result = await Customer.aggregate([
-                {
-                    $match: { type: 1 }
-                },
-                {
-                    $lookup: {
-                        from: "cities",
-                        localField: "city",
-                        foreignField: "id",
-                        as: "cities",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "id",
-                        as: "states",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "country",
-                        foreignField: "id",
-                        as: "countries",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "roles",
-                        localField: "role_id",
-                        foreignField: "id",
-                        as: "roles",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: limitNumber
-                }
-            ]).exec();
-            
+            // const result = await Customer.aggregate([
+            //     {
+            //         $match: { type: 1 }
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "cities",
+            //             localField: "city",
+            //             foreignField: "id",
+            //             as: "cities",
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "states",
+            //             localField: "state",
+            //             foreignField: "id",
+            //             as: "states",
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "countries",
+            //             localField: "country",
+            //             foreignField: "id",
+            //             as: "countries",
+            //         },
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "roles",
+            //             localField: "role_id",
+            //             foreignField: "id",
+            //             as: "roles",
+            //         },
+            //     },
+            //     {
+            //         $sort: { id: -1 }
+            //     },
+            //     {
+            //         $skip: skip
+            //     },
+            //     {
+            //         $limit: limitNumber
+            //     }
+            // ]).exec();
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { phone: { $regex: search, $options: 'i' } },
+                        { date_of_birth: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } }, // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = {};
+            }
+            const result = await User.find(searchQuery)
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber).lean();
+
             const totalCount = await Customer.countDocuments({ type: 1 });
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]),
-                    { result, totalPages }
+                    { result, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -107,7 +125,7 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {
@@ -172,39 +190,37 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
-            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
-    
-            // Validate password length
-            if (password.length < 8) {
-                return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
-            }
-    
+
+
+            const { name, phone, email, company_name, brand_name, company_logo, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
+
+
+
             // Check if email already exists
-            const existingUser = await Customer.findOne({ mobile_number: phone });
+            const existingUser = await Customer.findOne({ phone: phone });
             if (existingUser) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
-    
-            const enpassword = await Bcrypt.hash(password, 10);
-    
+
+
             const userData = await Customer.create({
-                name,
-                mobile_number: phone,
-                email,
-                address,
-                city: city_id,
-                state: state_id,
-                country: country_id,
-                role_id,
-                password: enpassword,
-                type: 1,
-                status: 1,
+                name: name,
+                phone: phone,
+                email: email,
+                company_name: company_name,
+                brand_name: brand_name,
+                gst: gst,
+                telephone: telephone,
+                company_email: company_email,
+                address_line_1: address_line_1,
+                address_line_2: address_line_2,
+                open_time: open_time,
+                close_time: close_time,
+                parent_id: parent_id,
+                status: status,
             });
-    
-            const formattedUserData = await this.fetchUserDetails(userData.id);
-    
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), formattedUserData);
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -258,7 +274,7 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, email, address, city_id, state_id, country_id, role_id  } = req.body;
+            const { name, phone, email, address, city_id, state_id, country_id, role_id } = req.body;
 
             await Customer.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
 
@@ -279,7 +295,7 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, email, gstnumber, telephonenumber, address, pincode  } = req.body;
+            const { name, phone, email, gstnumber, telephonenumber, address, pincode } = req.body;
 
             await Customer.findOneAndUpdate({ id: userid }, { name, phone, email, gst_no: gstnumber, telephonenumber, address, pincode });
 
@@ -334,50 +350,50 @@ export default class UserController {
         }
     }
 
-    public async changePass(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[changepass]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-    
-            const { id } = req.params;
-            const { currentpass, newpass, confirmpass } = req.body;
-    
-            // Fetch the user by id
-            const user = await Customer.findOne({ id: id }).lean();
-    
-            if (!user) {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
-    
-            // Check if the current password matches the user's password
-            const isMatch = await Bcrypt.compare(currentpass, user.password);
-            if (!isMatch) {
-                return serverResponse(res, HttpCodeEnum.UNAUTHORIZED, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["incorrect-password"]), {});
-            }
-    
-            // Check if new password and confirm password match
-            if (newpass !== confirmpass) {
-                return serverResponse(res, HttpCodeEnum.BADREQUEST, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-mismatch"]), {});
-            }
-    
-            // Hash the new password
-            const saltRounds = 10;
-            const hashedPassword = await Bcrypt.hash(newpass, saltRounds);
-    
-            // Update the user's password
-            const updationstatus = await Customer.findOneAndUpdate({ id: id }, { password: hashedPassword }).lean();
-    
-            if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-updated"]), {});
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
-            }
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
+    // public async changePass(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[changepass]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const { id } = req.params;
+    //         const { currentpass, newpass, confirmpass } = req.body;
+
+    //         // Fetch the user by id
+    //         const user = await Customer.findOne({ id: id }).lean();
+
+    //         if (!user) {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+
+    //         // Check if the current password matches the user's password
+    //         const isMatch = await Bcrypt.compare(currentpass, user.password);
+    //         if (!isMatch) {
+    //             return serverResponse(res, HttpCodeEnum.UNAUTHORIZED, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["incorrect-password"]), {});
+    //         }
+
+    //         // Check if new password and confirm password match
+    //         if (newpass !== confirmpass) {
+    //             return serverResponse(res, HttpCodeEnum.BADREQUEST, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-mismatch"]), {});
+    //         }
+
+    //         // Hash the new password
+    //         const saltRounds = 10;
+    //         const hashedPassword = await Bcrypt.hash(newpass, saltRounds);
+
+    //         // Update the user's password
+    //         const updationstatus = await Customer.findOneAndUpdate({ id: id }, { password: hashedPassword }).lean();
+
+    //         if (updationstatus) {
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-updated"]), {});
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
 
     public async updateProfileImg(req: Request, res: Response): Promise<any> {
         try {
@@ -385,7 +401,7 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { id } = req.params;
 
             let product_image: string | undefined;
@@ -396,17 +412,17 @@ export default class UserController {
                     product_image = files['product_image'][0].path;
                 }
             }
-    
+
             // Fetch the user by id
             const user = await Customer.findOne({ id: id }).lean();
-    
+
             if (!user) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-    
+
             // Update the user's profile image
             const updateprofile = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
-    
+
             if (updateprofile) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
             } else {

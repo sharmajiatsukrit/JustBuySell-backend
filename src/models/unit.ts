@@ -10,17 +10,17 @@ interface IUnit extends Document {
 }
 
 const unitSchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
     shortname: { type: String, default: '' },
     status: { type: Boolean, default: true },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 unitSchema.plugin(autoIncrement, { model: 'units', field: 'id', startAt: 1 });
 

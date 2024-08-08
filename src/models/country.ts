@@ -13,21 +13,21 @@ interface ICountry extends Document {
 }
 
 const countrySchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
     iso: { type: String, default: '' },
     std_code: { type: String, default: '' },
     status: { type: Boolean, default: true },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
-countrySchema.plugin(autoIncrement, { model: 'country', field: 'id', startAt: 1 });
+countrySchema.plugin(autoIncrement, { model: 'countries', field: 'id', startAt: 1 });
 
-const Country = model<ICountry>('country', countrySchema);
+const Country = model<ICountry>('countries', countrySchema);
 
 export default Country;

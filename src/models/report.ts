@@ -12,13 +12,13 @@ interface IReport extends Document {
 
 const ReportSchema: Schema = new Schema({
     message: { type: String, default: '' },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 ReportSchema.plugin(autoIncrement, { model: 'report', field: 'id', startAt: 1 });
 

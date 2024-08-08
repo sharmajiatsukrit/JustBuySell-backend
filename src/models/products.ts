@@ -17,7 +17,7 @@ interface IProducts extends Document {
 }
 
 const productsSchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     price: { type: Number, default: '' },
@@ -26,13 +26,13 @@ const productsSchema: Schema = new Schema({
     pack: { type: String, default: '' },
     product_image: { type: String, default: '', required: true },
     status: { type: Boolean, default: true },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 productsSchema.plugin(autoIncrement, { model: 'products', field: 'id', startAt: 1 });
 

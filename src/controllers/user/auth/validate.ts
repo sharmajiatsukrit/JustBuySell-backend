@@ -5,11 +5,7 @@ export default function validate(methodName: string) {
     switch (methodName) {
         case UserRouteEndPoints.SignIn:
             return [
-                body("email")
-                    .exists()
-                    .isEmail()
-                    .customSanitizer((value) => value && value.toLowerCase()),
-                body("password").exists(),
+                body("phone").exists(),
             ];
         case UserRouteEndPoints.ForgetPassword:
             return [

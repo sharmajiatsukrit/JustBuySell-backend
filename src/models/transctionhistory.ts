@@ -20,8 +20,8 @@ const TransactionSchema: Schema = new Schema({
     trnid: { type: String, default: '' },
     type: { type: Number, default: '' },
     status: { type: Boolean, default: true },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
     {
         timestamps: true,

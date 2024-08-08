@@ -1,6 +1,7 @@
 import expres, { Router } from "express";
 import { authAdmin, validateRequest } from "../../utils/middleware";
 import AuthRouter from "./auth";
+import AuthRoutes from "../user/auth";
 import CatRouter from "./category";
 import ProductRouter from "./products";
 import Banner from "./banner";
@@ -19,7 +20,7 @@ import Report from "./report";
 import Help from "../admin/help";
 
 const routes: Router = expres.Router();
-
+routes.use("/auth", AuthRoutes);
 routes.use("/category", CatRouter);
 routes.use("/products", ProductRouter);
 routes.use("/prodductrequest", Productrequest);

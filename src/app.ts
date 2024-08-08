@@ -7,16 +7,16 @@ import AppRoutes from "./routes";
 import { serverResponse } from "./utils";
 import Logger from "./utils/logger";
 import fs from 'fs';
-let http: any;
+let protocol: any;
 let sslOptions = {};
 if (process.env.NODE_ENV === "production") {
-    http = require("https");
+    protocol = require("https");
     sslOptions = {
-                key: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/privkey.pem"),
-                cert: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/cert.pem"),
-            };
-} else { 
-    http = require("http");
+        key: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/privkey.pem"),
+        cert: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/cert.pem"),
+    };
+} else {
+    protocol = require("http");
 }
 
 
@@ -48,14 +48,14 @@ declare global {
 
 export default class App {
     public app: express.Application;
-    
+
     constructor() {
         // express app
         this.app = express();
 
         // Cors Config
         this.app.use(cors());
-       
+
         // Load middleware
         this.loadMiddleWare();
         this.routeManager();
@@ -63,22 +63,22 @@ export default class App {
     }
 
     startServer(): void {
-        
+
         const port: number = Number(process.env.PORT) || 4001; // Port
         DataBase()
-        .then(() => {
-            console.log("Database connected");
-            let server = http.Server(sslOptions, this.app);
-            server.listen(port, () => {
-                console.log("Server started @ port ", port);
-            });
-        })
-        .catch((err) => console.log("Database connection failed", err));
+            .then(() => {
+                console.log("Database connected");
+                let server = protocol.Server(sslOptions, this.app);
+                server.listen(port, () => {
+                    console.log("Server started @ port ", port);
+                });
+            })
+            .catch((err) => console.log("Database connection failed", err));
     }
 
     loadMiddleWare(): void {
         // Body parser
-        this.app.use(express.json({limit: "20mb"}) as RequestHandler);
+        this.app.use(express.json({ limit: "20mb" }) as RequestHandler);
 
         this.app.use(express.urlencoded({ extended: true }) as RequestHandler);
 

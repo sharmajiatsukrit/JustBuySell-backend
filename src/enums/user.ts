@@ -9,7 +9,7 @@ export enum UserAccountStatus {
 export enum UserRouteEndPoints {
     Register = "Register",
     SocialSignIn = "SocialSignIn",
-    UploadUserImage="UploadUserImage",
+    UploadUserImage = "UploadUserImage",
     SignIn = "SignIn",
     Login = "Login",
     ForgetPassword = "ForgetPassword",
@@ -17,18 +17,19 @@ export enum UserRouteEndPoints {
     ResetOldPassword = "ResetOldPassword",
     VERIFYEMAIL = "VERIFYEMAIL",
     Delete = "Delete",
-    Getlist="Getlist",
-    getLimitlist="getLimitlist",
-    Getlimitlist="Getlimitlist",
-    Getsearch="Getsearch",
-    Addproductrequest="Addproductrequest",
-    Getbyid="Getbyid",
-    Gettransbyid="Gettransbyid",
+    Getlist = "Getlist",
+    getLimitlist = "getLimitlist",
+    Getlimitlist = "Getlimitlist",
+    Getsearch = "Getsearch",
+    Addproductrequest = "Addproductrequest",
+    Getbyid = "Getbyid",
+    Gettransbyid = "Gettransbyid",
     Verifyotplogin = "Vehicleotplogin"
 }
 
 export enum AdminRouteEndPoints {
-    SignIn = "SignIn"
+    SignIn = "SignIn",
+    Register = "Register"
 }
 
 export enum SocialType {

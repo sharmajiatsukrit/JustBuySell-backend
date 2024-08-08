@@ -23,9 +23,9 @@ const offersSchema: Schema = new Schema({
     origin: { type: Number, default: 0 },
     pin: { type: Number, default: 0 },
     status: { type: Number, default: 0 },
-    type: { type: String, default:0 },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    type: { type: String, default: 0 },
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
     {
         timestamps: true,

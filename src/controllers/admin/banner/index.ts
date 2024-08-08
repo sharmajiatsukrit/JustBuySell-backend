@@ -15,26 +15,46 @@ export default class BannerController {
 
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const { locale } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
-            const result = await Banner.find({}).sort({ id: -1 }).lean();
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            // Constructing the search query
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    isDeleted: false,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = { isDeleted: false, };
+            }
+
+            const result = await Banner.find(searchQuery)
+                .lean()
+                .skip(skip)
+                .limit(limitNumber).sort({ id: -1 });
             const totalCount = await Banner.countDocuments({});
 
             if (result.length > 0) {
                 const formattedResult = result.map((item: any) => ({
                     id: item.id,
                     name: item.name,
-                    bannerimg: `${process.env.APP_URL}/${item.bannerimg}`,
-                    url: item.url,
+                    banner: `${process.env.APP_URL}/${item.banner}`,
+                    external_url: item.external_url,
                     status: item.status,
                 }));
-
+                const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
-                    { result: formattedResult, totalCount }
+                    { result: formattedResult, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -44,7 +64,7 @@ export default class BannerController {
         }
     }
 
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -56,8 +76,8 @@ export default class BannerController {
                 const formattedResult = {
                     id: result.id,
                     name: result.name,
-                    bannerimg: `${process.env.APP_URL}/${result.bannerimg}`,
-                    url: result.url,
+                    banner: `${process.env.APP_URL}/${result.banner}`,
+                    external_url: result.external_url,
                     status: result.status,
                 };
 
@@ -70,27 +90,24 @@ export default class BannerController {
         }
     }
 
-    public async addBanner(req: Request, res: Response): Promise<any> {
+    public async add(req: Request, res: Response): Promise<any> {
         try {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name } = req.body;
+            const { name, external_url, status } = req.body;
 
-            let bannerimg: string | undefined;
-            if (req.files && typeof req.files === 'object') {
-                if ('bannerimg' in req.files) {
-                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
-                        bannerimg = files['bannerimg'][0].path;
-                    }
-                }
+            let banner: any;
+            if (req.file) {
+                banner = req?.file?.filename;
+            } else {
+                return serverResponse(res, HttpCodeEnum.OK, "No Banner Attached", {});
             }
 
             const banneradd = await Banner.create({
-                id: await this.generateNextBannerId(),
                 name: name,
-                bannerimg: bannerimg
+                external_url: external_url,
+                status: status
             });
 
             if (banneradd) {
@@ -103,7 +120,7 @@ export default class BannerController {
         }
     }
 
-    public async updateBanner(req: Request, res: Response): Promise<any> {
+    public async update(req: Request, res: Response): Promise<any> {
         try {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -111,12 +128,12 @@ export default class BannerController {
             const { name } = req.body;
             const { id } = req.params;
 
-            let bannerimg: string | undefined;
+            let banner: string | undefined;
             if (req.files && typeof req.files === 'object') {
-                if ('bannerimg' in req.files) {
+                if ('banner' in req.files) {
                     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    if (Array.isArray(files['bannerimg']) && files['bannerimg'].length > 0) {
-                        bannerimg = files['bannerimg'][0].path;
+                    if (Array.isArray(files['banner']) && files['banner'].length > 0) {
+                        banner = files['banner'][0].path;
                     }
                 }
             }
@@ -130,8 +147,8 @@ export default class BannerController {
                 bannerToUpdate.name = name;
             }
 
-            if (bannerimg) {
-                bannerToUpdate.bannerimg = bannerimg;
+            if (banner) {
+                bannerToUpdate.banner = banner;
             }
 
             const updatedBanner = await bannerToUpdate.save();
@@ -146,7 +163,7 @@ export default class BannerController {
         }
     }
 
-    public async deleteBanner(req: Request, res: Response): Promise<any> {
+    public async delete(req: Request, res: Response): Promise<any> {
         try {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -166,7 +183,7 @@ export default class BannerController {
         }
     }
 
-    public async updateBannerStatus(req: Request, res: Response): Promise<any> {
+    public async updateStatus(req: Request, res: Response): Promise<any> {
         try {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";

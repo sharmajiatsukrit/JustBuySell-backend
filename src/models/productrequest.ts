@@ -17,21 +17,21 @@ interface IProductRequest extends Document {
 }
 
 const productRequestSchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
     unitid: { type: Number, default: '' },
     pack: { type: String, default: '' },
     masterpack: { type: String, default: 0 },
     description: { type: String, default: 0 },
     status: { type: Number, default: 0 },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 },
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' },
     productImg: { type: String, default: '' },
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
 
 productRequestSchema.plugin(autoIncrement, { model: 'productrequest', field: 'id', startAt: 1 });

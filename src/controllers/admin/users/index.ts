@@ -32,74 +32,44 @@ export default class UserController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
-            // Aggregation pipeline with pagination
-            const result = await User.aggregate([
-                {
-                    $match: { type: 0 }
-                },
-                {
-                    $lookup: {
-                        from: "cities",
-                        localField: "city",
-                        foreignField: "id",
-                        as: "cities",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "id",
-                        as: "states",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "country",
-                        foreignField: "id",
-                        as: "countries",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "roles",
-                        localField: "role_id",
-                        foreignField: "id",
-                        as: "roles",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: limitNumber
-                }
-            ]).exec();
-    
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { phone: { $regex: search, $options: 'i' } },
+                        { date_of_birth: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } }, // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = {};
+            }
+            const result = await User.find(searchQuery)
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber).lean();
+
             // Get the total number of documents in the User collection that match the filter
-            const totalCount = await User.countDocuments({ type: 0 });
-    
+            const totalCount = await User.countDocuments();
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]),
-                    { result, totalPages, currentPage: pageNumber }
+                    { result, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -108,7 +78,7 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     // Checked
     public async getDetailsById(req: Request, res: Response): Promise<any> {
@@ -119,43 +89,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.aggregate([
-                {
-                    $match: { id: id, type: 0 }
-                },
-                {
-                    $lookup: {
-                        from: "cities",
-                        localField: "city",
-                        foreignField: "id",
-                        as: "cities",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "id",
-                        as: "states",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "country",
-                        foreignField: "id",
-                        as: "countries",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "roles",
-                        localField: "role_id",
-                        foreignField: "id",
-                        as: "roles",
-                    },
-                },
-            ]).exec();
+            const result = await User.find({ id: id }).lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
@@ -173,39 +107,80 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
-            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
-    
+
+            const { name, phone, email, date_of_birth, city_id, state_id, country_id, address, role_id, password } = req.body;
+
             // Validate password length
             if (password.length < 8) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "password-length"), {});
             }
-    
+
             // Check if email already exists
             const existingUser = await User.findOne({ email });
             if (existingUser) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
-    
-            const enpassword = await Bcrypt.hash(password, 10);
-    
+
+            const hashedPassword = await Bcrypt.hash(password, 10);
+            let profile_img: any;
+            if (req.file) {
+                profile_img = req?.file?.filename;
+            }
+
             const userData = await User.create({
-                name,
-                mobile_number: phone,
-                email,
-                address,
-                city: city_id,
-                state: state_id,
-                country: country_id,
-                role_id,
-                password: enpassword,
-                type: 0,
+                name: name,
+                phone: phone,
+                email: email,
+                password: hashedPassword,
+                date_of_birth: date_of_birth,
+                profile_img: profile_img,
+                city_id: city_id,
+                state_id: state_id,
+                country_id: country_id,
+                address: address,
+                role_id: role_id,
                 status: 1,
             });
-    
+
             const formattedUserData = await this.fetchUserDetails(userData.id);
-    
+
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-add"), formattedUserData);
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async update(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[update]";
+
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const { name, phone, email, date_of_birth, city_id, state_id, country_id, address, role_id, password } = req.body;
+            const id = parseInt(req.params.id);
+            const hashedPassword = await Bcrypt.hash(password, 10);
+            await User.findOneAndUpdate({ id: id }, {
+                name: name,
+                phone: phone,
+                email: email,
+                date_of_birth: date_of_birth,
+                city_id: city_id,
+                state_id: state_id,
+                country_id: country_id,
+                address: address,
+                role_id: role_id,
+                status: 1,
+            });
+
+
+
+            if (password.length >= 8) {
+                await User.findOneAndUpdate({ id: id }, { password: hashedPassword });
+            }
+            const userData: any = await this.fetchUserDetails(id);
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-update"), userData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -249,26 +224,7 @@ export default class UserController {
 
         return Promise.resolve({ is_email_verified: false });
     }
-    public async update(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[update]";
 
-            const user_id = parseInt(req.params.id);
-
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-            const { name, phone, email, address, city_id, state_id, country_id, role_id, password } = req.body;
-
-            await User.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id, password });
-
-            const userData: any = await this.fetchUserDetails(user_id);
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-update"), userData);
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
 
     // Checked
     public async delete(req: Request, res: Response): Promise<any> {
@@ -319,35 +275,35 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { id } = req.params;
             const { currentpass, newpass, confirmpass } = req.body;
-    
+
             // Fetch the user by id
             const user = await User.findOne({ id: id }).lean();
-    
+
             if (!user) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-    
+
             // Check if the current password matches the user's password
             const isMatch = await Bcrypt.compare(currentpass, user.password);
             if (!isMatch) {
                 return serverResponse(res, HttpCodeEnum.UNAUTHORIZED, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["incorrect-password"]), {});
             }
-    
+
             // Check if new password and confirm password match
             if (newpass !== confirmpass) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-mismatch"]), {});
             }
-    
+
             // Hash the new password
             const saltRounds = 10;
             const hashedPassword = await Bcrypt.hash(newpass, saltRounds);
-    
+
             // Update the user's password
             const updationstatus = await User.findOneAndUpdate({ id: id }, { password: hashedPassword }).lean();
-    
+
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["password-updated"]), {});
             } else {
@@ -364,7 +320,7 @@ export default class UserController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { id } = req.params;
 
             let product_image: string | undefined;
@@ -375,17 +331,17 @@ export default class UserController {
                     product_image = files['product_image'][0].path;
                 }
             }
-    
+
             // Fetch the user by id
             const user = await User.findOne({ id: id }).lean();
-    
+
             if (!user) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-    
+
             // Update the user's profile image
             const updationstatus = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
-    
+
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
             } else {
@@ -395,6 +351,6 @@ export default class UserController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
 }

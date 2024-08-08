@@ -12,20 +12,20 @@ interface ICity extends Document {
 }
 
 const citySchema: Schema = new Schema({
-    
+
     name: { type: String, default: '' },
     state_id: { type: String, default: '' },
     status: { type: Boolean, default: true },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
-citySchema.plugin(autoIncrement, { model: 'city', field: 'id', startAt: 1 });
+citySchema.plugin(autoIncrement, { model: 'cities', field: 'id', startAt: 1 });
 
-const Category = model<ICity>('city', citySchema);
+const Category = model<ICity>('cities', citySchema);
 
 export default Category;
