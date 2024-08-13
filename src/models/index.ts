@@ -17,11 +17,12 @@ import ProductRequest from './productrequest';
 import Offers from './offers';
 import Banner from './banner';
 import Watchlist from './watchlist';
+import WatchlistItem from './watchlist-items';
 import Productwatch from './productwatch';
 import Wallet from './wallet';
-import TransctionHistory from './transctionhistory';
+import Transaction from './transaction';
 import Customer from './customer';
 import Deviceid from "./deviceid";
 import Location from "./location";
 
-export { DataBase, User, Customer, Location, Deviceid, Sessions, Otps,Roles, Permissions, Configs, Notifications,Category,Product,Country,State,City,Unit,ProductRequest,Offers,Banner,Watchlist, Productwatch, Wallet, TransctionHistory };
+export { DataBase, User, Customer, Location, Deviceid, Sessions, Otps, Roles, Permissions, Configs, Notifications, Category, Product, Country, State, City, Unit, ProductRequest, Offers, Banner, Watchlist, WatchlistItem, Productwatch, Wallet, Transaction };

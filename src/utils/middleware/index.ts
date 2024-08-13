@@ -45,7 +45,7 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
 
         // Decode token
         if (!process.env.JWT_SECRET) throw new Error("JWT SECRET NOT SPECIFIED");
-        
+
         let decoded: any;
         try {
             decoded = JWT.verify(token, process.env.JWT_SECRET);
@@ -78,8 +78,8 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]));
         }
 
-        req.customer = { user_id: decoded.user_id, phone: decoded.mobile_number, superadmin: false };
-        Logger.info("authRequest: user: " + JSON.stringify(req.user));
+        req.customer = { object_id: decoded.object_id, user_id: decoded.user_id, phone: decoded.mobile_number, superadmin: false };
+        Logger.info("authRequest: user: " + JSON.stringify(req.customer));
 
         return next();
     } catch (err: any) {
@@ -164,7 +164,7 @@ async function authAdmin(req: Request, res: Response, next: NextFunction): Promi
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]));
         }
 
-        req.user = { user_id: decoded.user_id, email: decoded.email, superadmin: false };
+        req.user = { object_id: decoded.object_id, user_id: decoded.user_id, email: decoded.email, superadmin: false };
         Logger.info("authRequest: user: " + JSON.stringify(req.user));
 
         return next();

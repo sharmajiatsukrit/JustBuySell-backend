@@ -6,12 +6,15 @@ import Unit from './unit';
 
 interface IProductRequest extends Document {
     name: string;
-    unitid: number;
-    pack: string;
-    masterpack: string;
+    selling_unit: string;
+    individual_pack_size: string;
+    individual_pack_unit: string;
+    Individual_packing_type: string;
+    master_pack_qty: string;
+    product_image: string;
+    master_pack_type: string;
     description: string;
-    status: number;
-    productImg: string;
+    status: boolean;
     created_by: number;
     updated_by: number;
 }
@@ -19,14 +22,18 @@ interface IProductRequest extends Document {
 const productRequestSchema: Schema = new Schema({
 
     name: { type: String, default: '' },
-    unitid: { type: Number, default: '' },
-    pack: { type: String, default: '' },
-    masterpack: { type: String, default: 0 },
+    selling_unit: { type: String, default: '' },
+    individual_pack_size: { type: String, default: '' },
+    individual_pack_unit: { type: String, default: 0 },
+    Individual_packing_type: { type: String, default: 0 },
+    master_pack_qty: { type: String, default: 0 },
+    product_image: { type: String, default: '' },
+    master_pack_type: { type: String, default: 0 },
     description: { type: String, default: 0 },
-    status: { type: Number, default: 0 },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    status: { type: Boolean, default: true },
+    created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' },
-    productImg: { type: String, default: '' },
+
 },
     {
         timestamps: true,
@@ -34,9 +41,9 @@ const productRequestSchema: Schema = new Schema({
     });
 
 
-productRequestSchema.plugin(autoIncrement, { model: 'productrequest', field: 'id', startAt: 1 });
+productRequestSchema.plugin(autoIncrement, { model: 'product_requests', field: 'id', startAt: 1 });
 
-const ProductRequest = model<IProductRequest>('productrequest', productRequestSchema);
+const ProductRequest = model<IProductRequest>('product_requests', productRequestSchema);
 
 export default ProductRequest;
 

@@ -9,9 +9,9 @@ interface IUser extends Document {
     profile_img: string;
     password: string;
     date_of_birth: string;
-    country: number;
-    state: number;
-    city: number;
+    country_id: number;
+    state_id: number;
+    city_id: number;
     address: string;
     language_code: string;
     language: string;
@@ -19,6 +19,8 @@ interface IUser extends Document {
     device: string;
     role_id: number;
     status: number;
+    created_by: number;
+    updated_by: number;
 }
 
 const userSchema: Schema = new Schema({
@@ -37,7 +39,9 @@ const userSchema: Schema = new Schema({
     ip_address: { type: String, default: '' },
     device: { type: String, default: 'Android' },
     role_id: { type: Schema.Types.ObjectId, ref: 'roles' },
-    status: { type: Number, default: 1 }
+    status: { type: Number, default: 1 },
+    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
     {
         timestamps: true,

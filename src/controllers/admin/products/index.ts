@@ -27,14 +27,14 @@ export default class ProductController {
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             // Aggregation pipeline with pagination
             const result = await Product.aggregate([
                 {
@@ -62,19 +62,19 @@ export default class ProductController {
                     }
                 }
             ]).exec();
-    
+
             // Get the total number of documents in the Product collection
             const totalCount = await Product.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-    
+
                 // Modify each result item to include image_url
                 const formattedResults = result.map(item => ({
                     ...item,
                     image_url: `${process.env.APP_URL}/${item.image_path}` // Full URL of product image
                 }));
-    
+
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
@@ -88,7 +88,7 @@ export default class ProductController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     // Checked
 
@@ -133,33 +133,35 @@ export default class ProductController {
             const fn = "[add]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { name, description, category_id, status } = req.body;
-    
+
             let result: any;
-    
-            let product_image: string | undefined;
-            if (req.files && typeof req.files === 'object') {
-                if ('product_image' in req.files) {
-                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    product_image = files['product_image'][0].path; // Relative path of product image
-                }
-            }
-    
+            const category: any = Category.findOne({ id: category_id }).lean();
+
+
             result = await Product.create({
                 name: name,
                 description: description,
-                category_id: category_id,
-                product_image: product_image,
+                category_id: category._id,
                 status: status
             });
-    
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-add"), result.doc);
+            if (result) {
+                let product_image: any;
+                if (req.file) {
+                    product_image = req?.file?.filename;
+                    let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
+                }
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-add"), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     //update
     public async update(req: Request, res: Response): Promise<any> {
@@ -174,14 +176,7 @@ export default class ProductController {
             this.locale = (locale as string) || "en";
             const { name, description, price, unit_id, pack, category_id, status } = req.body;
 
-            let product_image: string | undefined;
-            if (req.files && typeof req.files === 'object') {
 
-                if ('product_image' in req.files) {
-                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    product_image = files['product_image'][0].path;
-                }
-            }
 
             let result: any = await Product.findOneAndUpdate(
                 { id: id },
@@ -189,10 +184,13 @@ export default class ProductController {
                     name: name,
                     description: description,
                     category_id: category_id,
-                    product_image: product_image,
                     status: status
                 });
-
+            let product_image: any;
+            if (req.file) {
+                product_image = req?.file?.filename;
+                let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
+            }
             const updatedData: any = await Product.find({ id: id }).lean();
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-update"), updatedData);

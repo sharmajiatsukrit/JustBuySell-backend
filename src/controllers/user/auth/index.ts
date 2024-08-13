@@ -89,7 +89,7 @@ export default class AuthController {
             }
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
-            const session = await this.createSession(userData.id, phone, req, userData.status, remember);
+            const session = await this.createSession(userData._id, userData.id, phone, req, userData.status, remember);
 
             if (session) {
                 formattedUserData.token = session.token;
@@ -167,7 +167,7 @@ export default class AuthController {
     }
 
     // Checked with encryption
-    private async createSession(user_id: number, mobile_number: number, req: Request, status: number, remember: boolean) {
+    private async createSession(object_id: any, user_id: number, mobile_number: number, req: Request, status: number, remember: boolean) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -193,6 +193,7 @@ export default class AuthController {
 
             const token: string = JWT.sign(
                 {
+                    object_id,
                     mobile_number,
                     user_id,
                     session_id: sessionData.id
@@ -225,63 +226,6 @@ export default class AuthController {
         }
     }
 
-    private async createSessionadminLogin(user_id: number, email: string, req: Request, status: number, remember: boolean) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
-        try {
-            if (!process.env.JWT_SECRET) {
-                throw new Error("JWT secret key undefined");
-            }
-
-            const ipAddress: string = (req.headers["X-Forwarded-For"] as string) || "";
-            const deviceDetails = getDeviceDetails(req);
-            const expiresIn = DateTime.now().plus({ days: (remember) ? 30 : 1 }).toISO();
-
-            const sessionData = await Sessions.create({
-                user_id,
-                status: true,
-                ip: ipAddress,
-                device_type: deviceDetails.device_type,
-                device_os: deviceDetails.device_os,
-                device_info: deviceDetails,
-                expires_in: expiresIn,
-                last_used: DateTime.now().toISO(),
-            });
-
-            const token: string = JWT.sign(
-                {
-                    email,
-                    user_id,
-                    session_id: sessionData.id
-                },
-                process.env.JWT_SECRET,
-                {
-                    expiresIn: (remember) ? "30d" : "1d",
-                }
-            );
-
-            sessionData.token = token;
-            await sessionData.save();
-
-            // Store session cache
-            const dbDataBuild: SessionManageData = {
-                session_id: sessionData.id,
-                user_id: sessionData.user_id,
-                token: token,
-                status: status,
-                is_valid: sessionData.status,
-            };
-
-            updateSeesionWithIpInfo(sessionData.id, ipAddress);
-            await session.commitTransaction();
-            return sessionData;
-        } catch (err: any) {
-            session.abortTransaction();
-            session.endSession();
-            return Promise.reject(err);
-        }
-    }
 
     // Checked
     public async authCheck(req: Request, res: Response) {
@@ -326,60 +270,7 @@ export default class AuthController {
         }
     }
 
-    // Checked with encryption
-    public async fetchUserDetailsLite(userId: number): Promise<any> {
-        try {
-            const userData: any = await User.findOne({ id: userId });
-            delete userData._doc.__enc_email;
-            delete userData._doc.__enc_communication_email;
-            delete userData._doc.__enc_mobile_number;
-            delete userData._doc.__enc_city;
 
-            if (!userData) {
-                throw new Error(constructResponseMsg(this.locale, "user-nf"));
-            }
-
-            const formattedUserData = removeObjectKeys(userData._doc, [
-                "username",
-                "password",
-                "mobile_number_country_code",
-                "mobile_number",
-                "is_mobile_number_verified",
-                "date_of_birth",
-                "city",
-                "country",
-                "country_code",
-                "address",
-                "job_title",
-                "account_status",
-                "social_handles",
-                "tax_id",
-                "view_mobile_journey",
-                "subscribed_to",
-                "device",
-                "ip_address",
-                "notify_on_email",
-                "notify_on_mobile",
-                "is_email_verified",
-                "is_profile_journey_completed",
-                "is_first_group_created",
-                "is_first_invite_sent",
-                "is_mobile_journey_completed",
-                "is_welcome_journey_completed",
-                "is_ai_journey_completed",
-                "referred_by",
-                "superadmin",
-                "createdAt",
-                "updatedAt"
-            ]);
-            const activeSubscriberData: any = {};
-            formattedUserData.active_subscriber = removeObjectKeys(activeSubscriberData, ["pubnub_channels"]);
-
-            return Promise.resolve(formattedUserData);
-        } catch (err: any) {
-            return Promise.reject(err);
-        }
-    }
 
     // Checked with encryption
     private async checkIfUserExists(email: string): Promise<Boolean> {
@@ -544,7 +435,7 @@ export default class AuthController {
             // Added for 2FA at signin
             if (signIn) {
                 const formattedUserData = await this.fetchUserDetails(userData.id || 0);
-                const session = await this.createSession(userData.id || 0, email, req, userData.account_status || 0, remember);
+                const session = await this.createSession(userData._id || 0, userData.id || 0, email, req, userData.account_status || 0, remember);
 
                 if (session) {
                     formattedUserData.token = session.token;
@@ -637,32 +528,12 @@ export default class AuthController {
         }
     }
 
-    // Checked
-    public async getUserLiteDetailsByid(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[getUserLiteDetailsByid]";
-            const { userid } = req.params;
-
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-            Logger.info(`${fileName + fn} user_id: ${userid}`);
-
-            const userData: any = await this.fetchUserDetailsLite(parseInt(userid));
-            userData.email = userData.email.split("@")[1] !== "socialemailnotfound.com" ? userData.email : null;
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "user-ds"), userData);
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
-
 
     // UnChecked
     public async refreshUserToken(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[refreshToken]";
-            const { user_id } = req.user;
+            const { user_id, object_id } = req.customer;
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const authId: any = req.headers.authorization?.split(" ");
@@ -670,7 +541,7 @@ export default class AuthController {
 
             const currentToken: any = await Sessions.findOne({ user_id: user_id, token: authId[1] }, { id: true }).lean();
             const formattedUserData: any = await this.fetchUserDetails(user_id);
-            const session: any = await this.createSession(formattedUserData.id, formattedUserData.communication_email, req, formattedUserData.account_status, true);
+            const session: any = await this.createSession(object_id, formattedUserData.id, formattedUserData.communication_email, req, formattedUserData.account_status, true);
             await Sessions.deleteOne({ id: currentToken.id });
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "token-ref"), { "token": session.token });
@@ -679,47 +550,6 @@ export default class AuthController {
         }
     }
 
-
-
-    public async adminSignIn(req: Request, res: Response): Promise<any> {
-        const fn = "[adminSignIn]";
-
-        try {
-            const { locale = "en" } = req.query;
-            this.locale = locale as string;
-
-            let { email, password, remember = true } = req.body;
-
-            // Remove spaces from email
-            email = removeSpace(email);
-
-            // Check if user exists
-            const user = await User.findOne({ email });
-            if (!user) {
-                throw new Error(constructResponseMsg(this.locale, "user-not-found"));
-            }
-
-            // Verify password
-            const isPasswordValid = await Bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
-                throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-            }
-
-            // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
-            const formattedUserData = await this.fetchUserDetails(user.id);
-            const session = await this.createSessionadminLogin(user.id, email, req, user.status, remember);
-
-            if (session) {
-                formattedUserData.token = session.token;
-            }
-
-            // Return successful response
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "logged-in"), formattedUserData);
-        } catch (err: any) {
-            console.error(`${fn} Error: ${err.message}`);
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
 
 
 }

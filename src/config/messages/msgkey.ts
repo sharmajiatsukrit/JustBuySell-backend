@@ -15,6 +15,9 @@ export const MessageKey: IObjectKeys = {
     "user-it": "user-it",
     "user-ua": "user-ua",
     "user-nf": "user-nf",
+    "notifications-fetched": "notifications-fetched",
+    "notifications-cleared": "notifications-cleared",
+    "notification-cleared": "notification-cleared",
     "email-already-exists": "email-already-exists",
     "invalid-password": "invalid-password",
     "logged-in": "logged-in",
@@ -64,7 +67,7 @@ export const MessageKey: IObjectKeys = {
     "unit-status": "unit-status",
     "unit-delete": "unit-delete",
 
-    "product-requested-add": "product-requested-add",
+    "product-requested": "product-requested",
     "product-requested-updated": "product-requested-updated",
     "product-requested-deleted": "product-requested-deleted",
     "product-request-fethed": "product-request-fethed",
@@ -96,6 +99,20 @@ export const MessageKey: IObjectKeys = {
     "deviceid-add": "deviceid-add",
     "deviceid-update": "deviceid-update",
     "location-update": "location-update",
-    "location-add": "location-add"
+    "location-add": "location-add",
+
+    "banner-fetched": "banner-fetched",
+    "banner-add": "banner-add",
+    "banner-update": "banner-update",
+    "banner-status": "banner-status",
+    "banner-delete": "banner-delete",
+
+    "watchlist-fetched": "watchlist-fetched",
+    "watchlist-add": "watchlist-add",
+    "watchlist-update": "watchlist-update",
+    "watchlist-status": "watchlist-status",
+    "watchlist-delete": "watchlist-delete",
+    "watchlist-item-add": "watchlist-item-add",
+    "watchlist-item-remove": "watchlist-item-remove",
 
 };

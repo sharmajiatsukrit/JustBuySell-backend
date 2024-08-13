@@ -1,5 +1,5 @@
 import expres, { Router } from "express";
-import Offers from "../../../controllers/user/postnewoffer";
+import Offers from "../../../controllers/user/offer";
 import { authRequest, validateRequest } from "../../../utils/middleware";
 import Fileupload from "../../../utils/middleware/multer";
 

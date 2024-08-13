@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { City,State } from "../../../models";
+import { City, State } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -26,16 +26,26 @@ export default class CityController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await City.find({}).sort([['id', 'desc']]).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const results = await City.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            const totalCount = await City.countDocuments({});
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -45,19 +55,19 @@ export default class CityController {
     }
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await City.find({ id: id }).lean();
+            const result: any = await City.findOne({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -74,19 +84,20 @@ export default class CityController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, state_id, status} = req.body;
+            const { name, state_id, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await City.create({
-                    name:name,
-                    state_id:state_id,
-                    status: status
-                });
-            
+                name: name,
+                state_id: state_id,
+                status: status,
+                created_by: req.user.object_id
+            });
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "city-add"), result.doc);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -97,25 +108,26 @@ export default class CityController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} city_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, state_id, status} = req.body;
-            
+            const { name, state_id, status } = req.body;
+
             let result: any = await City.findOneAndUpdate(
                 { id: id },
                 {
-                    name:name,
-                    state_id:state_id,
-                    status: status
+                    name: name,
+                    state_id: state_id,
+                    status: status,
+                    updated_by: req.user.object_id
                 });
 
             const updatedData: any = await City.find({ id: id }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-update"), updatedData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "city-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -124,7 +136,7 @@ export default class CityController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -133,7 +145,7 @@ export default class CityController {
             const result = await City.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-delete"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -145,17 +157,17 @@ export default class CityController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await City.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await City.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await City.find({ id: id }).lean();
             if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-status"]), updatedData);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

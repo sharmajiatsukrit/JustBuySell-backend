@@ -7,9 +7,9 @@ const routes: Router = expres.Router();
 const categoryController = new CategoryController();
 
 routes.get("/list", validateRequest, authAdmin, categoryController.getList.bind(categoryController));
-routes.post("/add", upload.single("cat_image"), authAdmin, validateRequest, categoryController.add.bind(categoryController));
-routes.put("/update/:id", upload.single("cat_image"), validateRequest, authAdmin, categoryController.update.bind(categoryController));
-routes.get("/by-id/:id", validateRequest, authAdmin, categoryController.getDetailsById.bind(categoryController));
+routes.post("/add", validateRequest, authAdmin, upload.single("cat_img"), categoryController.add.bind(categoryController));
+routes.put("/update/:id", validateRequest, authAdmin, upload.single("cat_img"), categoryController.update.bind(categoryController));
+routes.get("/by-id/:id", validateRequest, authAdmin, categoryController.getById.bind(categoryController));
 routes.delete("/delete/:id", validateRequest, authAdmin, categoryController.delete.bind(categoryController));
 routes.patch("/status/:id", validateRequest, authAdmin, categoryController.status.bind(categoryController));
 

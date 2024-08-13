@@ -69,7 +69,7 @@ export default class UserController {
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]),
-                    { result, totalPages, totalCount, currentPage: pageNumber }
+                    { data: result, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -81,7 +81,7 @@ export default class UserController {
 
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getDetailsById]";
             // Set locale
@@ -89,9 +89,9 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.find({ id: id }).lean();
+            const result = await User.findOne({ id: id }).lean();
 
-            if (result.length > 0) {
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -140,6 +140,7 @@ export default class UserController {
                 address: address,
                 role_id: role_id,
                 status: 1,
+                created_by: req.user.object_id
             });
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
@@ -171,6 +172,7 @@ export default class UserController {
                 address: address,
                 role_id: role_id,
                 status: 1,
+                updated_by: req.user.object_id
             });
 
 

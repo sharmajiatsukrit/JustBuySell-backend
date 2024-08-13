@@ -14,7 +14,7 @@ interface ICity extends Document {
 const citySchema: Schema = new Schema({
 
     name: { type: String, default: '' },
-    state_id: { type: String, default: '' },
+    state_id: { type: Schema.Types.ObjectId, ref: 'states' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

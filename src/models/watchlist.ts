@@ -14,8 +14,8 @@ const WatchlistSchema: Schema = new Schema({
 
     name: { type: String, default: '' },
     status: { type: Boolean, default: true },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
+    created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'customers' }
 },
     {
         timestamps: true,

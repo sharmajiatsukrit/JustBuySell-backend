@@ -14,7 +14,7 @@ interface IState extends Document {
 const stateSchema: Schema = new Schema({
 
     name: { type: String, default: '' },
-    country_id: { type: Number, default: '' },
+    country_id: { type: Schema.Types.ObjectId, ref: 'countries' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
@@ -24,8 +24,8 @@ const stateSchema: Schema = new Schema({
         versionKey: false
     });
 
-stateSchema.plugin(autoIncrement, { model: 'state', field: 'id', startAt: 1 });
+stateSchema.plugin(autoIncrement, { model: 'states', field: 'id', startAt: 1 });
 
-const State = model<IState>('state', stateSchema);
+const State = model<IState>('states', stateSchema);
 
 export default State;

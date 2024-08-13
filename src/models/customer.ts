@@ -26,7 +26,7 @@ interface ICustomer extends Document {
 
 const customerSchema: Schema = new Schema({
     name: { type: String, default: '' },
-    phone: { type: String, default: '', required: true, index: { unique: true } },
+    phone: { type: String, required: true, index: { unique: true } },
     email: { type: String },
     company_name: { type: String, default: '' },
     brand_name: { type: String, default: '' },
@@ -50,7 +50,7 @@ const customerSchema: Schema = new Schema({
         versionKey: false
     });
 
-customerSchema.plugin(autoIncrement, { model: 'customer', field: 'id', startAt: 1 });
+customerSchema.plugin(autoIncrement, { model: 'customers', field: 'id', startAt: 1 });
 
 customerSchema.plugin(mongooseFieldEncryption, {
     fields: [],
@@ -58,6 +58,6 @@ customerSchema.plugin(mongooseFieldEncryption, {
     saltGenerator: () => { return process.env.JWT_SECRET?.slice(0, 16) }
 });
 
-const Customer = model<ICustomer>('customer', customerSchema);
+const Customer = model<ICustomer>('customers', customerSchema);
 
 export default Customer;

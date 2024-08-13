@@ -9,11 +9,13 @@ import Logger from "./utils/logger";
 import fs from 'fs';
 let protocol: any;
 let sslOptions = {};
-if (process.env.NODE_ENV === "production") {
+if (process.env.SSL === "enabled") {
     protocol = require("https");
+    const sslkey: any = process.env.SSL_KEY;
+    const sslcert: any = process.env.SSL_CERT;
     sslOptions = {
-        key: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/privkey.pem"),
-        cert: fs.readFileSync("/etc/letsencrypt/live/api.justbuysell.com/cert.pem"),
+        key: fs.readFileSync(sslkey),
+        cert: fs.readFileSync(sslcert),
     };
 } else {
     protocol = require("http");
@@ -24,6 +26,7 @@ declare global {
     namespace Express {
         interface Request {
             user: {
+                object_id: any;
                 user_id: number;
                 email: string;
                 superadmin: boolean;
@@ -37,6 +40,7 @@ declare global {
     namespace Express {
         interface Request {
             customer: {
+                object_id: any;
                 user_id: number;
                 phone: string;
                 superadmin: boolean;

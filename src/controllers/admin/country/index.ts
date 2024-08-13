@@ -26,16 +26,26 @@ export default class CountryController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await Country.find({}).sort([['id', 'desc']]).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-fetched"]), result);
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const results = await Country.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            const totalCount = await Country.countDocuments({});
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            console.log(req.user);
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -45,18 +55,18 @@ export default class CountryController {
     }
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Country.find({ id: id }).lean();
-            console.log(result);
-            
-            if (result.length > 0) {
+            const result: any = await Country.findOne({ id: id }).lean();
+            // console.log(result);
+
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -74,18 +84,17 @@ export default class CountryController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, iso, std_code, status} = req.body;
+            const { name, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await Country.create({
-                     name: name,
-                    iso:iso,
-                    std_code:std_code,
-                    status: status
-                });
-            
+                name: name,
+                status: status,
+                created_by: req.user.object_id
+            });
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "country-add"), result.doc);
         } catch (err: any) {
@@ -98,21 +107,20 @@ export default class CountryController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, iso, std_code, status} = req.body;
-            
+            const { name, status } = req.body;
+
             let result: any = await Country.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
-                    iso:iso,
-                    std_code:std_code,
-                    status: status
+                    status: status,
+                    updated_by: req.user.object_id
                 });
 
             const updatedData: any = await Country.find({ id: id }).lean();
@@ -126,7 +134,7 @@ export default class CountryController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -147,14 +155,14 @@ export default class CountryController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Country.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await Country.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Country.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-status"]), updatedData);

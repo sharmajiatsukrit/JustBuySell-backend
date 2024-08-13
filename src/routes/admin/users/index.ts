@@ -9,7 +9,7 @@ const userController = new UserController();
 routes.get("/list", validateRequest, authAdmin, userController.getList.bind(userController));
 routes.post("/add", validateRequest, authAdmin, upload.single("profile_img"), userController.add.bind(userController));
 routes.put("/update/:id", validateRequest, authAdmin, upload.single("profile_img"), userController.update.bind(userController));
-routes.get("/by-id/:id", validateRequest, authAdmin, userController.getDetailsById.bind(userController));
+routes.get("/by-id/:id", validateRequest, authAdmin, userController.getById.bind(userController));
 routes.delete("/delete/:id", validateRequest, authAdmin, userController.delete.bind(userController));
 routes.patch("/status/:id", validateRequest, authAdmin, userController.status.bind(userController));
 // routes.patch("/changepass/:id", validateRequest, authAdmin, userController.changePass.bind(userController));

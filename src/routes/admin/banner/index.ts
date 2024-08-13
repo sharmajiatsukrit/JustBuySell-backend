@@ -7,7 +7,7 @@ const routes: Router = expres.Router();
 const bannerController = new BannerController();
 
 routes.get("/list", validateRequest, authAdmin, bannerController.getList.bind(bannerController));
-routes.get("/get-by-id/:id", validateRequest, authAdmin, bannerController.getById.bind(bannerController));
+routes.get("/by-id/:id", validateRequest, authAdmin, bannerController.getById.bind(bannerController));
 routes.post("/add", validateRequest, authAdmin, upload.single("banner"), bannerController.add.bind(bannerController));
 routes.patch("/update/:id", validateRequest, authAdmin, upload.single("banner"), bannerController.update.bind(bannerController));
 routes.delete("/delete/:id", validateRequest, authAdmin, bannerController.delete.bind(bannerController));

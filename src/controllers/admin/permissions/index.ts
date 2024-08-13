@@ -30,21 +30,21 @@ export default class PermissionController {
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             const result = await Permissions.find({})
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
-    
+
             // Get the total number of documents in the Permissions collection
             const totalCount = await Permissions.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
@@ -60,12 +60,12 @@ export default class PermissionController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -73,7 +73,7 @@ export default class PermissionController {
             const id = parseInt(req.params.id);
             const result: any = await Permissions.find({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]), result);
             } else {
@@ -92,17 +92,18 @@ export default class PermissionController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, status} = req.body;
+            const { name, description, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await Permissions.create({
-                    name:name,
-                    description:description,
-                    status: status
-                });
-            
+                name: name,
+                description: description,
+                status: status,
+                created_by: req.user.object_id
+            });
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "permission-add"), result.doc);
         } catch (err: any) {
@@ -115,20 +116,21 @@ export default class PermissionController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, status} = req.body;
-            
+            const { name, description, status } = req.body;
+
             let result: any = await Permissions.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
-                    description:description,
-                    status: status
+                    description: description,
+                    status: status,
+                    updated_by: req.user.object_id
                 });
 
             const updatedData: any = await Permissions.find({ id: id }).lean();
@@ -142,7 +144,7 @@ export default class PermissionController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -163,14 +165,14 @@ export default class PermissionController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Permissions.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await Permissions.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Permissions.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-status"]), updatedData);

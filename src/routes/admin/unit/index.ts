@@ -8,7 +8,7 @@ const unitController = new UnitController();
 routes.get("/list", validateRequest, authAdmin, unitController.getList.bind(unitController));
 routes.post("/add", validateRequest, authAdmin, unitController.add.bind(unitController));
 routes.put("/update/:id", validateRequest, authAdmin, unitController.update.bind(unitController));
-routes.get("/by-id/:id", validateRequest, authAdmin, unitController.getDetailsById.bind(unitController));
+routes.get("/by-id/:id", validateRequest, authAdmin, unitController.getById.bind(unitController));
 routes.delete("/delete/:id", validateRequest, authAdmin, unitController.delete.bind(unitController));
 routes.patch("/status/:id", validateRequest, authAdmin, unitController.status.bind(unitController));
 

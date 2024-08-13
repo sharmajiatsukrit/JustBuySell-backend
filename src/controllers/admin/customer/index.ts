@@ -42,53 +42,7 @@ export default class UserController {
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-            // Aggregation pipeline with pagination
-            // const result = await Customer.aggregate([
-            //     {
-            //         $match: { type: 1 }
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: "cities",
-            //             localField: "city",
-            //             foreignField: "id",
-            //             as: "cities",
-            //         },
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: "states",
-            //             localField: "state",
-            //             foreignField: "id",
-            //             as: "states",
-            //         },
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: "countries",
-            //             localField: "country",
-            //             foreignField: "id",
-            //             as: "countries",
-            //         },
-            //     },
-            //     {
-            //         $lookup: {
-            //             from: "roles",
-            //             localField: "role_id",
-            //             foreignField: "id",
-            //             as: "roles",
-            //         },
-            //     },
-            //     {
-            //         $sort: { id: -1 }
-            //     },
-            //     {
-            //         $skip: skip
-            //     },
-            //     {
-            //         $limit: limitNumber
-            //     }
-            // ]).exec();
+
             let searchQuery = {};
             if (search) {
                 searchQuery = {
@@ -103,12 +57,12 @@ export default class UserController {
             } else {
                 searchQuery = {};
             }
-            const result = await User.find(searchQuery)
+            const result = await Customer.find(searchQuery)
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber).lean();
 
-            const totalCount = await Customer.countDocuments({ type: 1 });
+            const totalCount = await Customer.countDocuments({});
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
@@ -116,7 +70,7 @@ export default class UserController {
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]),
-                    { result, totalPages, totalCount, currentPage: pageNumber }
+                    { data: result, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -128,54 +82,18 @@ export default class UserController {
 
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Customer.aggregate([
-                {
-                    $match: { id: id, type: 1 }
-                },
-                {
-                    $lookup: {
-                        from: "cities",
-                        localField: "city",
-                        foreignField: "id",
-                        as: "cities",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "id",
-                        as: "states",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "country",
-                        foreignField: "id",
-                        as: "countries",
-                    },
-                },
-                {
-                    $lookup: {
-                        from: "roles",
-                        localField: "role_id",
-                        foreignField: "id",
-                        as: "roles",
-                    },
-                },
-            ]).exec();
+            const results = await Customer.findOne({ id: id }).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), result);
+            if (results) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), results);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -194,8 +112,6 @@ export default class UserController {
 
             const { name, phone, email, company_name, brand_name, company_logo, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
 
-
-
             // Check if email already exists
             const existingUser = await Customer.findOne({ phone: phone });
             if (existingUser) {
@@ -203,7 +119,7 @@ export default class UserController {
             }
 
 
-            const userData = await Customer.create({
+            const result: any = await Customer.create({
                 name: name,
                 phone: phone,
                 email: email,
@@ -219,8 +135,16 @@ export default class UserController {
                 parent_id: parent_id,
                 status: status,
             });
+            if (result) {
+                let company_logo: any;
+                if (req.file) {
+                    company_logo = req?.file?.filename;
+                    let resultimage: any = await Customer.findOneAndUpdate({ id: result.id }, { company_logo: company_logo });
+                }
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), {});
+            } else {
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), {});
+            }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -269,16 +193,36 @@ export default class UserController {
         try {
             const fn = "[update]";
 
-            const user_id = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, email, address, city_id, state_id, country_id, role_id } = req.body;
+            const { name, phone, email, company_name, brand_name, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
 
-            await Customer.findOneAndUpdate({ id: user_id }, { name, phone, email, address, city_id, state_id, country_id, role_id });
+            const result: any = await Customer.findOneAndUpdate({ id: id }, {
+                name: name,
+                phone: phone,
+                email: email,
+                company_name: company_name,
+                brand_name: brand_name,
+                gst: gst,
+                telephone: telephone,
+                company_email: company_email,
+                address_line_1: address_line_1,
+                address_line_2: address_line_2,
+                open_time: open_time,
+                close_time: close_time,
+                parent_id: parent_id,
+                status: status,
+            });
 
-            const userData: any = await this.fetchUserDetails(user_id);
+            let company_logo: any;
+            if (req.file) {
+                company_logo = req?.file?.filename;
+                let resultimage: any = await Customer.findOneAndUpdate({ id: id }, { company_logo: company_logo });
+            }
+            const userData: any = await Customer.findOne({ id: id });
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
         } catch (err: any) {
@@ -286,26 +230,6 @@ export default class UserController {
         }
     }
 
-    public async profileUpdate(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[update]";
-
-            const { user_id: userid } = req.customer;
-
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
-            const { name, phone, email, gstnumber, telephonenumber, address, pincode } = req.body;
-
-            await Customer.findOneAndUpdate({ id: userid }, { name, phone, email, gst_no: gstnumber, telephonenumber, address, pincode });
-
-            const userData: any = await this.fetchUserDetails(userid);
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
 
     // Checked
     public async delete(req: Request, res: Response): Promise<any> {

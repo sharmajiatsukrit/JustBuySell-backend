@@ -30,24 +30,24 @@ export default class UnitController {
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             // Fetch documents with pagination
             const result = await Unit.find({})
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
-    
+
             // Get the total number of documents in the Unit collection
             const totalCount = await Unit.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
@@ -63,12 +63,12 @@ export default class UnitController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getDetailsById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -76,7 +76,7 @@ export default class UnitController {
             const id = parseInt(req.params.id);
             const result: any = await Unit.find({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
             } else {
@@ -95,17 +95,18 @@ export default class UnitController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, shortname, status} = req.body;
+            const { name, shortname, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await Unit.create({
-                    name:name,
-                    shortname:shortname,
-                    status: status
-                });
-            
+                name: name,
+                shortname: shortname,
+                status: status,
+                created_by: req.user.object_id
+            });
+
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "unit-add"), result.doc);
         } catch (err: any) {
@@ -118,20 +119,21 @@ export default class UnitController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} category_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, shortname, status} = req.body;
-            
+            const { name, shortname, status } = req.body;
+
             let result: any = await Unit.findOneAndUpdate(
                 { id: id },
                 {
-                    name:name,
-                    shortname:shortname,
-                    status: status
+                    name: name,
+                    shortname: shortname,
+                    status: status,
+                    updated_by: req.user.object_id
                 });
 
             const updatedData: any = await Unit.find({ id: id }).lean();
@@ -145,7 +147,7 @@ export default class UnitController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -166,14 +168,14 @@ export default class UnitController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Unit.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await Unit.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await Unit.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-status"]), updatedData);

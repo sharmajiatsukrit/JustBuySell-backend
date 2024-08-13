@@ -21,10 +21,10 @@ const productsSchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     price: { type: Number, default: '' },
-    category_id: { type: Number, default: 0 },
+    category_id: { type: Schema.Types.ObjectId, ref: 'categories' },
     unit_id: { type: Number, default: '' },
     pack: { type: String, default: '' },
-    product_image: { type: String, default: '', required: true },
+    product_image: { type: String, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

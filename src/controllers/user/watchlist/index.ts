@@ -23,41 +23,31 @@ export default class WatchlistController {
         return validate(endPoint);
     }
 
+
+
+    // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
-
             const skip = (pageNumber - 1) * limitNumber;
 
-            const result = await Watchlist.find({})
-                .sort({ id: -1 })
+            const results = await Watchlist.find({ created_by: req.customer.object_id })
+                .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            const totalCount = await Watchlist.countDocuments({});
+            const totalCount = await Watchlist.countDocuments({ created_by: req.customer.object_id });
+            const totalPages = Math.ceil(totalCount / limitNumber);
 
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                const formattedResult = result.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    status: item.status
-                    // Add other fields as needed
-                }));
-
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]),
-                    { result: formattedResult, totalCount, totalPages, currentPage: pageNumber }
-                );
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -65,73 +55,47 @@ export default class WatchlistController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    public async getbyid(req: Request, res: Response): Promise<any> {
+
+    // Checked
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getList]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
-            const { id } = req.params;
-    
-            let result;
-            if (id) {
-                // Find by ID if provided
-                result = await Watchlist.find({ id }).lean();
-                if (result.length === 0) {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                } else {
-                    // Format the result if found in Watchlist
-                    result = result.map(item => ({
-                        id: item.id,
-                        name: item.name,
-                        status: item.status
-                        // add other fields as needed
-                    }));
-                }
+
+            const id = parseInt(req.params.id);
+            const result: any = await Watchlist.findOne({ id: id }).lean();
+            console.log(result);
+
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
             } else {
-                // Get all products sorted by ID in descending order
-                result = await Product.find({}).sort({ id: -1 }).lean();
-                if (result.length === 0) {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                } else {
-                    // Format the product results if needed
-                    result = result.map(product => ({
-                        id: product.id,
-                        name: product.name,
-                        description: product.description,
-                        price: product.price,
-                        category_id: product.category_id,
-                        unit_id: product.unit_id,
-                        product_image: product.product_image,
-                        status: product.status
-                        // add other fields as needed
-                    }));
-                }
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-    
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-       public async addWatchlist(req: Request, res: Response): Promise<any> {
+    public async add(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[updateProfileImg]";
+            const fn = "[add]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const { name } = req.body;
 
-            const banneradd = await Watchlist.create({
+            const result: any = await Watchlist.create({
                 name: name,
+                status: true,
+                created_by: req.customer.object_id
             });
 
-            if (banneradd) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-create"]), {});
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-add"]), {});
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["server-error"]));
             }
         } catch (err: any) {
             console.error(err);
@@ -139,10 +103,9 @@ export default class WatchlistController {
         }
     }
 
-
-    public async editWatchlist(req: Request, res: Response): Promise<any> {
+    public async update(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[editWatchlist]";
+            const fn = "[update]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -162,9 +125,9 @@ export default class WatchlistController {
         }
     }
 
-    public async deleteWatchlist(req: Request, res: Response): Promise<any> {
+    public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[deleteWatchlist]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -175,10 +138,10 @@ export default class WatchlistController {
             console.log(`${fn} Attempting to delete watchlist with id: ${id}`);
 
             // Find the watchlist by id
-            const watchlist = await Watchlist.find({id: id});
+            const watchlist = await Watchlist.find({ id: id });
 
             if (!watchlist) {
-                return serverResponse(res, HttpCodeEnum.NOTFOUND, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-notfound"]), {});
+                return serverResponse(res, HttpCodeEnum.NOTFOUND, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]), {});
             }
 
             await Watchlist.deleteOne();

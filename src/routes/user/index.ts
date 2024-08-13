@@ -2,41 +2,30 @@ import expres, { Router } from "express";
 import { authAdmin, validateRequest } from "../../utils/middleware";
 import AuthRouter from "./auth";
 import AuthRoutes from "../user/auth";
-import CatRouter from "./category";
-import ProductRouter from "./products";
-import Banner from "./banner";
-import Mosttradeprojects from "./mosttradeprojects";
-import Newlyaddedproducts from "./newlyaddedprojects";
-import Productrequest from "./productrequest";
+
+
 import SearchRouter from "./search";
-import Offer from "./postoffer";
-import Watchlist from "./watchlist";
-import Productwatch from "./productwatch";
-import Wallet from "./wallet";
 import Deviceid from "./deviceid";
-import Location from "./location";
-import Customer from "../admin/customer";
-import Report from "./report";
-import Help from "../admin/help";
+
+import DashboardRoutes from "./dashboard";
+import WatchlistRoutes from "./watchlist";
+import OfferRoutes from "./offer";
+import AccountRoutes from "../user/account";
+import NotificationRoutes from "../user/notification";
+import HelperRoutes from "../user/helper";
 
 const routes: Router = expres.Router();
 routes.use("/auth", AuthRoutes);
-routes.use("/category", CatRouter);
-routes.use("/products", ProductRouter);
-routes.use("/prodductrequest", Productrequest);
-routes.use("/banner", Banner);
-routes.use("/mosttradeprojects", Mosttradeprojects);
-routes.use("/newlyaddedproducts", Newlyaddedproducts);
 routes.use("/search", SearchRouter);
-routes.use("/Offer", Offer);
-routes.use("/watchlist", Watchlist);
-routes.use("/productwatch", Productwatch);
-routes.use("/wallet", Wallet);
-routes.use("/firebase", Deviceid);
-routes.use("/location", Location);
-routes.use("/customer", Customer);
-routes.use("/report", Report);
-routes.use("/help", Help);
 
+
+routes.use("/firebase", Deviceid);
+
+routes.use("/dashboard", DashboardRoutes);
+routes.use("/watchlist", WatchlistRoutes);
+routes.use("/offer", OfferRoutes);
+routes.use("/account", AccountRoutes);
+routes.use("/notifications", NotificationRoutes);
+routes.use("/helper", HelperRoutes);
 
 export default routes;

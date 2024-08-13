@@ -61,7 +61,7 @@ export default class AuthController {
 
             // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
             const formattedUserData = await this.fetchUserDetails(user.id);
-            const session = await this.createSessionadminLogin(user.id, email, req, user.status, remember);
+            const session = await this.createSessionadminLogin(user._id, user.id, email, req, user.status, remember);
 
             if (session) {
                 formattedUserData.token = session.token;
@@ -112,6 +112,7 @@ export default class AuthController {
                 });
             } else {
                 userData = {
+                    _id: isUserExists._id,
                     id: isUserExists.id,
                     email: isUserExists.email,
                     status: true
@@ -119,7 +120,7 @@ export default class AuthController {
             }
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
-            const session = await this.createSession(userData.id, email, req, userData.status, false);
+            const session = await this.createSession(userData._id, userData.id, email, req, userData.status, false);
             // const otp = await this.generateOtp(userData.id);
             // this.emailService.otpEmail(userData.email, otp);
 
@@ -165,7 +166,7 @@ export default class AuthController {
     }
 
     // Checked with encryption
-    private async createSession(user_id: number, mobile_number: number, req: Request, status: number, remember: boolean) {
+    private async createSession(object_id: any, user_id: number, mobile_number: number, req: Request, status: number, remember: boolean) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -191,6 +192,7 @@ export default class AuthController {
 
             const token: string = JWT.sign(
                 {
+                    object_id,
                     mobile_number,
                     user_id,
                     session_id: sessionData.id
@@ -223,7 +225,7 @@ export default class AuthController {
         }
     }
 
-    private async createSessionadminLogin(user_id: number, email: string, req: Request, status: number, remember: boolean) {
+    private async createSessionadminLogin(object_id: any, user_id: number, email: string, req: Request, status: number, remember: boolean) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -249,6 +251,7 @@ export default class AuthController {
 
             const token: string = JWT.sign(
                 {
+                    object_id,
                     email,
                     user_id,
                     session_id: sessionData.id
@@ -337,7 +340,7 @@ export default class AuthController {
 
             const currentToken: any = await Sessions.findOne({ user_id: user_id, token: authId[1] }, { id: true }).lean();
             const formattedUserData: any = await this.fetchUserDetails(user_id);
-            const session: any = await this.createSession(formattedUserData.id, formattedUserData.communication_email, req, formattedUserData.account_status, true);
+            const session: any = await this.createSession(formattedUserData._id, formattedUserData.id, formattedUserData.communication_email, req, formattedUserData.account_status, true);
             await Sessions.deleteOne({ id: currentToken.id });
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "token-ref"), { "token": session.token });

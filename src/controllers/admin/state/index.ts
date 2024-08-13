@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Country,State } from "../../../models";
+import { Country, State } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -26,16 +26,27 @@ export default class StateController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getList]";
+            const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await State.find({}).sort([['id', 'desc']]).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const results = await State.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            const totalCount = await State.countDocuments({});
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            // const result = await State.find({}).sort([['id', 'desc']]).lean();
+
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -45,9 +56,9 @@ export default class StateController {
     }
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -55,9 +66,9 @@ export default class StateController {
             const id = parseInt(req.params.id);
             const result: any = await State.find({ id: id }).lean();
             console.log(result);
-            
+
             if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -74,19 +85,20 @@ export default class StateController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name,  country_id, status} = req.body;
+            const { name, country_id, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await State.create({
-                    name:name,
-                    country_id:country_id,
-                    status: status
-                });
-            
+                name: name,
+                country_id: country_id,
+                status: status,
+                created_by: req.user.object_id
+            });
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-add"), result.doc);
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "state-add"), result.doc);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -97,25 +109,26 @@ export default class StateController {
         try {
             const fn = "[update]";
 
-            const  id  = parseInt(req.params.id);
+            const id = parseInt(req.params.id);
             Logger.info(`${fileName + fn} state_id: ${id}`);
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name,  country_id, status} = req.body;
-            
+            const { name, country_id, status } = req.body;
+
             let result: any = await State.findOneAndUpdate(
                 { id: id },
                 {
-                    name:name,
-                    country_id:country_id,
-                    status: status
+                    name: name,
+                    country_id: country_id,
+                    status: status,
+                    updated_by: req.user.object_id
                 });
 
             const updatedData: any = await State.find({ id: id }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-update"), updatedData);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "state-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -124,7 +137,7 @@ export default class StateController {
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[delete]";
+            const fn = "[delete]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
@@ -133,7 +146,7 @@ export default class StateController {
             const result = await State.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-delete"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -145,17 +158,17 @@ export default class StateController {
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[status]";
+            const fn = "[status]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await State.findOneAndUpdate({ id: id }, {status:status}).lean();
+            const updationstatus = await State.findOneAndUpdate({ id: id }, { status: status }).lean();
             const updatedData: any = await State.find({ id: id }).lean();
             if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-status"]), updatedData);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-status"]), updatedData);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

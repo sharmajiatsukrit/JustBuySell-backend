@@ -26,13 +26,13 @@ export default class BannerController {
             let searchQuery = {};
             if (search) {
                 searchQuery = {
-                    isDeleted: false,
+                    // isDeleted: false,
                     $or: [
                         { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
                     ]
                 };
             } else {
-                searchQuery = { isDeleted: false, };
+                searchQuery = {};
             }
 
             const result = await Banner.find(searchQuery)
@@ -41,11 +41,12 @@ export default class BannerController {
                 .limit(limitNumber).sort({ id: -1 });
             const totalCount = await Banner.countDocuments({});
 
+
             if (result.length > 0) {
                 const formattedResult = result.map((item: any) => ({
                     id: item.id,
                     name: item.name,
-                    banner: `${process.env.APP_URL}/${item.banner}`,
+                    banner: `${process.env.RESOURCE_URL}${item.banner}`,
                     external_url: item.external_url,
                     status: item.status,
                 }));
@@ -54,7 +55,7 @@ export default class BannerController {
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-fetched"]),
-                    { result: formattedResult, totalPages, totalCount, currentPage: pageNumber }
+                    { data: formattedResult, totalPages, totalCount, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -76,7 +77,7 @@ export default class BannerController {
                 const formattedResult = {
                     id: result.id,
                     name: result.name,
-                    banner: `${process.env.APP_URL}/${result.banner}`,
+                    banner: `${process.env.RESOURCE_URL}${result.banner}`,
                     external_url: result.external_url,
                     status: result.status,
                 };
@@ -106,14 +107,16 @@ export default class BannerController {
 
             const banneradd = await Banner.create({
                 name: name,
+                banner: banner,
                 external_url: external_url,
-                status: status
+                status: status,
+                created_by: req.user.object_id
             });
 
             if (banneradd) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-create"]), {});
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-add"]), {});
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -125,38 +128,30 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name } = req.body;
+            const { name, external_url, status } = req.body;
             const { id } = req.params;
 
-            let banner: string | undefined;
-            if (req.files && typeof req.files === 'object') {
-                if ('banner' in req.files) {
-                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    if (Array.isArray(files['banner']) && files['banner'].length > 0) {
-                        banner = files['banner'][0].path;
-                    }
-                }
+            let banner: any;
+            if (req.file) {
+                banner = req?.file?.filename;
+                let result: any = await Banner.findOneAndUpdate({ id: id }, { banner: banner });
             }
 
-            const bannerToUpdate = await Banner.findOne({ id: id });
-            if (!bannerToUpdate) {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-not-found"]));
-            }
+            let result: any = await Banner.findOneAndUpdate(
+                { id: id },
+                {
+                    name: name,
+                    external_url: external_url,
+                    status: status,
+                    updated_by: req.user.object_id
+                });
 
-            if (name) {
-                bannerToUpdate.name = name;
-            }
+            const updatedData: any = await Banner.find({ id: id }).lean();
 
-            if (banner) {
-                bannerToUpdate.banner = banner;
-            }
-
-            const updatedBanner = await bannerToUpdate.save();
-
-            if (updatedBanner) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-update"]), {});
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-update"]), {});
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -174,9 +169,9 @@ export default class BannerController {
 
             if (banner) {
                 await banner.deleteOne();
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["bannerimg-delete"]), {});
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-delete"]), {});
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -197,17 +192,13 @@ export default class BannerController {
                 banner.status = status;
                 await banner.save();
 
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-status-update"]), {});
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["banner-status"]), {});
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-    private async generateNextBannerId(): Promise<number> {
-        const lastBanner = await Banner.findOne().sort({ id: -1 });
-        return lastBanner ? lastBanner.id + 1 : 1;
-    }
 }

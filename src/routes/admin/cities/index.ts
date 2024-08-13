@@ -8,7 +8,7 @@ const cityController = new CityController();
 routes.get("/list", validateRequest, authAdmin, cityController.getList.bind(cityController));
 routes.post("/add", validateRequest, authAdmin, cityController.add.bind(cityController));
 routes.put("/update/:id", validateRequest, authAdmin, cityController.update.bind(cityController));
-routes.get("/by-id/:id", validateRequest, authAdmin, cityController.getDetailsById.bind(cityController));
+routes.get("/by-id/:id", validateRequest, authAdmin, cityController.getById.bind(cityController));
 routes.delete("/delete/:id", validateRequest, authAdmin, cityController.delete.bind(cityController));
 routes.patch("/status/:id", validateRequest, authAdmin, cityController.status.bind(cityController));
 

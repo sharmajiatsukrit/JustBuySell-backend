@@ -16,9 +16,9 @@ interface ICategory extends Document {
 const categorySchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
-    parent_id: { type: Number, default: 0 },
+    parent_id: { type: Schema.Types.ObjectId, ref: 'categories' },
     status: { type: Boolean, default: true },
-    cat_img: { type: String, default: '', required: true },
+    cat_img: { type: String, default: '' },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
@@ -27,8 +27,8 @@ const categorySchema: Schema = new Schema({
         versionKey: false
     });
 
-categorySchema.plugin(autoIncrement, { model: 'category', field: 'id', startAt: 1 });
+categorySchema.plugin(autoIncrement, { model: 'categories', field: 'id', startAt: 1 });
 
-const Category = model<ICategory>('category', categorySchema);
+const Category = model<ICategory>('categories', categorySchema);
 
 export default Category;

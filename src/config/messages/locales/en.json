@@ -17,6 +17,9 @@
     "user-lo": "User logout successfully",
     "us-lon": "User Login successfully",
     "in-otp": "Invalid Otp",
+    "notifications-fetched": "All Notifications Fetched",
+    "notifications-cleared": "All Notifications Cleared",
+    "notification-cleared": "Notification Cleared",
 
     "email-already-exists": "Email Already Exists",
     "logged-in": "Successfully logged-in!",
@@ -27,7 +30,7 @@
     "user-delete": "User Deleted successfully",
     "user-status": "User Status successfully Updated",
 
-    "category-fetched": "Category Details Fetched",
+    "category-fetched": "Categories Fetched successfully",
     "category-add":"New Category added successfully",
     "category-update":"Category Updated successfully",
     "category-delete": "Category Deleted successfully",
@@ -72,7 +75,7 @@
     "unit-delete": "Unit Deleted successfully",
     "unit-status": "Unit Status successfully Updated",
 
-    "product-requested-add": "Product Request Added",
+    "product-requested": "Product Request Successfully submitted.",
     "product-requested-updated": "Product Request Updated",
     "product-requested-deleted": "Product Request Deleted",
     "product-request-fethed": "Product Request Fethed",
@@ -80,7 +83,7 @@
     "offer-add": "Offer Added Successfully",
     "offer-update": "Offer Updated Successfully",
     "offer-delete": "Offer Delete Successfully",
-    "offer-fetch": "Offer Fetched Successfully",
+    "offer-fetched": "Offer Fetched Successfully",
 
     "incorrect-password": "Incorrect Password",
     "password-mismatch": "New Password and confirm password not mached",
@@ -88,17 +91,14 @@
     "update-failed": "Failed To Update",
     "profile-img-updated": "Profile Img updated",
 
-    "bannerimg-create": "Banner img created",
-    "bannerimg-update": "Banner img updated",
-    "bannerimg-delete": "Banner img deleted",
-    "bannerimg-not-found": "Banner Not Found",
-    "banner-status-update": "Banner Status Updated",
-    "banner-fetched": "Banner Fetched Successfully",
+    "banner-fetched": "Banners Fetched",
+    "banner-add":"New Banner added successfully",
+    "banner-update":"Banner Updated successfully",
+    "banner-delete": "Banner Deleted successfully",
+    "banner-status": "Banner Status successfully Updated",
 
     "password-length": "Password Must Be of 8 chracters",
     "missing-params": "Parameters are missing",
-    "watchlist-notfound": "Watchlist not Found",
-    "watchlist-delete": "Watchlist Deleted",
     "token-expired": "Token Expired",
     "token-invalid": "Token Invalid",
 
@@ -118,9 +118,14 @@
 
     "wallet-fetched": "Wallet Fethed successfully",
     "wallettrans-fetched": "Wallet trans fethed successfully",
-    "watchlist-fetched": "Watchlist fetch",
-    "watchlist-create": "Watchlist created",
-    "watchlist-update": "Watchlist update",
+
+    "watchlist-fetched": "Watchlist Fetched successfully",
+    "watchlist-add": "Watchlist Created successfully",
+    "watchlist-update": "Watchlist updated successfully",
+    "watchlist-delete": "Watchlist deleted successfully",
+    "watchlist-status": "Watchlist status successfully",
+    "watchlist-item-add": "Product Successfully added to watchlist",
+    "watchlist-item-remove": "Product Successfully removed from watchlist",
 
     "phone-number-required": "phone-number-required",
     "otp-verified": "Otp verified successfully",
@@ -131,4 +136,5 @@
     "deviceid-update": "Device Updated successfully",
     "location-update": "Location updated successfully",
     "location-add": "Location Added successfully"
+    
 }

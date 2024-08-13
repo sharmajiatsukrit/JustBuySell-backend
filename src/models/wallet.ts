@@ -4,20 +4,14 @@ import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IWallet extends Document {
-    wallet: string;
-    userid: string;
-    status: boolean;
-    created_by: number;
-    updated_by: number;
+    customer_id: string;
+    balance: string;
 }
 
 const walletSchema: Schema = new Schema({
 
-    wallet: { type: String, default: '' },
-    userid: { type: String, default: '' },
-    status: { type: Boolean, default: true },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
+    balance: { type: String, default: '' },
+    customer_id: { type: Schema.Types.ObjectId, ref: 'customers' }
 },
     {
         timestamps: true,

@@ -1,10 +1,10 @@
 export enum ServerMessagesEnum {
     "server-error" = "server-error",
-    "no-file-provided"="no-file-provided",
+    "no-file-provided" = "no-file-provided",
     "not-found" = "not-found",
     "required-iv" = "required-iv",
     "permission-denied" = "permission-denied",
-    "user-bc"="user-bc",
+    "user-bc" = "user-bc",
     "user-bl" = "user-bl",
     "user-dl" = "user-dl",
     "user-it" = "user-it",
@@ -12,12 +12,15 @@ export enum ServerMessagesEnum {
     "user-nf" = "user-nf",
     "email-already-exists" = "email-already-exists",
     "invalid-password" = "invalid-password",
-    "logged-in"="logged-in",
+    "logged-in" = "logged-in",
     "user-fetched" = "user-fetched",
     "user-add" = "user-add",
     "user-update" = "user-update",
     "user-delete" = "user-delete",
     "user-status" = "user-status",
+    "notifications-fetched" = "notifications-fetched",
+    "notifications-cleared" = "notifications-cleared",
+    "notification-cleared" = "notification-cleared",
     "category-fetched" = "category-fetched",
     "category-add" = "category-add",
     "category-update" = "category-update",
@@ -62,24 +65,24 @@ export enum ServerMessagesEnum {
     "unit-add" = "unit-add",
     "unit-update" = "unit-update",
     "unit-delete" = "unit-delete",
-    "unit-status"="unit-status",
+    "unit-status" = "unit-status",
+
+    "banner-fetched" = "banner-fetched",
+    "banner-add" = "banner-add",
+    "banner-update" = "banner-update",
+    "banner-delete" = "banner-delete",
+    "banner-status" = "banner-status",
+
+
     "incorrect-password" = "incorrect-password",
     "password-mismatch" = "password-mismatch",
     "password-updated" = "password-updated",
     "update-failed" = "update-failed",
     "profile-img-updated" = "profile-img-updated",
-    "bannerimg-create" = "bannerimg-create",
-    "bannerimg-update" = "bannerimg-update",
-    "bannerimg-delete" = "bannerimg-delete",
-    "bannerimg-not-found" = "bannerimg-not-found",
-    "banner-status-update" = "banner-status-update",
+
     "missing-params" = "missing-params",
-    "watchlist-notfound" = "watchlist-notfound",
-    "watchlist-delete" = "watchlist-delete",
     "token-expired" = "token-expired",
     "token-invalid" = "token-invalid",
-
-    "banner-fetched" = "banner-fetched",
 
     "customer-fetched" = "customer-fetched",
     "customer-add" = "customer-add",
@@ -96,7 +99,16 @@ export enum ServerMessagesEnum {
 
     "wallet-fetched" = "wallet-fetched",
     "wallettrans-fetched" = "wallettrans-fetched",
+
+
     "watchlist-fetched" = "watchlist-fetched",
-    "watchlist-create" = "watchlist-create",
-    "watchlist-update" = "watchlist-update"
+    "watchlist-add" = "watchlist-add",
+    "watchlist-update" = "watchlist-update",
+    "watchlist-delete" = "watchlist-delete",
+    "watchlist-status" = "watchlist-status",
+    "watchlist-item-add" = "watchlist-item-add",
+    "watchlist-item-remove" = "watchlist-item-remove",
+
+    "product-requested" = "product-requested",
+
 }

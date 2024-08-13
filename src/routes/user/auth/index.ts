@@ -20,8 +20,4 @@ routes.get("/auth-check", authRequest, authController.authCheck.bind(authControl
 routes.get("/refresh-token", authRequest, authController.refreshUserToken.bind(authController));
 routes.get("/signout", authRequest, authController.signOut.bind(authController));
 
-//Admin auth
-routes.post("/admin/signin", authController.validate(AdminRouteEndPoints.SignIn), validateRequest, authController.adminSignIn.bind(authController));
-
-
 export default routes;

@@ -3,7 +3,7 @@ import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
-interface ITransctionhistory extends Document {
+interface ITransaction extends Document {
     amount: string;
     userid: string;
     trnid: string;
@@ -28,8 +28,8 @@ const TransactionSchema: Schema = new Schema({
         versionKey: false
     });
 
-TransactionSchema.plugin(autoIncrement, { model: 'transctionhistory', field: 'id', startAt: 1 });
+TransactionSchema.plugin(autoIncrement, { model: 'transactions', field: 'id', startAt: 1 });
 
-const TransctionHistory = model<ITransctionhistory>('transctionhistory', TransactionSchema);
+const Transaction = model<ITransaction>('transactions', TransactionSchema);
 
-export default TransctionHistory;
+export default Transaction;
