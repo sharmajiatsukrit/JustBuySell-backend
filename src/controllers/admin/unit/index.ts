@@ -28,7 +28,7 @@ export default class UnitController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
             // Parse page and limit from query params, set defaults if not provided

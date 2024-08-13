@@ -105,16 +105,16 @@ export default class ProductRequestController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             // Aggregation pipeline with pagination
             const result = await ProductRequest.aggregate([
                 {
@@ -135,10 +135,10 @@ export default class ProductRequestController {
                     $limit: limitNumber
                 }
             ]).exec();
-    
+
             // Get the total number of documents in the ProductRequest collection
             const totalCount = await ProductRequest.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
@@ -154,7 +154,7 @@ export default class ProductRequestController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     //get byid list
     public async getDetailsById(req: Request, res: Response): Promise<any> {

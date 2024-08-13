@@ -64,13 +64,13 @@ export default class OfferController {
 
             let result: any = await Offers.findOneAndUpdate(
                 { id: id }, {
-                    productid: productid,
-                    priceperunit: priceperunit,
-                    miniquantity: miniquantity,
-                    origin: origin,
-                    pin: pin,
-                    type: type,
-                    status: status
+                productid: productid,
+                priceperunit: priceperunit,
+                miniquantity: miniquantity,
+                origin: origin,
+                pin: pin,
+                type: type,
+                status: status
             });
 
             const updatedData: any = await Offers.find({ id: id }).lean();
@@ -106,16 +106,16 @@ export default class OfferController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-    
+
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-    
+
             // Aggregation pipeline with pagination
             const result = await Offers.aggregate([
                 {
@@ -136,10 +136,10 @@ export default class OfferController {
                     $limit: limitNumber
                 }
             ]).exec();
-    
+
             // Get the total number of documents in the Offers collection
             const totalCount = await Offers.countDocuments({});
-    
+
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
                 return serverResponse(
@@ -155,7 +155,7 @@ export default class OfferController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
 
     //get byid list
     public async getDetailsById(req: Request, res: Response): Promise<any> {

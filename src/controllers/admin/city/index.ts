@@ -28,7 +28,7 @@ export default class CityController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;

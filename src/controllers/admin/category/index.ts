@@ -26,7 +26,7 @@ export default class CategoryController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
@@ -99,7 +99,6 @@ export default class CategoryController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     //add
     public async add(req: Request, res: Response): Promise<any> {

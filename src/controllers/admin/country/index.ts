@@ -22,7 +22,6 @@ export default class CountryController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
