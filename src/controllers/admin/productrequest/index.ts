@@ -21,6 +21,52 @@ export default class ProductRequestController {
     public validate(endPoint: string): ValidationChain[] {
         return validate(endPoint);
     }
+    // list
+    public async getList(req: Request, res: Response): Promise<any> {
+        try {
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const results = await ProductRequest.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            // Get the total number of documents in the Category collection
+            const totalCount = await ProductRequest.countDocuments({});
+
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+                // Format each item in the result array
+                const formattedResults = results.map((item, index) => ({
+                    id: item.id, // Generate a simple sequential ID starting from 1
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
+                    status: item.status,
+                    // Add more fields as necessary
+                }));
+
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-request-fetched"]),
+                    { data: formattedResults, totalCount, totalPages, currentPage: pageNumber }
+                );
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
     //add
     public async add(req: Request, res: Response): Promise<any> {
@@ -100,87 +146,37 @@ export default class ProductRequestController {
         }
     }
 
-    // list
-    public async getList(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[getList]";
-            // Set locale
-            const { locale, page, limit, search } = req.query;
-            this.locale = (locale as string) || "en";
 
-            // Parse page and limit from query params, set defaults if not provided
-            const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
-
-            // Calculate the number of documents to skip
-            const skip = (pageNumber - 1) * limitNumber;
-
-            // Aggregation pipeline with pagination
-            const result = await ProductRequest.aggregate([
-                {
-                    $lookup: {
-                        from: "units",
-                        localField: "unitid",
-                        foreignField: "id",
-                        as: "units",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: limitNumber
-                }
-            ]).exec();
-
-            // Get the total number of documents in the ProductRequest collection
-            const totalCount = await ProductRequest.countDocuments({});
-
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    constructResponseMsg(this.locale, "product-request-fethed"),
-                    { result, totalPages }
-                );
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
 
 
     //get byid list
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getDetailsById]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { id } = req.params;
-            // const result: any = await ProductRequest.findById( id ).lean();
-            const result = await ProductRequest.aggregate([
-                {
-                    $match: { id: parseInt(id) },
-                },
-                {
-                    $lookup: {
-                        from: "units",
-                        localField: "unitid",
-                        foreignField: "id",
-                        as: "units",
-                    },
-                },
-            ]);
+            const id = parseInt(req.params.id);
+            const result: any = await ProductRequest.findOne({ id: id }).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fethed"), result);
+
+            if (result) {
+
+                const formattedResult = {
+                    id: result.id,
+                    name: result.name,
+                    selling_unit: result.selling_unit,
+                    individual_pack_size: result.individual_pack_size,
+                    individual_pack_unit: result.individual_pack_unit,
+                    Individual_packing_type: result.Individual_packing_type,
+                    master_pack_qty: result.master_pack_qty,
+                    master_pack_type: result.master_pack_type,
+                    description: result.description,
+                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
+                    created_by: result.created_by,
+                    status: result.status,
+                };
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fetched"), formattedResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

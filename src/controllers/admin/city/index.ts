@@ -64,7 +64,6 @@ export default class CityController {
 
             const id = parseInt(req.params.id);
             const result: any = await City.findOne({ id: id }).lean();
-            console.log(result);
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-fetched"]), result);

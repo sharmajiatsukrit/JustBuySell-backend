@@ -10,6 +10,6 @@ routes.post("/add", validateRequest, authAdmin, offersController.add.bind(offers
 routes.put("/update/:id", validateRequest, authAdmin, offersController.update.bind(offersController));
 routes.delete("/delete/:id", validateRequest, authAdmin, offersController.delete.bind(offersController));
 routes.get("/list", validateRequest, authAdmin, offersController.getList.bind(offersController));
-routes.get("/get-details-byid/:id", validateRequest, authAdmin, offersController.getDetailsById.bind(offersController));
+routes.get("/by-id/:id", validateRequest, authAdmin, offersController.getById.bind(offersController));
 
 export default routes;

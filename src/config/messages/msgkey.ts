@@ -68,14 +68,17 @@ export const MessageKey: IObjectKeys = {
     "unit-delete": "unit-delete",
 
     "product-requested": "product-requested",
-    "product-requested-updated": "product-requested-updated",
-    "product-requested-deleted": "product-requested-deleted",
-    "product-request-fethed": "product-request-fethed",
+    "product-request-fetched": "product-request-fetched",
+    "product-request-add": "product-request-add",
+    "product-request-update": "product-request-update",
+    "product-request-status": "product-request-status",
+    "product-request-delete": "product-request-delete",
 
+    "offer-fetched": "offer-fetched",
     "offer-add": "offer-add",
     "offer-update": "offer-update",
+    "offer-status": "offer-status",
     "offer-delete": "offer-delete",
-    "offer-fetch": "offer-fetch",
 
     "user-not-found": "user-not-found",
     "password-length": "password-length",

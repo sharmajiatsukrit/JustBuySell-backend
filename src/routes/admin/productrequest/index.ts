@@ -10,7 +10,7 @@ routes.post("/add", validateRequest, authAdmin, productrequestController.add.bin
 routes.put("/update/:id", validateRequest, authAdmin, productrequestController.update.bind(productrequestController));
 routes.delete("/delete/:id", validateRequest, authAdmin, productrequestController.delete.bind(productrequestController));
 routes.get("/get-list", validateRequest, authAdmin, productrequestController.getList.bind(productrequestController));
-routes.get("/get-details-byid/:id", authAdmin, validateRequest, productrequestController.getDetailsById.bind(productrequestController));
+routes.get("/by-id/:id", authAdmin, validateRequest, productrequestController.getById.bind(productrequestController));
 routes.patch("/update-status/:id", authAdmin, validateRequest, productrequestController.statusUpdate.bind(productrequestController));
 
 export default routes;

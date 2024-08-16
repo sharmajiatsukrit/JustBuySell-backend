@@ -7,23 +7,21 @@ interface IDeviceid extends Document {
     type: String;
     created_by: number;
     updated_by: number;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 const DeviceSchema: Schema = new Schema({
     device_id: { type: String, default: '' },
     type: { type: String, default: '' },
-    created_by: { type: Number, default: 0 },
-    updated_by: { type: Number, default: 0 }
+    created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'customers' }
 },
-{
-    timestamps: true,
-    versionKey: false
-});
+    {
+        timestamps: true,
+        versionKey: false
+    });
 
-DeviceSchema.plugin(autoIncrement, { model: 'deviceid', field: 'id', startAt: 1 });
+DeviceSchema.plugin(autoIncrement, { model: 'deviceids', field: 'id', startAt: 1 });
 
-const Deviceid = model<IDeviceid>('deviceid', DeviceSchema);
+const Deviceid = model<IDeviceid>('deviceids', DeviceSchema);
 
 export default Deviceid;

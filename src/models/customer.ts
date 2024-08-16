@@ -17,6 +17,8 @@ interface ICustomer extends Document {
     open_time: string;
     close_time: string;
     parent_id: string;
+    latitude: string;
+    longitude: string;
     is_email_verified: boolean;
     language_code: string;
     language: string;
@@ -39,6 +41,8 @@ const customerSchema: Schema = new Schema({
     open_time: { type: String, default: '' },
     close_time: { type: String, default: '' },
     parent_id: { type: String, default: 0 },
+    latitude: { type: String, default: '' },
+    longitude: { type: String, default: '' },
     is_email_verified: { type: Boolean, default: false },
     language_code: { type: String, default: 'en' },
     language: { type: String, default: 'English' },

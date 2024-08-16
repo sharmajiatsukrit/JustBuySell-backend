@@ -36,7 +36,7 @@
     "category-delete": "Category Deleted successfully",
     "category-status": "Category Status successfully Updated",
 
-    "product-fetched": "Product Details Fetched",
+    "product-fetched": "Products Fetched",
     "product-add":"New Product added successfully",
     "product-update":"Product Updated successfully",
     "product-delete": "Product Deleted successfully",
@@ -76,14 +76,17 @@
     "unit-status": "Unit Status successfully Updated",
 
     "product-requested": "Product Request Successfully submitted.",
-    "product-requested-updated": "Product Request Updated",
-    "product-requested-deleted": "Product Request Deleted",
-    "product-request-fethed": "Product Request Fethed",
+    "product-request-fetched": "Product Request Fetched",
+    "product-request-add":"New Product Request added successfully",
+    "product-request-update":"Product Request Updated successfully",
+    "product-request-delete": "Product Request Deleted successfully",
+    "product-request-status": "Product Request Status successfully Updated",
 
-    "offer-add": "Offer Added Successfully",
-    "offer-update": "Offer Updated Successfully",
-    "offer-delete": "Offer Delete Successfully",
-    "offer-fetched": "Offer Fetched Successfully",
+    "offer-fetched": "Offer Details Fetched",
+    "offer-add":"New Offer added successfully",
+    "offer-update":"Offer Updated successfully",
+    "offer-delete": "Offer Deleted successfully",
+    "offer-status": "Offer Status successfully Updated",
 
     "incorrect-password": "Incorrect Password",
     "password-mismatch": "New Password and confirm password not mached",
@@ -108,12 +111,6 @@
     "customer-deleted": "customer-deleted",
     "customer-status": "customer-status",
 
-    "product-requested-statusupdated": "Product Request Status Update",
-    "productwatch-fetched": "Product watch fetched",
-    "productwatch-create": "Product created",
-    "productwatch-update": "Product watch update",
-    "productwatch-notfound": "Product watch not found",
-    "productwatch-delete": "Product watch deleted",
     "search-fetched": "Search Successfully",
 
     "wallet-fetched": "Wallet Fethed successfully",

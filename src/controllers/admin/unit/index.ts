@@ -31,31 +31,22 @@ export default class UnitController {
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
-            // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
-
-            // Calculate the number of documents to skip
+            const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            // Fetch documents with pagination
-            const result = await Unit.find({})
-                .sort({ id: -1 })
+            const results = await Unit.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            // Get the total number of documents in the Unit collection
             const totalCount = await Unit.countDocuments({});
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]),
-                    { result, totalPages }
-                );
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -68,16 +59,16 @@ export default class UnitController {
     // Checked
     public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getDetailsById]";
+            const fn = "[getById]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Unit.find({ id: id }).lean();
-            console.log(result);
+            const result: any = await Unit.findOne({ id: id }).lean();
+            // console.log(result);
 
-            if (result.length > 0) {
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

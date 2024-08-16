@@ -101,7 +101,8 @@ export default class OfferController {
         }
     }
 
-    // list
+
+    // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
@@ -109,35 +110,17 @@ export default class OfferController {
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
-            // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
 
-            // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-            // Aggregation pipeline with pagination
-            const result = await Offers.aggregate([
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "origin",
-                        foreignField: "id",
-                        as: "countrydetails",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: limitNumber
-                }
-            ]).exec();
+            const result = await Offers.find({})
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
 
-            // Get the total number of documents in the Offers collection
             const totalCount = await Offers.countDocuments({});
 
             if (result.length > 0) {
@@ -145,7 +128,7 @@ export default class OfferController {
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
-                    constructResponseMsg(this.locale, "offer-fetch"),
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]),
                     { result, totalPages }
                 );
             } else {
@@ -156,32 +139,19 @@ export default class OfferController {
         }
     }
 
-
     //get byid list
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getDetailsById]";
+            const fn = "[getById]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { id } = req.params;
-            // const result: any = await Offers.find({ id: id }).lean();
-            const result = await Offers.aggregate([
-                {
-                    $match: { id: parseInt(id) },
-                },
-                {
-                    $lookup: {
-                        from: "countries",
-                        localField: "origin",
-                        foreignField: "id",
-                        as: "countrydetails",
-                    },
-                },
-            ]);
+            const id = parseInt(req.params.id);
+            const result: any = await Offers.findOne({ id: id }).lean();
 
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetch"), result);
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-fetched"), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

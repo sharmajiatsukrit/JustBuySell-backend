@@ -90,11 +90,7 @@ export enum ServerMessagesEnum {
     "customer-deleted" = "customer-deleted",
     "customer-status" = "customer-status",
 
-    "productwatch-fetched" = "productwatch-fetched",
-    "productwatch-create" = "productwatch-create",
-    "productwatch-update" = "productwatch-update",
-    "productwatch-notfound" = "productwatch-notfound",
-    "productwatch-delete" = "productwatch-delete",
+
     "search-fetched" = "search-fetched",
 
     "wallet-fetched" = "wallet-fetched",
@@ -110,5 +106,15 @@ export enum ServerMessagesEnum {
     "watchlist-item-remove" = "watchlist-item-remove",
 
     "product-requested" = "product-requested",
+    "product-request-fetched" = "product-request-fetched",
+    "product-request-add" = "product-request-add",
+    "product-request-update" = "product-request-update",
+    "product-request-delete" = "product-request-delete",
+    "product-request-status" = "product-request-status",
 
+    "offer-fetched" = "offer-fetched",
+    "offer-add" = "offer-add",
+    "offer-update" = "offer-update",
+    "offer-delete" = "offer-delete",
+    "offer-status" = "offer-status",
 }

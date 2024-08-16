@@ -26,35 +26,33 @@ export default class RolesController {
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getList]";
-            // Set locale
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
-            // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
-            const limitNumber = parseInt(limit as string) || 5;
-
-            // Calculate the number of documents to skip
+            const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            // Fetch documents with pagination
-            const result = await Roles.find({})
-                .sort({ id: -1 })
+            const results = await Roles.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            // Get the total number of documents in the Roles collection
+            // Get the total number of documents in the Category collection
             const totalCount = await Roles.countDocuments({});
 
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+
+
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]),
-                    { result, totalPages }
+                    { data: results, totalCount, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -74,23 +72,11 @@ export default class RolesController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            // const result: any = await Roles.find({ id: id }).lean();
-            const result = await Roles.aggregate([
-                {
-                    $match: { id: id },
-                },
-                {
-                    $lookup: {
-                        from: "permissions",
-                        localField: "permissions",
-                        foreignField: "id",
-                        as: "permissions",
-                    },
-                },
-            ]);
+            const result: any = await Roles.findOne({ id: id }).lean();
 
 
-            if (result.length > 0) {
+
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

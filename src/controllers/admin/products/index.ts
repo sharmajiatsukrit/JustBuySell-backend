@@ -21,65 +21,44 @@ export default class ProductController {
     public validate(endPoint: string): ValidationChain[] {
         return validate(endPoint);
     }
+
     public async getList(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getList]";
-            // Set locale
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
-            // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
-
-            // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-            // Aggregation pipeline with pagination
-            const result = await Product.aggregate([
-                {
-                    $lookup: {
-                        from: "categories",
-                        localField: "category_id",
-                        foreignField: "id",
-                        as: "categories",
-                    },
-                },
-                {
-                    $sort: { id: -1 }
-                },
-                {
-                    $skip: skip
-                },
-                {
-                    $limit: limitNumber
-                },
-                {
-                    $addFields: {
-                        "image_url": {
-                            $concat: [process.env.APP_URL, "/", "$image_path"] // Assuming image_path is the field storing the image path
-                        }
-                    }
-                }
-            ]).exec();
+            const results = await Product.find({})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
 
-            // Get the total number of documents in the Product collection
+            // Get the total number of documents in the Category collection
             const totalCount = await Product.countDocuments({});
 
-            if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limitNumber);
 
-                // Modify each result item to include image_url
-                const formattedResults = result.map(item => ({
-                    ...item,
-                    image_url: `${process.env.APP_URL}/${item.image_path}` // Full URL of product image
+            if (results.length > 0) {
+                // Format each item in the result array
+                const formattedResults = results.map((item, index) => ({
+                    id: item.id, // Generate a simple sequential ID starting from 1
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
+                    status: item.status,
+                    // Add more fields as necessary
                 }));
 
                 return serverResponse(
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
-                    { result: formattedResults, totalPages }
+                    { data: formattedResults, totalCount, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -88,37 +67,29 @@ export default class ProductController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
     // Checked
 
 
     // Checked
-    public async getDetailsById(req: Request, res: Response): Promise<any> {
+    public async getById(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getDetailsById]";
+            const fn = "[getById]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { id } = req.params;
-            // const result: any = await Product.find({ id: id }).lean();
-            const result = await Product.aggregate([
-                {
-                    $match: { id: parseInt(id) },
-                },
-                {
-                    $lookup: {
-                        from: "categories",
-                        localField: "category_id",
-                        foreignField: "id",
-                        as: "categories",
-                    },
-                },
-            ]);
+            const id = parseInt(req.params.id);
+            const result: any = await Product.findOne({ id: id }).lean();
 
-
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
+            if (result) {
+                const formattedResult = {
+                    id: result.id,
+                    name: result.name,
+                    description: result.description,
+                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
+                    created_by: result.created_by,
+                    status: result.status,
+                };
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

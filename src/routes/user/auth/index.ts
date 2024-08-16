@@ -19,5 +19,6 @@ routes.post("/resetpassword", authController.validate(UserRouteEndPoints.ResetPa
 routes.get("/auth-check", authRequest, authController.authCheck.bind(authController));
 routes.get("/refresh-token", authRequest, authController.refreshUserToken.bind(authController));
 routes.get("/signout", authRequest, authController.signOut.bind(authController));
-
+routes.patch("/update-geo-coordinates", validateRequest, authRequest, authController.updateCoordinates.bind(authController));
+routes.patch("/update-device", validateRequest, authRequest, authController.addUpdateDevice.bind(authController));
 export default routes;

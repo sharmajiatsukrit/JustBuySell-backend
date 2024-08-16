@@ -64,10 +64,10 @@ export default class StateController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await State.find({ id: id }).lean();
-            console.log(result);
+            const result: any = await State.findOne({ id: id }).lean();
+            // console.log(result);
 
-            if (result.length > 0) {
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions, User, Customer } from "../../../models";
+import { Otps, Permissions, Sessions, User, Customer, Deviceid } from "../../../models";
 import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import { UserData } from "../../../interfaces/user";
@@ -392,9 +392,6 @@ export default class AuthController {
         }
     }
 
-
-
-
     // Checked with encryption
     public async verifyEmailId(req: Request, res: Response): Promise<any> {
         try {
@@ -550,6 +547,49 @@ export default class AuthController {
         }
     }
 
+    // Checked with encryption
+    public async updateCoordinates(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateCoordinates]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            // Req Body
+            const { latitude, longitude } = req.body;
+            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
 
+            await Customer.findOneAndUpdate({ id: req.customer.user_id }, { latitude: latitude, longitude: longitude });
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "location-update"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked with encryption
+    public async addUpdateDevice(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[addUpdateDevice]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            // Req Body
+            const { device_id, type } = req.body;
+            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+
+            const device: any = await Deviceid.findOne({ device_id: device_id }).lean();
+            console.log(device);
+            if (!device) {
+                await Deviceid.create({ device_id: device_id, type: type, created_by: req.customer.object_id });
+            }
+
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "deviceid-add"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 }
