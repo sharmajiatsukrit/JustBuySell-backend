@@ -93,8 +93,9 @@ export enum ServerMessagesEnum {
 
     "search-fetched" = "search-fetched",
 
-    "wallet-fetched" = "wallet-fetched",
-    "wallettrans-fetched" = "wallettrans-fetched",
+    "wallet-balance-fetched" = "wallet-balance-fetched",
+    "wallet-recharge-success" = "wallet-recharge-success",
+    "transactions-fetched" = "transactions-fetched",
 
 
     "watchlist-fetched" = "watchlist-fetched",
@@ -117,4 +118,20 @@ export enum ServerMessagesEnum {
     "offer-update" = "offer-update",
     "offer-delete" = "offer-delete",
     "offer-status" = "offer-status",
+    "report-issue" = "report-issue",
+
+    "faq-fetched" = "faq-fetched",
+    "faq-add" = "faq-add",
+    "faq-update" = "faq-update",
+    "faq-delete" = "faq-delete",
+    "faq-status" = "faq-status",
+
+    "settings-saved" = "settings-saved",
+    "settings-fetched" = "settings-fetched",
+
+    "team-fetched" = "team-fetched",
+    "team-add" = "team-add",
+    "team-update" = "team-update",
+    "team-delete" = "team-delete",
+    "team-status" = "team-status",
 }

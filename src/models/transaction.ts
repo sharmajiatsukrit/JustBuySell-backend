@@ -4,24 +4,24 @@ import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface ITransaction extends Document {
-    amount: string;
-    userid: string;
-    trnid: string;
-    type: number;
-    status: boolean;
-    created_by: number;
-    updated_by: number;
+    amount: number;
+    transaction_type: number;
+    transaction_id: string;
+    order_id: number;
+    status: string;
+    remarks: string;
+    customer_id: number;
 }
 
 const TransactionSchema: Schema = new Schema({
 
-    amount: { type: String, default: '' },
-    userid: { type: String, default: '' },
-    trnid: { type: String, default: '' },
-    type: { type: Number, default: '' },
-    status: { type: Boolean, default: true },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
+    amount: { type: Number, default: 0 },
+    transaction_type: { type: Number, default: '' },
+    transaction_id: { type: String, default: '' },
+    order_id: { type: String, default: '' },
+    status: { type: String, default: '' },
+    remarks: { type: String, default: '' },
+    customer_id: { type: Schema.Types.ObjectId, ref: 'customers' }
 },
     {
         timestamps: true,

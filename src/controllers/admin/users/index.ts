@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissions, User } from "../../../models";
+import { Roles, Permissions, User, Country, State, City } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -121,6 +121,10 @@ export default class UserController {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
 
+            const role: any = Roles.findOne({ id: role_id }).lean();
+            const country: any = Country.findOne({ id: country_id }).lean();
+            const state: any = State.findOne({ id: state_id }).lean();
+            const city: any = City.findOne({ id: city_id }).lean();
             const hashedPassword = await Bcrypt.hash(password, 10);
             let profile_img: any;
             if (req.file) {
@@ -134,11 +138,11 @@ export default class UserController {
                 password: hashedPassword,
                 date_of_birth: date_of_birth,
                 profile_img: profile_img,
-                city_id: city_id,
-                state_id: state_id,
-                country_id: country_id,
+                city_id: city?._id,
+                state_id: state?._id,
+                country_id: country?._id,
                 address: address,
-                role_id: role_id,
+                role_id: role?._id,
                 status: 1,
                 created_by: req.user.object_id
             });
@@ -161,16 +165,20 @@ export default class UserController {
             const { name, phone, email, date_of_birth, city_id, state_id, country_id, address, role_id, password } = req.body;
             const id = parseInt(req.params.id);
             const hashedPassword = await Bcrypt.hash(password, 10);
+            const role: any = Roles.findOne({ id: role_id }).lean();
+            const country: any = Country.findOne({ id: country_id }).lean();
+            const state: any = State.findOne({ id: state_id }).lean();
+            const city: any = City.findOne({ id: city_id }).lean();
             await User.findOneAndUpdate({ id: id }, {
                 name: name,
                 phone: phone,
                 email: email,
                 date_of_birth: date_of_birth,
-                city_id: city_id,
-                state_id: state_id,
-                country_id: country_id,
+                city_id: city?._id,
+                state_id: state?._id,
+                country_id: country?._id,
                 address: address,
-                role_id: role_id,
+                role_id: role?._id,
                 status: 1,
                 updated_by: req.user.object_id
             });

@@ -3,8 +3,6 @@ import { authAdmin, validateRequest } from "../../utils/middleware";
 import AuthRouter from "./auth";
 import AuthRoutes from "../user/auth";
 
-
-import SearchRouter from "./search";
 import Deviceid from "./deviceid";
 
 import DashboardRoutes from "./dashboard";
@@ -16,7 +14,7 @@ import HelperRoutes from "../user/helper";
 
 const routes: Router = expres.Router();
 routes.use("/auth", AuthRoutes);
-routes.use("/search", SearchRouter);
+// routes.use("/search", SearchRouter);
 
 
 routes.use("/firebase", Deviceid);

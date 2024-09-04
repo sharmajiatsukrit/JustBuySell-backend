@@ -20,8 +20,8 @@ const ReportSchema: Schema = new Schema({
         versionKey: false
     });
 
-ReportSchema.plugin(autoIncrement, { model: 'report', field: 'id', startAt: 1 });
+ReportSchema.plugin(autoIncrement, { model: 'report_issues', field: 'id', startAt: 1 });
 
-const Report = model<IReport>('report', ReportSchema);
+const ReportIssues = model<IReport>('report_issues', ReportSchema);
 
-export default Report;
+export default ReportIssues;

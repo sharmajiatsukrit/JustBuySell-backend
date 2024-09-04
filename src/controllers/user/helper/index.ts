@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -86,22 +86,22 @@ export default class HelperController {
 
     public async addToWatchlist(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[requestNewProduct]";
+            const fn = "[addToWatchlist]";
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { watchlist_id, product_id } = req.body;
-
-            const watchlist: any = Watchlist.findOne({ id: watchlist_id }).lean();
-            const product: any = Product.findOne({ id: product_id }).lean();
-
+            console.log(watchlist_id, product_id);
+            const watchlist: any = await Watchlist.findOne({ id: watchlist_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
+            console.log(watchlist.id);
+            console.log(product._id);
             const result: any = await WatchlistItem.create({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
                 customer_id: req.customer.object_id
             });
-
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-item-add"]), {});
             } else {
@@ -114,17 +114,21 @@ export default class HelperController {
 
     public async removeFromWatchlist(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[requestNewProduct]";
+            const fn = "[removeFromWatchlist]";
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { watchlist_id, product_id } = req.body;
 
-            const watchlist: any = Watchlist.findOne({ id: watchlist_id }).lean();
-            const product: any = Product.findOne({ id: product_id }).lean();
+            const watchlist: any = await Watchlist.findOne({ id: watchlist_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
 
-
+            console.log({
+                product_id: product._id,
+                watchlist_id: watchlist._id,
+                customer_id: req.customer.object_id
+            });
             const result = await WatchlistItem.deleteOne({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
@@ -135,6 +139,44 @@ export default class HelperController {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-item-remove"]), {});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["server-error"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getProductsByCat(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getNewlyAddedProducts]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const cat_id = parseInt(req.params.cat_id);
+            const category_id: any = await Category.findOne({ id: cat_id }).lean();
+            console.log(category_id);
+            if (!category_id) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+            const results: any = await Product.find({ status: true, category_id: category_id._id }).lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 });
+            const totalCount = await Product.countDocuments({ status: true });
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            if (results.length > 0) {
+                const formattedResult = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
+                }));
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});

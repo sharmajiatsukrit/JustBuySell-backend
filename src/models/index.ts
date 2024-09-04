@@ -23,5 +23,7 @@ import Transaction from './transaction';
 import Customer from './customer';
 import Deviceid from "./deviceid";
 import Location from "./location";
-
-export { DataBase, User, Customer, Location, Deviceid, Sessions, Otps, Roles, Permissions, Configs, Notifications, Category, Product, Country, State, City, Unit, ProductRequest, Offers, Banner, Watchlist, WatchlistItem, Wallet, Transaction };
+import ReportIssues from "./report-issues";
+import Faqs from "./faqs";
+import Setting from "./setting";
+export { DataBase, User, Customer, Location, Deviceid, Sessions, Otps, Roles, Permissions, Configs, Notifications, Category, Product, Country, State, City, Unit, ProductRequest, Offers, Banner, Watchlist, WatchlistItem, Wallet, Transaction, ReportIssues, Faqs, Setting };

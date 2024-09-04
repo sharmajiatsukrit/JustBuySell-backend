@@ -13,4 +13,6 @@ routes.post("/request-new-product", validateRequest, authRequest, upload.single(
 routes.post("/add-to-watchlist", validateRequest, authRequest, helperController.addToWatchlist.bind(helperController));
 routes.post("/remove-from-watchlist", validateRequest, authRequest, helperController.removeFromWatchlist.bind(helperController));
 
+routes.get("/get-products-by-cat/:cat_id", validateRequest, authRequest, helperController.getProductsByCat.bind(helperController));
+
 export default routes;

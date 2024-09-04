@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category, Product } from "../../../models";
+import { Faqs } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -9,8 +9,8 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
-const fileName = "[admin][product][index.ts]";
-export default class ProductController {
+const fileName = "[admin][faq][index.ts]";
+export default class FaqController {
     public locale: string = "en";
     public emailService;
 
@@ -22,8 +22,11 @@ export default class ProductController {
         return validate(endPoint);
     }
 
+    // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
+            const fn = "[getList]";
+            // Set locale
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
@@ -31,35 +34,17 @@ export default class ProductController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const results = await Product.find({})
+            const results = await Faqs.find({})
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            // Get the total number of documents in the Category collection
-            const totalCount = await Product.countDocuments({});
-
-            // Calculate total pages
+            const totalCount = await Faqs.countDocuments({});
             const totalPages = Math.ceil(totalCount / limitNumber);
-
+            console.log(req.user);
             if (results.length > 0) {
-                // Format each item in the result array
-                const formattedResults = results.map((item, index) => ({
-                    id: item.id, // Generate a simple sequential ID starting from 1
-                    name: item.name,
-                    description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
-                    status: item.status,
-                    // Add more fields as necessary
-                }));
-
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
-                    { data: formattedResults, totalCount, totalPages, currentPage: pageNumber }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -67,29 +52,21 @@ export default class ProductController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    // Checked
-
 
     // Checked
     public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getById]";
+            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Product.findOne({ id: id }).lean();
+            const result: any = await Faqs.findOne({ id: id }).lean();
+            // console.log(result);
 
             if (result) {
-                const formattedResult = {
-                    id: result.id,
-                    name: result.name,
-                    description: result.description,
-                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    created_by: result.created_by,
-                    status: result.status,
-                };
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -102,43 +79,30 @@ export default class ProductController {
     public async add(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[add]";
+            // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, category_id, status } = req.body;
+            const { question, answer, status } = req.body;
+            // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
-            const category: any = await Category.findOne({ id: category_id }).lean();
-            if (category) {
-                result = await Product.create({
-                    name: name,
-                    description: description,
-                    category_id: category._id,
-                    status: status
-                });
-                if (result) {
-                    let product_image: any;
-                    if (req.file) {
-                        product_image = req?.file?.filename;
-                        let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
-                    }
-                    return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-add"), {});
-                } else {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-                }
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
+
+            result = await Faqs.create({
+                question: question,
+                answer: answer,
+                status: status,
+                created_by: req.user.object_id
+            });
 
 
-
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "faq-add"), result.doc);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-
-    //update
+    //Update
     public async update(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[update]";
@@ -149,26 +113,20 @@ export default class ProductController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, price, unit_id, pack, category_id, status } = req.body;
+            const { question, answer, status } = req.body;
 
-
-
-            let result: any = await Product.findOneAndUpdate(
+            let result: any = await Faqs.findOneAndUpdate(
                 { id: id },
                 {
-                    name: name,
-                    description: description,
-                    category_id: category_id,
-                    status: status
+                    question: question,
+                    answer: answer,
+                    status: status,
+                    updated_by: req.user.object_id
                 });
-            let product_image: any;
-            if (req.file) {
-                product_image = req?.file?.filename;
-                let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
-            }
-            const updatedData: any = await Product.find({ id: id }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-update"), updatedData);
+            const updatedData: any = await Faqs.find({ id: id }).lean();
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "faq-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -183,10 +141,10 @@ export default class ProductController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Product.deleteOne({ id: id });
+            const result = await Faqs.deleteOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-delete"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-delete"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -205,10 +163,10 @@ export default class ProductController {
 
             const id = parseInt(req.params.id);
             const { status } = req.body;
-            const updationstatus = await Product.findOneAndUpdate({ id: id }, { status: status }).lean();
-            const updatedData: any = await Product.find({ id: id }).lean();
+            const updationstatus = await Faqs.findOneAndUpdate({ id: id }, { status: status }).lean();
+            const updatedData: any = await Faqs.find({ id: id }).lean();
             if (updationstatus) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-status"]), updatedData);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-status"]), updatedData);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

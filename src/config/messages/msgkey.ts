@@ -97,7 +97,7 @@ export const MessageKey: IObjectKeys = {
 
     "help-add": "help-add",
     "help-display": "help-display",
-    "report-add": "report-add",
+    "report-issue": "report-issue",
     "customer-updated": "customer-updated",
     "deviceid-add": "deviceid-add",
     "deviceid-update": "deviceid-update",
@@ -117,5 +117,26 @@ export const MessageKey: IObjectKeys = {
     "watchlist-delete": "watchlist-delete",
     "watchlist-item-add": "watchlist-item-add",
     "watchlist-item-remove": "watchlist-item-remove",
+
+
+    "faq-fetched": "faq-fetched",
+    "faq-add": "faq-add",
+    "faq-update": "faq-update",
+    "faq-status": "faq-status",
+    "faq-delete": "faq-delete",
+
+    "team-fetched": "team-fetched",
+    "team-add": "team-add",
+    "team-update": "team-update",
+    "team-status": "team-status",
+    "team-delete": "team-delete",
+
+
+    "settings-saved": "settings-saved",
+    "settings-fetched": "settings-fetched",
+
+    "wallet-balance-fetched": "wallet-balance-fetched",
+    "wallet-recharge-success": "wallet-recharge-success",
+    "transactions-fetched": "transactions-fetched",
 
 };

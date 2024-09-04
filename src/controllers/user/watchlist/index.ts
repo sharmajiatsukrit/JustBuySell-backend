@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category, Product, ProductRequest, Watchlist } from "../../../models";
+import { Category, Product, ProductRequest, Watchlist, WatchlistItem } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -66,9 +66,9 @@ export default class WatchlistController {
 
             const id = parseInt(req.params.id);
             const result: any = await Watchlist.findOne({ id: id }).lean();
-            console.log(result);
 
-            if (result.length > 0) {
+
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -112,11 +112,16 @@ export default class WatchlistController {
 
             const { id } = req.params; // Assuming the ID is passed as a URL parameter
             const { name } = req.body;
+            let result: any = await Watchlist.findOneAndUpdate(
+                { id: id },
+                {
+                    name: name,
+                    updated_by: req.customer.object_id
+                });
+            // const watchlist = await Watchlist.find({ id });
 
-            const watchlist = await Watchlist.find({ id });
-
-            watchlist[0].name = name;
-            await watchlist[0].save();
+            // watchlist[0].name = name;
+            // await watchlist[0].save();
 
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-update"]), {});
         } catch (err: any) {
@@ -132,23 +137,49 @@ export default class WatchlistController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { id } = req.params; // Assuming the ID is passed as a URL parameter
-
             // Log the id for debugging purposes
-            console.log(`${fn} Attempting to delete watchlist with id: ${id}`);
 
-            // Find the watchlist by id
-            const watchlist = await Watchlist.find({ id: id });
+            const id = parseInt(req.params.id);
+            const result = await Watchlist.deleteOne({ id: id });
 
-            if (!watchlist) {
-                return serverResponse(res, HttpCodeEnum.NOTFOUND, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]), {});
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-delete"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
 
-            await Watchlist.deleteOne();
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
-            console.log(`${fn} Watchlist with id: ${id} deleted successfully`);
 
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-delete"]), {});
+    // Checked
+    public async getProductsByWatchlistId(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const watchlist: any = await Watchlist.findOne({ id: id }).lean();
+            const result: any = await WatchlistItem.find({ watchlist_id: watchlist._id }).populate({
+                path: 'product_id',
+                transform: (doc) => {
+                    if (doc && doc.product_image) {
+                        doc.product_image = `${process.env.RESOURCE_URL}${doc.product_image}`;
+                    }
+                    return doc;
+                }
+            }).lean();
+
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

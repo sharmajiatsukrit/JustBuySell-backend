@@ -9,6 +9,7 @@ interface ICustomer extends Document {
     company_name: string;
     brand_name: string;
     company_logo: string;
+    designation: string;
     gst: string;
     telephone: string;
     company_email: string;
@@ -31,6 +32,7 @@ const customerSchema: Schema = new Schema({
     phone: { type: String, required: true, index: { unique: true } },
     email: { type: String },
     company_name: { type: String, default: '' },
+    designation: { type: String, default: '' },
     brand_name: { type: String, default: '' },
     company_logo: { type: String, default: '' },
     gst: { type: String, default: '' },
@@ -40,7 +42,7 @@ const customerSchema: Schema = new Schema({
     address_line_2: { type: String, default: '' },
     open_time: { type: String, default: '' },
     close_time: { type: String, default: '' },
-    parent_id: { type: String, default: 0 },
+    parent_id: { type: Schema.Types.ObjectId, ref: 'customers', default: '' },
     latitude: { type: String, default: '' },
     longitude: { type: String, default: '' },
     is_email_verified: { type: Boolean, default: false },

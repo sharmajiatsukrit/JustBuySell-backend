@@ -29,25 +29,25 @@ export default class SearchController {
             const fn = "[getSearch]";
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-    
+
             const { keyword, categoryid } = req.query;
-    
+
             let query: any = {};
-    
+
             if (keyword) {
                 query.name = { $regex: keyword, $options: 'i' };
             }
-    
+
             if (categoryid) {
                 query.category_id = categoryid;
             }
-    
+
             let searchResults = await Product.find(query).select('-createBy -updatedBy -createdAt -updatedAt').lean();
-    
+
             if (searchResults.length > 0) {
                 // Format the response data if needed
                 const formattedResults = searchResults.map((result: any) => ({
-                    id: result._id,
+                    id: result.id,
                     name: result.name,
                     description: result.description,
                     price: result.price,
@@ -56,7 +56,7 @@ export default class SearchController {
                     product_image: result.product_image
                     // Add other fields you want to include
                 }));
-    
+
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), formattedResults);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

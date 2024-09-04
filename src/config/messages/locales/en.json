@@ -128,10 +128,29 @@
     "otp-verified": "Otp verified successfully",
     "help-add": "Help Added successfully",
     "help-display": "Help Display successfully",
-    "report-add": "report-add",
+    "report-issue": "Your Report issue successfully submitted.",
     "deviceid-add": "Device Added Successfully",
     "deviceid-update": "Device Updated successfully",
     "location-update": "Location updated successfully",
-    "location-add": "Location Added successfully"
+    "location-add": "Location Added successfully",
+
+    "faq-fetched": "Faqs Fetched Successfully",
+    "faq-add":"New Faqs added successfully",
+    "faq-update":"Faqs Updated successfully",
+    "faq-delete": "Faqs Deleted successfully",
+    "faq-status": "Faqs Status successfully Updated",
+
+    "settings-saved": "Settings Saved successfully Updated",
+    "settings-fetched": "Settings Fetched successfully Updated",
+
+    "wallet-balance-fetched": "Wallet balance fetched.",
+    "wallet-recharge-success": "Wallet recharge successfully.",
+    "transactions-fetched": "Transaction History fetched.",
+
+    "team-fetched": "Team Member Fetched Successfully",
+    "team-add":"New Team Member added successfully",
+    "team-update":"Team Member Updated successfully",
+    "team-delete": "Team Member Deleted successfully",
+    "team-status": "Team Member Status successfully Updated"
     
 }

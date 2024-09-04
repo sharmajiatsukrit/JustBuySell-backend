@@ -32,12 +32,32 @@ export default class DashboardController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const results: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
-            if (results.company_logo.length) {
+            const { keyword, categoryid } = req.query;
 
+            let query: any = {};
+
+            if (keyword) {
+                query.name = { $regex: keyword, $options: 'i' };
             }
-            if (results) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), results);
+
+            if (categoryid) {
+                query.category_id = categoryid;
+            }
+
+            let searchResults = await Product.find(query).select('-createBy -updatedBy -createdAt -updatedAt').lean().limit(10);
+
+            if (searchResults.length > 0) {
+                // Format the response data if needed
+                const formattedResults = searchResults.map((result: any) => ({
+                    id: result.id,
+                    name: result.name,
+                    description: result.description,
+                    category_id: result.category_id,
+                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`
+                    // Add other fields you want to include
+                }));
+
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), formattedResults);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
