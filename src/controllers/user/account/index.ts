@@ -247,7 +247,6 @@ export default class AccountController {
         }
     }
 
-
     // Checked
     public async getTeamMemberList(req: Request, res: Response): Promise<any> {
         try {
@@ -335,11 +334,14 @@ export default class AccountController {
             this.locale = (locale as string) || "en";
 
             const { id } = req.params; // Assuming the ID is passed as a URL parameter
-            const { name } = req.body;
+            const { name, phone, email, designation } = req.body;
             let result: any = await Customer.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
+                    phone: phone,
+                    email: email,
+                    designation: designation,
                     updated_by: req.customer.object_id
                 });
             // const watchlist = await Watchlist.find({ id });
