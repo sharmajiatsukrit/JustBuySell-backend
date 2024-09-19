@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category,Unit,Country,State,City,Roles } from "../../../models";
+import { Category, Unit, Country, State, City, Roles, Attribute } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -23,37 +23,58 @@ export default class HelperController {
     }
 
 
+
     // Checked
     public async getCategories(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getCategories]";
-            // Set locale
-            const { locale } = req.query;
+            const fn = "[getCategories]";
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await Category.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
-
-            if (result.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), result);
+            // Constructing the search query
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                searchQuery = { status: true, };
+            }
+            const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            console.log(result);
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
+            } else {
+                throw new Error(
+                    ServerMessages.errorMsgLocale(
+                        this.locale,
+                        ServerMessagesEnum["not-found"]
+                    )
+                );
             }
         } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+            return serverErrorHandler(
+                err,
+                res,
+                err.message,
+                HttpCodeEnum.SERVERERROR,
+                []
+            );
         }
     }
 
 
     public async getUnits(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getUnits]";
+            const fn = "[getUnits]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
-            const result = await Unit.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+
+
+            const result = await Unit.find({ status: true }).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
@@ -64,15 +85,58 @@ export default class HelperController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
+
+
+    // Checked
+    public async getAttributes(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getAttributes]";
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+            // Constructing the search query
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = { status: true, };
+            }
+            const result: any = await Attribute.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            console.log(result);
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-fetched"), result);
+            } else {
+                throw new Error(
+                    ServerMessages.errorMsgLocale(
+                        this.locale,
+                        ServerMessagesEnum["not-found"]
+                    )
+                );
+            }
+        } catch (err: any) {
+            return serverErrorHandler(
+                err,
+                res,
+                err.message,
+                HttpCodeEnum.SERVERERROR,
+                []
+            );
+        }
+    }
+
     public async getCounties(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getCounties]";
+            const fn = "[getCounties]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
+
+
             const result = await Country.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {
@@ -87,12 +151,12 @@ export default class HelperController {
 
     public async getStates(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getStates]";
+            const fn = "[getStates]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
+
+
             const result = await State.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {
@@ -107,12 +171,12 @@ export default class HelperController {
 
     public async getCities(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getCities]";
+            const fn = "[getCities]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
+
+
             const result = await City.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {
@@ -128,12 +192,12 @@ export default class HelperController {
 
     public async getRoles(req: Request, res: Response): Promise<any> {
         try {
-            const fn ="[getRoles]";
+            const fn = "[getRoles]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            
-                            
+
+
             const result = await Roles.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {

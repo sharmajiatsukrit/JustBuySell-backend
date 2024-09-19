@@ -126,6 +126,12 @@ export enum ServerMessagesEnum {
     "faq-delete" = "faq-delete",
     "faq-status" = "faq-status",
 
+    "attribute-fetched" = "attribute-fetched",
+    "attribute-add" = "attribute-add",
+    "attribute-update" = "attribute-update",
+    "attribute-delete" = "attribute-delete",
+    "attribute-status" = "attribute-status",
+
     "settings-saved" = "settings-saved",
     "settings-fetched" = "settings-fetched",
 

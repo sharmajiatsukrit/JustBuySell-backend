@@ -75,6 +75,12 @@
     "unit-delete": "Unit Deleted successfully",
     "unit-status": "Unit Status successfully Updated",
 
+    "attribute-fetched": "Attribute Details Fetched",
+    "attribute-add":"New Attribute added successfully",
+    "attribute-update":"Attribute Updated successfully",
+    "attribute-delete": "Attribute Deleted successfully",
+    "attribute-status": "Attribute Status successfully Updated",
+
     "product-requested": "Product Request Successfully submitted.",
     "product-request-fetched": "Product Request Fetched",
     "product-request-add":"New Product Request added successfully",

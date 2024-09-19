@@ -7,6 +7,7 @@ const helperController = new HelperController();
 
 routes.get("/get-categories", validateRequest, authAdmin, helperController.getCategories.bind(helperController));
 routes.get("/get-units", validateRequest, authAdmin, helperController.getUnits.bind(helperController));
+routes.get("/get-attributes", validateRequest, authAdmin, helperController.getAttributes.bind(helperController));
 routes.get("/get-countries", validateRequest, authAdmin, helperController.getCounties.bind(helperController));
 routes.get("/get-states", validateRequest, authAdmin, helperController.getStates.bind(helperController));
 routes.get("/get-cities", validateRequest, authAdmin, helperController.getCities.bind(helperController));

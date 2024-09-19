@@ -131,6 +131,11 @@ export const MessageKey: IObjectKeys = {
     "team-status": "team-status",
     "team-delete": "team-delete",
 
+    "attribute-fetched": "attribute-fetched",
+    "attribute-add": "attribute-add",
+    "attribute-update": "attribute-update",
+    "attribute-status": "attribute-status",
+    "attribute-delete": "attribute-delete",
 
     "settings-saved": "settings-saved",
     "settings-fetched": "settings-fetched",
