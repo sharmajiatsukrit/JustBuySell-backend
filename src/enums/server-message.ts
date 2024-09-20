@@ -132,6 +132,12 @@ export enum ServerMessagesEnum {
     "attribute-delete" = "attribute-delete",
     "attribute-status" = "attribute-status",
 
+    "attribute-item-fetched" = "attribute-item-fetched",
+    "attribute-item-add" = "attribute-item-add",
+    "attribute-item-update" = "attribute-item-update",
+    "attribute-item-delete" = "attribute-item-delete",
+    "attribute-item-status" = "attribute-item-status",
+
     "settings-saved" = "settings-saved",
     "settings-fetched" = "settings-fetched",
 

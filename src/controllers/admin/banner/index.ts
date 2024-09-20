@@ -102,7 +102,7 @@ export default class BannerController {
             if (req.file) {
                 banner = req?.file?.filename;
             } else {
-                return serverResponse(res, HttpCodeEnum.OK, "No Banner Attached", {});
+                return serverResponse(res, HttpCodeEnum.SERVERERROR, "No Banner Attached", {});
             }
 
             const banneradd = await Banner.create({

@@ -34,6 +34,7 @@ export default class ProductRequestController {
             const results = await ProductRequest.find({})
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
+                .populate('created_by', 'id name')
                 .limit(limitNumber)
                 .lean();
 
@@ -157,7 +158,7 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await ProductRequest.findOne({ id: id }).lean();
+            const result: any = await ProductRequest.findOne({ id: id }).populate('created_by', 'id name').lean();
 
 
             if (result) {

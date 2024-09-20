@@ -157,6 +157,12 @@
     "team-add":"New Team Member added successfully",
     "team-update":"Team Member Updated successfully",
     "team-delete": "Team Member Deleted successfully",
-    "team-status": "Team Member Status successfully Updated"
+    "team-status": "Team Member Status successfully Updated",
+
+    "attribute-item-fetched": "{attribute_name} Fetched Successfully",
+    "attribute-item-add":"New {attribute_name} added successfully",
+    "attribute-item-update":"{attribute_name} Updated successfully",
+    "attribute-item-delete": "{attribute_name} Deleted successfully",
+    "attribute-item-status": "{attribute_name} Status successfully Updated"
     
 }
