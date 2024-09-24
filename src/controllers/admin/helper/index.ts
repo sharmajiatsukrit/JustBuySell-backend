@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category, Unit, Country, State, City, Roles, Attribute } from "../../../models";
+import { Category, Unit, Country, State, City, Roles, Attribute, AttributeItem } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -110,6 +110,50 @@ export default class HelperController {
             console.log(result);
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-fetched"), result);
+            } else {
+                throw new Error(
+                    ServerMessages.errorMsgLocale(
+                        this.locale,
+                        ServerMessagesEnum["not-found"]
+                    )
+                );
+            }
+        } catch (err: any) {
+            return serverErrorHandler(
+                err,
+                res,
+                err.message,
+                HttpCodeEnum.SERVERERROR,
+                []
+            );
+        }
+    }
+
+    // Checked
+    public async getAttributeItems(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getAttributeItems]";
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+            // Constructing the search query
+            const attribute_id = parseInt(req.params.attribute_id);
+            const attribute: any = await Attribute.findOne({ id: attribute_id }).lean();
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    attribute_id:attribute._id,
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = { attribute_id:attribute._id,status: true, };
+            }
+            const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            console.log(result);
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-item-fetched"), result);
             } else {
                 throw new Error(
                     ServerMessages.errorMsgLocale(

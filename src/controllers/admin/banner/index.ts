@@ -96,7 +96,7 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, external_url, status } = req.body;
+            const { name, external_url,start_date,end_date, status } = req.body;
 
             let banner: any;
             if (req.file) {
@@ -108,6 +108,8 @@ export default class BannerController {
             const banneradd = await Banner.create({
                 name: name,
                 banner: banner,
+                start_date: start_date,
+                end_date: end_date,
                 external_url: external_url,
                 status: status,
                 created_by: req.user.object_id
@@ -128,7 +130,7 @@ export default class BannerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, external_url, status } = req.body;
+            const { name, external_url,start_date,end_date, status } = req.body;
             const { id } = req.params;
 
             let banner: any;
@@ -142,6 +144,8 @@ export default class BannerController {
                 {
                     name: name,
                     external_url: external_url,
+                    start_date: start_date,
+                    end_date: end_date,
                     status: status,
                     updated_by: req.user.object_id
                 });
