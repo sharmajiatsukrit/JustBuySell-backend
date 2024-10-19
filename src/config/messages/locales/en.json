@@ -4,7 +4,6 @@
     "not-found": "No data Found",
     "required-iv": "The required fields are missing or invalid ",
     "permission-denied": "Permission has been denied",
-
     "user-bc": "user-bc",
     "user-bl": "The user has been blocked",
     "user-dl": "The user has been deleted",
@@ -88,7 +87,7 @@
     "product-request-delete": "Product Request Deleted successfully",
     "product-request-status": "Product Request Status successfully Updated",
 
-    "offer-fetched": "Offer Details Fetched",
+    "offer-fetched": "Offers Fetched Successfully",
     "offer-add":"New Offer added successfully",
     "offer-update":"Offer Updated successfully",
     "offer-delete": "Offer Deleted successfully",

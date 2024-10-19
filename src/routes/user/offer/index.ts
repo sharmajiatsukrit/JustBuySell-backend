@@ -6,11 +6,18 @@ import Fileupload from "../../../utils/middleware/multer";
 const routes: Router = expres.Router();
 const offersController = new Offers();
 
-routes.post("/add", validateRequest, authRequest, offersController.add.bind(offersController));
-routes.put("/update/:id", validateRequest, authRequest, offersController.update.bind(offersController));
-routes.delete("/delete/:id", validateRequest, authRequest, offersController.delete.bind(offersController));
-routes.get("/list", validateRequest, authRequest, offersController.getList.bind(offersController));
-routes.get("/get-details-byid/:id", validateRequest, authRequest, offersController.getDetailsById.bind(offersController));
-routes.patch("/offerstatus/:id", validateRequest, authRequest, offersController.offerStatus.bind(offersController));
+routes.get("/my-offers",  authRequest, validateRequest, offersController.getList.bind(offersController));
+routes.get("/by-id/:id",  authRequest, validateRequest, offersController.getById.bind(offersController));
+routes.delete("/delete/:id",  authRequest, validateRequest, offersController.delete.bind(offersController));
+routes.patch("/status/:id", validateRequest, authRequest, offersController.status.bind(offersController));
+
+routes.put("/buy-offer/update/:id", validateRequest, authRequest, offersController.updateBuyOffer.bind(offersController));
+routes.put("/sell-offer/update/:id", validateRequest, authRequest, offersController.updateSellOffer.bind(offersController));
+
+
+
+routes.post("/post-buy-offer", validateRequest, authRequest, offersController.postBuyOffer.bind(offersController));
+routes.post("/post-sell-offer", validateRequest, authRequest, offersController.postSellOffer.bind(offersController));
+
 
 export default routes;

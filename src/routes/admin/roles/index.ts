@@ -6,6 +6,7 @@ const routes: Router = expres.Router();
 const roleController = new RoleController();
 
 routes.get("/list", authAdmin, validateRequest, roleController.getList.bind(roleController));
+routes.get("/get-permissions", authAdmin, validateRequest, roleController.getPermissions.bind(roleController));
 routes.post("/add", authAdmin, validateRequest, roleController.add.bind(roleController));
 routes.put("/update/:id", authAdmin, validateRequest, roleController.update.bind(roleController));
 routes.get("/by-id/:id", authAdmin, validateRequest, roleController.getById.bind(roleController));

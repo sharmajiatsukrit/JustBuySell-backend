@@ -39,7 +39,7 @@ export default class StateController {
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
-                .lean();
+                .lean().populate("country_id","id name");
 
             const totalCount = await State.countDocuments({});
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -64,7 +64,7 @@ export default class StateController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await State.findOne({ id: id }).lean();
+            const result: any = await State.findOne({ id: id }).lean().populate("country_id","id name");
             // console.log(result);
 
             if (result) {
@@ -89,10 +89,10 @@ export default class StateController {
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
-
+            const country:any = await Country.findOne({id:country_id}).lean();
             result = await State.create({
                 name: name,
-                country_id: country_id,
+                country_id: country._id,
                 status: status,
                 created_by: req.user.object_id
             });
@@ -116,12 +116,12 @@ export default class StateController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, country_id, status } = req.body;
-
+            const country:any = await Country.findOne({id:country_id}).lean();
             let result: any = await State.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
-                    country_id: country_id,
+                    country_id: country._id,
                     status: status,
                     updated_by: req.user.object_id
                 });

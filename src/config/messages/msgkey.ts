@@ -98,11 +98,16 @@ export const MessageKey: IObjectKeys = {
     "help-add": "help-add",
     "help-display": "help-display",
     "report-issue": "report-issue",
-    "customer-updated": "customer-updated",
     "deviceid-add": "deviceid-add",
     "deviceid-update": "deviceid-update",
     "location-update": "location-update",
     "location-add": "location-add",
+
+    "customer-fetched": "customer-fetched",
+    "customer-add": "customer-add",
+    "customer-updated": "customer-update",
+    "customer-status": "customer-status",
+    "customer-deleted": "customer-delete",
 
     "banner-fetched": "banner-fetched",
     "banner-add": "banner-add",

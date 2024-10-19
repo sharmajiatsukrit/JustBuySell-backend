@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, Banner, Category, Product } from "../../../models";
+import { Customer, Banner, Category, Product,Offers } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -127,6 +127,52 @@ export default class DashboardController {
     }
 
     // Checked
+    public async getProductsByCategory(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getProductsByCategory]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const id = parseInt(req.params.id);
+            let results:any;
+            let totalCount:any;
+            if(id == 0){
+                results = await Product.find({ status: true }).lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 });
+                totalCount = await Product.countDocuments({ status: true});
+            }else{
+                const category:any = await Category.findOne({id:id}).lean();
+                results = await Product.find({ status: true,category_id:category._id }).lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 });
+                totalCount = await Product.countDocuments({ status: true,category_id:category._id });
+            }
+            
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            if (results.length > 0) {
+                const formattedResult = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
+                }));
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
     public async getMostSearchedProducts(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getMostSearchedProducts]";
@@ -223,5 +269,129 @@ export default class DashboardController {
         }
     }
 
+    // Checked
+    public async getProductByID(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getProductByID]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const id = parseInt(req.params.id);
+            const result: any = await Product.findOne({ status: true,id:id }).populate('category_id', 'id name').lean();
+            
+            if (result) {
+                const formattedResult = {
+                    id: result.id,
+                    name: result.name,
+                    description: result.description,
+                    category_id: result.category_id,
+                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
+                    attributes:result.attributes,
+                };
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
+
+    // Checked
+    public async getBuyOfferByProductID(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getBuyOfferByProductID]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const id = parseInt(req.params.id);
+            const product:any = await Product.findOne({ id: id }).lean();
+            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').lean();
+                    
+            const totalCount = await Offers.countDocuments({ status: 1,type: 0,product_id:product._id });
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            if (results.length > 0) {
+                
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: results, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    // public async getBuyOfferByProductID(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getProductByID]";
+    //         // Set locale
+    //         const { locale, page, limit } = req.query;
+    //         this.locale = (locale as string) || "en";
+    //         const id = parseInt(req.params.id);
+    //         const product:any = await Product.findOne({ id: id }).lean();
+    //         const result: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').lean();
+            
+    //         if (result.length > 0) {
+                
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
+    // Checked
+    public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getSellOfferByProductID]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const id = parseInt(req.params.id);
+            const product:any = await Product.findOne({ id: id }).lean();
+            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').lean();
+                   
+            const totalCount = await Offers.countDocuments({ status: 1,type: 1,product_id:product._id });
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            if (results.length > 0) {
+                
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: results, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    // Checked
+    // public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getProductByID]";
+    //         // Set locale
+    //         const { locale, page, limit } = req.query;
+    //         this.locale = (locale as string) || "en";
+    //         const id = parseInt(req.params.id);
+    //         const product:any = await Product.findOne({ id: id }).lean();
+    //         const result: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').lean();
+            
+    //         if (result.length > 0) {
+                
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
 }

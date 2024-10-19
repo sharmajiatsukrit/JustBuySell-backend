@@ -58,7 +58,12 @@ export default class UserController {
             const result = await User.find(searchQuery)
                 .sort({ id: -1 })
                 .skip(skip)
-                .limit(limitNumber).lean();
+                .limit(limitNumber).lean().populate("country_id","id name")
+                .populate("state_id","id name")
+                .populate("city_id","id name")
+                .populate("created_by","id name")
+                .populate("updated_by","id name")
+                .populate("role_id","id name");
 
             // Get the total number of documents in the User collection that match the filter
             const totalCount = await User.countDocuments();
@@ -89,7 +94,14 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.findOne({ id: id }).lean();
+            const result = await User.findOne({ id: id })
+                                        .lean()
+                                        .populate("country_id","id name")
+                                        .populate("state_id","id name")
+                                        .populate("city_id","id name")
+                                        .populate("created_by","id name")
+                                        .populate("updated_by","id name")
+                                        .populate("role_id","id name");
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-fetched"]), result);
@@ -121,10 +133,10 @@ export default class UserController {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
 
-            const role: any = Roles.findOne({ id: role_id }).lean();
-            const country: any = Country.findOne({ id: country_id }).lean();
-            const state: any = State.findOne({ id: state_id }).lean();
-            const city: any = City.findOne({ id: city_id }).lean();
+            const role: any = await Roles.findOne({ id: role_id }).lean();
+            const country: any = await Country.findOne({ id: country_id }).lean();
+            const state: any = await State.findOne({ id: state_id }).lean();
+            const city: any = await City.findOne({ id: city_id }).lean();
             const hashedPassword = await Bcrypt.hash(password, 10);
             let profile_img: any;
             if (req.file) {
@@ -165,10 +177,11 @@ export default class UserController {
             const { name, phone, email, date_of_birth, city_id, state_id, country_id, address, role_id, password } = req.body;
             const id = parseInt(req.params.id);
             const hashedPassword = await Bcrypt.hash(password, 10);
-            const role: any = Roles.findOne({ id: role_id }).lean();
-            const country: any = Country.findOne({ id: country_id }).lean();
-            const state: any = State.findOne({ id: state_id }).lean();
-            const city: any = City.findOne({ id: city_id }).lean();
+            const role: any = await Roles.findOne({ id: role_id }).lean();
+            const country: any = await Country.findOne({ id: country_id }).lean();
+            const state: any = await State.findOne({ id: state_id }).lean();
+            const city: any = await City.findOne({ id: city_id }).lean();
+            // console.log(role,country,state,city);
             await User.findOneAndUpdate({ id: id }, {
                 name: name,
                 phone: phone,

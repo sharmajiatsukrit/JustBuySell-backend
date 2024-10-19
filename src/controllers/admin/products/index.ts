@@ -81,7 +81,7 @@ export default class ProductController {
             const id = parseInt(req.params.id);
             const result: any = await Product.findOne({ id: id }).populate('category_id', 'id name').lean();
             const variations: any = await ProductVariations.findOne({ product_id: result._id }).populate('category_id', 'id name').lean();
-
+            console.log(result);
             if (result) {
                 const formattedResult = {
                     id: result.id,
@@ -89,7 +89,6 @@ export default class ProductController {
                     description: result.description,
                     category_id: result.category_id,
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    variations:variations,
                     attributes:result.attributes,
                     created_by: result.created_by,
                     status: result.status,
@@ -113,16 +112,24 @@ export default class ProductController {
             const { name, description, category_id,attributes,  variations, status } = req.body;
             let result: any;
             const attr = JSON.parse(attributes);
-            const categoryid = parseInt(category_id);
-            const category: any = await Category.findOne({ id: categoryid }).lean();
-    
-            if (category) {
+            const cat:any = JSON.parse(category_id);
+            const categoryObjects = await Promise.all(
+                cat.map(async (categoryId:any) => {
+                  // Find category by ID
+                  const category:any = await Category.findOne({ id: categoryId });
+                  if (!category) {
+                    // throw new Error(`Category with ID ${categoryId} not found`);
+                  }
+                  return category._id;  // Return the ObjectId
+                })
+              );
+            if (categoryObjects) {
                 // Create the main product
                 result = await Product.create({
                     name,
                     description,
                     attributes:attr,
-                    category_id: category._id,
+                    category_id: categoryObjects,
                     status
                 });
     
@@ -132,26 +139,7 @@ export default class ProductController {
                         const product_image = req.file.filename;
                         await Product.findOneAndUpdate({ id: result.id }, { product_image });
                     }
-                    let vari = JSON.parse(variations);
-                    // Handle variations if provided
-                    if (vari) {
-                        // console.log(vari);
-                        const variationPromises = vari.map(async (variation: any) => {
-                            console.log(variation);
-                            // Ensure to create the variation with the correct product ID
-                            return ProductVariation.create({
-                                product_id: result._id,
-                                attributes: variation, // Dynamic attributes
-                                category_id: category._id,
-                                status: true,
-                                created_by: req.user.object_id, // Assuming you have user info in the request
-                                updated_by: req.user.object_id
-                            });
-                        });
-    
-                        // Wait for all variations to be created
-                        await Promise.all(variationPromises);
-                    }
+                    
     
                     return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-add"), {});
                 } else {
@@ -178,33 +166,40 @@ export default class ProductController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, category_id, unit_id, packs, master_packs, trade_units, offer_units, status } = req.body;
-            const categoryid = parseInt(category_id);
-            const unitid = parseInt(unit_id);
+            const { name, description, category_id,attributes,  variations, status } = req.body;
+            const attr = JSON.parse(attributes);
+            const cat:any = JSON.parse(category_id);
+            const categoryObjects = await Promise.all(
+                cat.map(async (categoryId:any) => {
+                  // Find category by ID
+                  const category:any = await Category.findOne({ id: categoryId });
+                  if (!category) {
+                    // throw new Error(`Category with ID ${categoryId} not found`);
+                  }
+                  return category._id;  // Return the ObjectId
+                })
+              );
+            if (categoryObjects) {
+                let result: any = await Product.findOneAndUpdate(
+                    { id: id },
+                    {
+                        name,
+                        description,
+                        attributes:attr,
+                        category_id: categoryObjects,
+                        status
+                    });
+                let product_image: any;
+                if (req.file) {
+                    product_image = req?.file?.filename;
+                    let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
+                }
+                const updatedData: any = await Product.find({ id: id }).lean();
 
-            const category: any = await Category.findOne({ id: categoryid }).lean();
-            const units: any = await Unit.findOne({ id: unitid }).lean();
-            let result: any = await Product.findOneAndUpdate(
-                { id: id },
-                {
-                    name: name,
-                    description: description,
-                    category_id: category._id,
-                    unit_id: units._id,
-                    packs: JSON.parse(packs),
-                    master_packs: JSON.parse(master_packs),
-                    trade_units: JSON.parse(trade_units),
-                    offer_units: JSON.parse(offer_units),
-                    status: status
-                });
-            let product_image: any;
-            if (req.file) {
-                product_image = req?.file?.filename;
-                let resultimage: any = await Product.findOneAndUpdate({ id: result.id }, { product_image: product_image });
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-update"), updatedData);
+            }else{
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-            const updatedData: any = await Product.find({ id: id }).lean();
-
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-update"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

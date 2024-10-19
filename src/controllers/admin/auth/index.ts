@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions, User } from "../../../models";
+import { Otps, Permissions,Roles, Sessions, User } from "../../../models";
 import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import { UserData } from "../../../interfaces/user";
@@ -350,7 +350,26 @@ export default class AuthController {
     }
 
 
+    public async getPermissions(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getPermissions]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
 
+            // const id = parseInt(req.params.id);
+            const user: any = await User.findOne({ id: req.user.user_id }).lean();
+            const permission: any = await Roles.find({ _id: user.role_id }).select('id name description permissions').lean();
+
+            if (permission) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "permission-fetched"), permission);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
 
 

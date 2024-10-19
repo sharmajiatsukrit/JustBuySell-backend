@@ -51,7 +51,7 @@ export default class PermissionController {
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]),
-                    { result, totalPages }
+                    { data: result, totalCount, totalPages, currentPage: pageNumber }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

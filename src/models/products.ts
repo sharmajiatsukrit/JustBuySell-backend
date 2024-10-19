@@ -6,7 +6,7 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 interface IProducts extends Document {
     name: string;
     description: string;
-    category_id: number;
+    category_id: string[];
     attributes: string; // Dynamic attributes stored as key-value pairs
     product_image: string;
     status: boolean;
@@ -19,7 +19,7 @@ const productsSchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     attributes: { type: Map, of: Array, default: {} }, // Dynamic attributes
-    category_id: { type: Schema.Types.ObjectId, ref: 'categories' },
+    category_id: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
     product_image: { type: String, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },

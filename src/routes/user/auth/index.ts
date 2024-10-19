@@ -11,6 +11,8 @@ const authController = new AuthController();
 routes.post("/signin", authController.validate(UserRouteEndPoints.SignIn), validateRequest, authController.signIn.bind(authController));
 routes.post("/verify-otp", authController.validate(UserRouteEndPoints.Verifyotplogin), validateRequest, authController.verifyLoginOTP.bind(authController));
 
+
+
 routes.post("/forgetpassword", authController.validate(UserRouteEndPoints.ForgetPassword), validateRequest, authController.forgetPassword.bind(authController));
 routes.post("/sendotp", authController.validate(UserRouteEndPoints.ForgetPassword), validateRequest, authController.sendOtpMail.bind(authController));
 routes.post("/verifyemail", authController.validate(UserRouteEndPoints.VERIFYEMAIL), validateRequest, authController.verifyEmailId.bind(authController));

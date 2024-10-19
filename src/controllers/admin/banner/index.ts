@@ -46,6 +46,8 @@ export default class BannerController {
                 const formattedResult = result.map((item: any) => ({
                     id: item.id,
                     name: item.name,
+                    start_date: item.start_date,
+                    end_date: item.end_date,
                     banner: `${process.env.RESOURCE_URL}${item.banner}`,
                     external_url: item.external_url,
                     status: item.status,
@@ -77,6 +79,8 @@ export default class BannerController {
                 const formattedResult = {
                     id: result.id,
                     name: result.name,
+                    start_date: result.start_date,
+                    end_date: result.end_date,
                     banner: `${process.env.RESOURCE_URL}${result.banner}`,
                     external_url: result.external_url,
                     status: result.status,
@@ -132,7 +136,7 @@ export default class BannerController {
 
             const { name, external_url,start_date,end_date, status } = req.body;
             const { id } = req.params;
-
+            console.log({ name, external_url,start_date,end_date, status });
             let banner: any;
             if (req.file) {
                 banner = req?.file?.filename;

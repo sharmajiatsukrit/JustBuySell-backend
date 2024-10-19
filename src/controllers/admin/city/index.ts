@@ -39,7 +39,7 @@ export default class CityController {
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
-                .lean();
+                .lean().populate("state_id","id name");
 
             const totalCount = await City.countDocuments({});
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -63,9 +63,9 @@ export default class CityController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await City.findOne({ id: id }).lean();
+            const result: any = await City.findOne({ id: id }).lean().populate("state_id","id name");
 
-            if (result.length > 0) {
+            if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -85,12 +85,12 @@ export default class CityController {
 
             const { name, state_id, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
+            const state:any = await State.findOne({id:state_id}).lean();
             let result: any;
 
             result = await City.create({
                 name: name,
-                state_id: state_id,
+                state_id: state._id,
                 status: status,
                 created_by: req.user.object_id
             });
@@ -114,12 +114,12 @@ export default class CityController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, state_id, status } = req.body;
-
+            const state:any = await State.findOne({id:state_id}).lean();
             let result: any = await City.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
-                    state_id: state_id,
+                    state_id: state._id,
                     status: status,
                     updated_by: req.user.object_id
                 });

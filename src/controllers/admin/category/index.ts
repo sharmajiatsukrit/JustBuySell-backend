@@ -8,6 +8,7 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import { log } from "winston";
 
 const fileName = "[admin][category][index.ts]";
 export default class CategoryController {
@@ -37,7 +38,7 @@ export default class CategoryController {
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
-                .lean();
+                .lean().populate("parent_id","id name");
 
             // Get the total number of documents in the Category collection
             const totalCount = await Category.countDocuments({});
@@ -51,6 +52,7 @@ export default class CategoryController {
                     id: item.id, // Generate a simple sequential ID starting from 1
                     name: item.name,
                     description: item.description,
+                    parent_id: item.parent_id,
                     catImg: `${process.env.RESOURCE_URL}${item.cat_img}`, // Full URL of category image
                     status: item.status,
                     // Add more fields as necessary
@@ -79,7 +81,7 @@ export default class CategoryController {
             const id = parseInt(req.params.id);
 
             // Find category by id and fetch details
-            const result: any = await Category.findOne({ id }).lean();
+            const result: any = await Category.findOne({ id }).lean().populate("parent_id","id name");
 
             if (result) {
                 // Construct full URL for category image
@@ -109,7 +111,9 @@ export default class CategoryController {
             this.locale = (locale as string) || "en";
 
             const { name, description, parent_id, status } = req.body;
-            const category: any = Category.findOne({ id: parent_id }).lean();
+            const category: any = await Category.findOne({ id: parent_id }).lean();
+            console.log(category);
+            
             const result: any = await Category.create({
                 name: name,
                 description: description,
@@ -145,13 +149,13 @@ export default class CategoryController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, description, parent_id, status } = req.body;
-
+            const category: any = await Category.findOne({ id: parent_id }).lean();
             let result: any = await Category.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description: description,
-                    parent_id: parent_id,
+                    parent_id: category?._id,
                     status: status,
                     updated_by: req.user.object_id
                 });

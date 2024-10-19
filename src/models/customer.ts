@@ -42,7 +42,7 @@ const customerSchema: Schema = new Schema({
     address_line_2: { type: String, default: '' },
     open_time: { type: String, default: '' },
     close_time: { type: String, default: '' },
-    parent_id: { type: Schema.Types.ObjectId, ref: 'customers', default: '' },
+    parent_id: { type: Schema.Types.ObjectId, ref: 'customers', default: null },
     latitude: { type: String, default: '' },
     longitude: { type: String, default: '' },
     is_email_verified: { type: Boolean, default: false },
