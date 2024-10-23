@@ -15,6 +15,7 @@ export const MessageKey: IObjectKeys = {
     "user-it": "user-it",
     "user-ua": "user-ua",
     "user-nf": "user-nf",
+    "gst-fetched": "gst-fetched",
     "notifications-fetched": "notifications-fetched",
     "notifications-cleared": "notifications-cleared",
     "notification-cleared": "notification-cleared",
@@ -154,5 +155,11 @@ export const MessageKey: IObjectKeys = {
     "wallet-balance-fetched": "wallet-balance-fetched",
     "wallet-recharge-success": "wallet-recharge-success",
     "transactions-fetched": "transactions-fetched",
+
+    "offer-unlocked": "offer-unlocked",
+    "unlocked-offers-fetched": "unlocked-offers-fetched",
+    "rating-submitted": "rating-submitted",
+    "rating-updated": "rating-updated",
+    "rating-fetched": "rating-fetched",
 
 };

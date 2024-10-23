@@ -18,9 +18,17 @@ export enum ServerMessagesEnum {
     "user-update" = "user-update",
     "user-delete" = "user-delete",
     "user-status" = "user-status",
+    "gst-fetched" = "gst-fetched",
+    "offer-unlocked" = "offer-unlocked",
+    "unlocked-offers-fetched" = "unlocked-offers-fetched",
+    "rating-submitted" = "rating-submitted",
+    "rating-updated" = "rating-updated",
+    "rating-fetched" = "rating-fetched",
+    
     "notifications-fetched" = "notifications-fetched",
     "notifications-cleared" = "notifications-cleared",
     "notification-cleared" = "notification-cleared",
+    
     "category-fetched" = "category-fetched",
     "category-add" = "category-add",
     "category-update" = "category-update",

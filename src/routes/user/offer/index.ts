@@ -19,5 +19,16 @@ routes.put("/sell-offer/update/:id", validateRequest, authRequest, offersControl
 routes.post("/post-buy-offer", validateRequest, authRequest, offersController.postBuyOffer.bind(offersController));
 routes.post("/post-sell-offer", validateRequest, authRequest, offersController.postSellOffer.bind(offersController));
 
+routes.get("/unlocked/list",  authRequest, validateRequest, offersController.getUnlockedOffersList.bind(offersController));
+routes.post("/unlock", validateRequest, authRequest, offersController.unlockOffer.bind(offersController));
+routes.get("/unlocked/by-id/:id",  authRequest, validateRequest, offersController.getUnlockedOfferById.bind(offersController));
+
+
+
+routes.get("/rating/by-id/:id",  authRequest, validateRequest, offersController.getOfferRatingById.bind(offersController));
+routes.post("/rating/add", validateRequest, authRequest, offersController.addRating.bind(offersController));
+routes.put("/rating/update/:id", validateRequest, authRequest, offersController.updateRating.bind(offersController));
+
+
 
 export default routes;

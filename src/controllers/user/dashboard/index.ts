@@ -32,19 +32,23 @@ export default class DashboardController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { keyword, categoryid } = req.query;
+            const { search, categoryid } = req.query;
 
             let query: any = {};
-
-            if (keyword) {
-                query.name = { $regex: keyword, $options: 'i' };
-            }
 
             if (categoryid) {
                 query.category_id = categoryid;
             }
 
-            let searchResults = await Product.find(query).select('-createBy -updatedBy -createdAt -updatedAt').lean().limit(10);
+            if (search) {
+                query.$or = [
+                    { name: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } },
+                    
+                ];
+            }
+
+            let searchResults = await Product.find(query).select('-createBy -updatedBy -createdAt -updatedAt').lean().populate("category_id").limit(10);
 
             if (searchResults.length > 0) {
                 // Format the response data if needed
@@ -310,7 +314,7 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').lean();
+            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
                     
             const totalCount = await Offers.countDocuments({ status: 1,type: 0,product_id:product._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -325,27 +329,7 @@ export default class DashboardController {
         }
     }
 
-    // Checked
-    // public async getBuyOfferByProductID(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getProductByID]";
-    //         // Set locale
-    //         const { locale, page, limit } = req.query;
-    //         this.locale = (locale as string) || "en";
-    //         const id = parseInt(req.params.id);
-    //         const product:any = await Product.findOne({ id: id }).lean();
-    //         const result: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').lean();
-            
-    //         if (result.length > 0) {
-                
-    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
-    //         } else {
-    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-    //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
+    
 
     // Checked
     public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
@@ -359,7 +343,7 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').lean();
+            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
                    
             const totalCount = await Offers.countDocuments({ status: 1,type: 1,product_id:product._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -373,25 +357,5 @@ export default class DashboardController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    // Checked
-    // public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getProductByID]";
-    //         // Set locale
-    //         const { locale, page, limit } = req.query;
-    //         this.locale = (locale as string) || "en";
-    //         const id = parseInt(req.params.id);
-    //         const product:any = await Product.findOne({ id: id }).lean();
-    //         const result: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').lean();
-            
-    //         if (result.length > 0) {
-                
-    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
-    //         } else {
-    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-    //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
+   
 }

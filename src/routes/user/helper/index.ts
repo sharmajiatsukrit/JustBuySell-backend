@@ -14,5 +14,11 @@ routes.post("/add-to-watchlist", validateRequest, authRequest, helperController.
 routes.post("/remove-from-watchlist", validateRequest, authRequest, helperController.removeFromWatchlist.bind(helperController));
 
 routes.get("/get-products-by-cat/:cat_id", validateRequest, authRequest, helperController.getProductsByCat.bind(helperController));
+routes.get("/get-gst-details/:gst", validateRequest, authRequest, helperController.getGSTDetails.bind(helperController));
+
+routes.get("/get-rating-by/customer/:id", validateRequest, authRequest, helperController.getRatingByCustomer.bind(helperController));
+
+
+routes.get("/check-profile-completeness", validateRequest, authRequest, helperController.getProfileCompleteness.bind(helperController));
 
 export default routes;

@@ -172,7 +172,7 @@ export default class WatchlistController {
                     }
                     return doc;
                 }
-            }).lean();
+            }).sort({ _id: -1 }).lean();
 
 
             if (result) {

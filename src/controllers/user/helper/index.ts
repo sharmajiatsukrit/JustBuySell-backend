@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-
+import { networkRequest } from '../../../utils/request'
 
 const fileName = "[user][helper][index.ts]";
 export default class HelperController {
@@ -175,6 +175,113 @@ export default class HelperController {
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`
                 }));
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
+    public async getGSTDetails(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getGSTDetails]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const gst = req.params.gst;
+            const authorization:any = {};
+            const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/afd0252e4ff0c30cfbf6c0153a19dc57/${gst}`);
+            console.log(response.data);
+            if (response.data.flag) {
+                const ResultData:any = {
+                    "company_name":response.data.data.lgnm,
+                    "gstin":response.data.data.gstin,
+                    "registration_date":response.data.data.rgdt,
+                    "permanent_address":response.data.data.pradr.adr,
+                    "addr":response.data.data.pradr.addr,
+                    "trade_name":response.data.data.tradeNam,
+                }
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["gst-fetched"]), ResultData);
+            } else {
+                throw new Error(response.data.message);
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
+    public async getRatingByCustomer(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getNewlyAddedProducts]";
+            // Set locale
+            const { locale, page, limit } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const id = parseInt(req.params.id);
+            const customer: any = await Customer.findOne({ id: id }).lean();
+            console.log(customer);
+            const data:any = {};
+            data.customer = customer;
+            const results: any = await Rating.find({ customer_id: customer._id }).lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 }).populate("customer_id");
+            const totalCount = await Rating.countDocuments({ status: true });
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            if (results.length > 0) {
+                // const formattedResult = results.map((item: any) => ({
+                //     id: item.id,
+                //     name: item.name,
+                //     description: item.description,
+                //     product_image: `${process.env.RESOURCE_URL}${item.product_image}`
+                // }));
+                data.ratings = results;
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: data, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+
+    // Checked
+    public async getProfileCompleteness(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getProfileCompleteness]";
+            // Set locale
+            const { locale} = req.query;
+            this.locale = (locale as string) || "en";
+           
+            const customer: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
+            console.log(customer);
+            if (customer) {
+                const requiredFields = ['name', 'phone', 'email', 'company_name', 'brand_name','gst','telephone','address_line_1','open_time','close_time'];
+                let filledCount = 0;
+                
+                // Check how many required fields are filled in the customer's profile
+                requiredFields.forEach(field => {
+                    if (customer[field] && customer[field].toString().trim() !== '') {
+                        filledCount++;
+                    }
+                });
+                
+                // Calculate completeness percentage
+                const completenessPercentage = (filledCount / requiredFields.length) * 100;
+                const isComplete = completenessPercentage === 100;
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                    percentage: completenessPercentage.toFixed(2) + '%',
+                    isComplete: isComplete // true if 100%, false otherwise
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Offers,Product,Category } from "../../../models";
+import { Offers,Product,Rating,UnlockOffers,Transaction, Wallet } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -29,13 +29,17 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, product_location, product_id} = req.body;
+            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,attribute} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.create({
                 target_price: target_price,
                 buy_quantity: buy_quantity,
+                brand: brand,
+                coo: coo,
+                pin_code: pin_code,
+                attribute: attribute,
                 product_location: product_location,
                 product_id: product._id,
                 type: 0,//buy
@@ -57,7 +61,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,product_location, product_id} = req.body;
+            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,attribute} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -66,7 +70,9 @@ export default class OfferController {
                 moq: moq,
                 brand: brand,
                 coo: coo,
+                pin_code: pin_code,
                 product_location: product_location,
+                attribute: attribute,
                 product_id: product._id,
                 type: 1,//sell
                 status: 1,
@@ -274,6 +280,224 @@ export default class OfferController {
 
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
+    public async getUnlockedOffersList(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getUnlockedOffersList]";
+            // Set locale
+            const { locale, page, limit, search,offerType,status } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            // Create filter object for status and offerType
+            let filter: any = { created_by: req.customer.object_id };
+
+            
+            const results = await UnlockOffers.find(filter)
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean()
+                .populate("offer_id")
+                .populate("transaction_id")
+                .populate({
+                    path: 'offer_id',
+                    populate: [
+                        {
+                            path: 'ratings', // Use the virtual "ratings" field
+                            match: { created_by: req.customer.object_id }, // Filter by the user who created the rating
+                            select: 'id rating rating_comment', // Select only the required fields
+                            model: 'Rating', // Reference the Rating model
+                        },
+                        {
+                            path: 'product_id', // Populate the product_id field as well
+                            model: 'products', // Reference the Product model
+                        },
+                        {
+                            path: 'created_by', // Populate the product_id field as well
+                            model: 'customers', // Reference the Product model
+                        }
+                    ],
+                    
+                  });
+
+            const totalCount = await UnlockOffers.countDocuments(filter);
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+                
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    //add
+    public async unlockOffer(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[unlockOffer]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const { offer_id,price} = req.body;
+
+            let result: any;
+            const offer:any = await Offers.findOne({ id: offer_id }).lean();
+
+            const transaction: any = await Transaction.create({
+                amount: price,
+                transaction_type: 1,
+                transaction_id: null,
+                status: 1,
+                customer_id: req.customer.object_id
+            });
+            console.log(transaction);
+            result = await UnlockOffers.create({
+                transaction_id:transaction._id,
+                price: price,
+                offer_id: offer._id,
+                status: 1,
+                created_by:req.customer.object_id
+            });
+            const walletBalance:any = await Wallet.findOne({customer_id:req.customer.object_id}).lean();
+            console.log(walletBalance);
+            const resultwallet: any = await Wallet.findOneAndUpdate(
+                { customer_id: req.customer.object_id },
+                {
+                    balance: walletBalance.balance - parseInt(price),
+                });
+            
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getUnlockedOfferById(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getUnlockedOfferById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const result: any = await UnlockOffers.findOne({ id: id }).lean().populate("offer_id")
+            .populate("transaction_id")
+            .populate({
+                path: 'offer_id',
+                populate: [
+                    {
+                        path: 'ratings', // Use the virtual "ratings" field
+                        match: { created_by: req.customer.object_id }, // Filter by the user who created the rating
+                        select: 'id rating rating_comment', // Select only the required fields
+                        model: 'Rating', // Reference the Rating model
+                    },
+                    {
+                        path: 'product_id', // Populate the product_id field as well
+                        model: 'products', // Reference the Product model
+                    },
+                    {
+                        path: 'created_by', // Populate the product_id field as well
+                        model: 'customers', // Reference the Product model
+                    }
+                ],
+                
+              });
+
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getOfferRatingById(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const result: any = await Rating.findOne({ id: id }).lean().populate("offer_id","id name");
+
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["rating-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    //add
+    public async addRating(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[postBuyOffer]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const { offer_id,rating, rating_comment} = req.body;
+
+            let result: any;
+            const offer:any = await Offers.findOne({ id: offer_id }).lean();
+            result = await Rating.create({
+                rating: rating,
+                rating_comment: rating_comment,
+                offer_id: offer._id,
+                customer_id:offer.created_by,
+                status: 1,
+                created_by:req.customer.object_id
+            });
+
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "rating-submitted"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    //add
+    public async updateRating(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateRating]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const { rating, rating_comment} = req.body;
+            const id = parseInt(req.params.id);
+            let result: any;
+            result = await Rating.findOneAndUpdate(
+                { id: id },
+                {
+                    rating: rating,
+                    rating_comment: rating_comment,
+                    updated_by: req.customer.object_id
+                });
+            
+
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "rating-updated"), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

@@ -176,7 +176,7 @@ export default class AccountController {
             }
             const transaction: any = await Transaction.create({
                 amount: amount,
-                transaction_type: transaction_type,
+                transaction_type: 0,
                 transaction_id: transaction_id,
                 status: status,
                 customer_id: req.customer.object_id

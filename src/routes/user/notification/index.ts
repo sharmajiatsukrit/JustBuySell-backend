@@ -9,7 +9,7 @@ routes.get("/", validateRequest, authRequest, notificationController.fetchAllNot
 
 routes.post("/clear", validateRequest, authRequest, notificationController.clearNotification.bind(notificationController));
 
-routes.post("/clear/:id", validateRequest, authRequest, notificationController.clearSingleNotification.bind(notificationController));
+routes.delete("/clear/:id", validateRequest, authRequest, notificationController.clearSingleNotification.bind(notificationController));
 
 
 export default routes;
