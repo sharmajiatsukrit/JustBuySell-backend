@@ -193,11 +193,12 @@ export default class HelperController {
             this.locale = (locale as string) || "en";
             const gst = req.params.gst;
             const authorization:any = {};
-            const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/afd0252e4ff0c30cfbf6c0153a19dc57/${gst}`);
+            console.log(process.env.GSTINCHECK_APIKEY);
+            const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`);
             console.log(response.data);
             if (response.data.flag) {
                 const ResultData:any = {
-                    "company_name":response.data.data.lgnm,
+                    "leagal_name":response.data.data.lgnm,
                     "gstin":response.data.data.gstin,
                     "registration_date":response.data.data.rgdt,
                     "permanent_address":response.data.data.pradr.adr,
@@ -233,7 +234,7 @@ export default class HelperController {
                 .skip(skip)
                 .limit(limitNumber)
                 .sort({ id: -1 }).populate("customer_id");
-            const totalCount = await Rating.countDocuments({ status: true });
+            const totalCount = await Rating.countDocuments({ customer_id: customer._id,status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
                 // const formattedResult = results.map((item: any) => ({
@@ -242,6 +243,7 @@ export default class HelperController {
                 //     description: item.description,
                 //     product_image: `${process.env.RESOURCE_URL}${item.product_image}`
                 // }));
+                // data.rating_count =totalCount;
                 data.ratings = results;
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: data, totalPages, totalCount, currentPage: pageNumber });
             } else {

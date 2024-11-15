@@ -20,6 +20,7 @@ import { SubscriberType } from "../../../enums/subscriber";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { uploadFile, deleteFile } from "../../../utils/storage";
+import { networkRequest } from "../../../utils/request";
 import { postSoftDelete } from "../../../services/Chat";
 
 const fileName = "[user][index.ts]";
@@ -132,7 +133,7 @@ export default class AuthController {
         const isOTPExist = await Otps.where({ user_id: userId }).countDocuments();
 
         const otpValidDate = moment().add(10, 'minutes');
-
+        // networkRequest('POST', url: string, data = {}, headers = {});
         if (!isOTPExist) {
             await Otps.create({
                 user_id: userId,

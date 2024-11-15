@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, Banner, Category, Product,Offers } from "../../../models";
+import { Customer, Banner, Category, Product,Offers,Rating } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -314,12 +314,35 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("id target_price buy_quantity product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
-                    
+            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("_id id target_price buy_quantity product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            
+             
+            console.log(results); 
             const totalCount = await Offers.countDocuments({ status: 1,type: 0,product_id:product._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                
+                const formattedResult = results.map(async (item: any) => {
+                    // console.log({
+                    //     id: item.id,
+                    //     productId: item.product_id,
+                    //     targetPrice: item.target_price,
+                    //     buyQuantity: item.buy_quantity,
+                    //     productLocation: item.product_location,
+                    //     createdBy: item.created_by,
+                    //     rating_count: 0
+                    // });
+                    // const total_ratings = await Rating.countDocuments({ offer_id:item._id });
+                    return {
+                        id: item.id,
+                        productId: item.product_id,
+                        targetPrice: item.target_price,
+                        buyQuantity: item.buy_quantity,
+                        productLocation: item.product_location,
+                        createdBy: item.created_by,
+                        rating_count: 0
+                    }
+                //    return preparedData; 
+                });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: results, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

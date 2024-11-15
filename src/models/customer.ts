@@ -15,6 +15,9 @@ interface ICustomer extends Document {
     company_email: string;
     address_line_1: string;
     address_line_2: string;
+    city: string;
+    state: string;
+    pincode: string;
     open_time: string;
     close_time: string;
     parent_id: string;
@@ -40,6 +43,9 @@ const customerSchema: Schema = new Schema({
     company_email: { type: String, default: '' },
     address_line_1: { type: String, default: '' },
     address_line_2: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
+    pincode: { type: String, default: '' },
     open_time: { type: String, default: '' },
     close_time: { type: String, default: '' },
     parent_id: { type: Schema.Types.ObjectId, ref: 'customers', default: null },
