@@ -81,13 +81,9 @@ export default class ProductController {
             const id = parseInt(req.params.id);
             const result: any = await Product.findOne({ id: id })
                                         .populate('category_id', 'id name')
-                                        .populate('selling_unit', 'id name')
-                                        .populate('individual_pack_size', 'id name')
-                                        .populate('individual_pack_unit', 'id name')
-                                        .populate('individual_packing_type', 'id name')
-                                        .populate('master_pack_type', 'id name').populate('conversion_unit', 'id name').lean();
-            const variations: any = await ProductVariations.findOne({ product_id: result._id }).populate('category_id', 'id name').lean();
-            console.log(result);
+                                        .populate('conversion_unit', 'id name').lean();
+            //const variations: any = await ProductVariations.findOne({ product_id: result._id }).populate('category_id', 'id name').lean();
+            //console.log(result);
             if (result) {
                 const formattedResult = {
                     id: result.id,
@@ -95,12 +91,7 @@ export default class ProductController {
                     description: result.description,
                     category_id: result.category_id,
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    selling_unit:result.selling_unit,
-                    individual_pack_size:result.individual_pack_size,
-                    individual_pack_unit:result.individual_pack_unit,
-                    individual_packing_type:result.individual_packing_type,
-                    master_pack_qty:result.master_pack_qty,
-                    master_pack_type:result.master_pack_type,
+                    variations:result.variations,
                     conversion_unit:result.conversion_unit,
                     created_by: result.created_by,
                     status: result.status,
@@ -121,9 +112,10 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const { name, description, category_id,attributes,selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit, status } = req.body;
+            const { name, description,search_tags, category_id,variations,selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit, status } = req.body;
             let result: any;
-            // const attr = JSON.parse(attributes);
+            const variation = JSON.parse(variations);
+            console.log(variation);
             const cat:any = JSON.parse(category_id);
             const categoryObjects = await Promise.all(
                 cat.map(async (categoryId:any) => {
@@ -137,23 +129,19 @@ export default class ProductController {
               );
             if (categoryObjects) {
                 const sellingunit:any = await AttributeItem.findOne({id:selling_unit}).lean();
-                const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
-                const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
-                const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
-                const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
+                // const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
+                // const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
+                // const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
+                // const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
                 const conversionUnit:any = await AttributeItem.findOne({id:conversion_unit}).lean();
                 // Create the main product
                 result = await Product.create({
                     name,
                     description,
-                    // attributes:attr,
+                    search_tags:search_tags,
                     category_id: categoryObjects,
                     selling_unit:selling_unit ? sellingunit._id : null,
-                    individual_pack_size:individual_pack_size ? individualpacksize._id : null,
-                    individual_pack_unit:individual_pack_unit ? individualpackunit._id : null,
-                    individual_packing_type:individual_packing_type ? individualpackingtype._id : null,
-                    master_pack_qty:master_pack_qty,
-                    master_pack_type:master_pack_type ? masterpacktype._id : null,
+                    variations:variation,
                     conversion_unit:conversion_unit ? conversionUnit._id : null,
                     status
                 });
@@ -191,8 +179,8 @@ export default class ProductController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, category_id,attributes, selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit,status } = req.body;
-            // const attr = JSON.parse(attributes);
+            const { name, description,search_tags, category_id,variations, selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit,status } = req.body;
+            const variation = JSON.parse(variations);
             const cat:any = JSON.parse(category_id);
             const categoryObjects = await Promise.all(
                 cat.map(async (categoryId:any) => {
@@ -205,25 +193,20 @@ export default class ProductController {
                 })
               );
             if (categoryObjects) {
-                const sellingunit:any = await AttributeItem.findOne({id:selling_unit}).lean();
-                const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
-                const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
-                const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
-                const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
+                // const sellingunit:any = await AttributeItem.findOne({id:selling_unit}).lean();
+                // const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
+                // const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
+                // const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
+                // const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
                 const conversionUnit:any = await AttributeItem.findOne({id:conversion_unit}).lean();
                 let result: any = await Product.findOneAndUpdate(
                     { id: id },
                     {
                         name,
                         description,
-                        // attributes:attr,
+                        search_tags,
                         category_id: categoryObjects,
-                        selling_unit:selling_unit ? sellingunit._id : null,
-                        individual_pack_size:individual_pack_size ? individualpacksize._id : null,
-                        individual_pack_unit:individual_pack_unit ? individualpackunit._id : null,
-                        individual_packing_type:individual_packing_type ? individualpackingtype._id : null,
-                        master_pack_qty:master_pack_qty,
-                        master_pack_type:master_pack_type ? masterpacktype._id : null,
+                        variations:variation,
                         conversion_unit:conversion_unit ? conversionUnit._id : null,
                         status
                     });
