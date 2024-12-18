@@ -5,7 +5,6 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IOffers extends Document {
     product_id: string;
-
     target_price: number;
     buy_quantity: number;
     pin_code: string;
@@ -15,7 +14,11 @@ interface IOffers extends Document {
     brand: string;
     coo: string;
     type:number;
-    attribute: string;
+    individual_pack: string;
+    master_pack: string;
+    selling_unit: string;
+    conversion_unit: string;
+    conversion_rate: string;
     status: number;
     created_by: number;
     updated_by: number;
@@ -32,7 +35,11 @@ const offersSchema: Schema = new Schema({
     moq: { type: Number, default: 0 },
     brand: { type: String, default: '' },
     coo: { type: String, default: '' },
-    attribute: { type: Object, default: {} }, // Dynamic attributes
+    individual_pack: { type: Object, default: {} }, // Dynamic attributes
+    master_pack: { type: Object, default: {} }, // Dynamic attributes
+    selling_unit: { type: Object, default: {} }, // Dynamic attributes
+    conversion_unit: { type: Object, default: {} }, // Dynamic attributes
+    conversion_rate: { type: Object, default: {} }, // Dynamic attributes
     status: { type: Number, default: 1 },
     type: { type: String, default: 0 },
     created_by: { type: Schema.Types.ObjectId, ref: 'customers' },

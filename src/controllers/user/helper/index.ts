@@ -267,7 +267,7 @@ export default class HelperController {
             const customer: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
             console.log(customer);
             if (customer) {
-                const requiredFields = ['name', 'phone', 'email', 'company_name', 'brand_name','gst','telephone','address_line_1','open_time','close_time'];
+                const requiredFields = ['name', 'phone', 'email', 'trade_name', 'leagal_name','gst','address_line_1'];
                 let filledCount = 0;
                 
                 // Check how many required fields are filled in the customer's profile

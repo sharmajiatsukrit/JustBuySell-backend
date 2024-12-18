@@ -53,20 +53,23 @@ export default class AccountController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, designation,email, company_name, brand_name, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
+            const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, address_line_2,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
             let result: any = await Customer.findOneAndUpdate(
                 { id: req.customer.user_id },
                 {
                     name: name,
                     email: email,
                     designation: designation,
-                    company_name: company_name,
-                    brand_name: brand_name,
+                    trade_name: trade_name,
+                    leagal_name: leagal_name,
                     gst: gst,
                     telephone: telephone,
                     company_email: company_email,
                     address_line_1: address_line_1,
                     address_line_2: address_line_2,
+                    city: city,
+                    state: state,
+                    pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
                     status: status

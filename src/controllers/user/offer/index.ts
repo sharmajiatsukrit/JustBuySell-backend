@@ -29,7 +29,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,attribute} = req.body;
+            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -39,7 +39,11 @@ export default class OfferController {
                 brand: brand,
                 coo: coo,
                 pin_code: pin_code,
-                attribute: attribute,
+                individual_pack: individual_pack,
+                master_pack: master_pack,
+                selling_unit: selling_unit,
+                conversion_unit: conversion_unit,
+                conversion_rate: conversion_rate,
                 product_location: product_location,
                 product_id: product._id,
                 type: 0,//buy
@@ -61,7 +65,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,attribute} = req.body;
+            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -72,7 +76,11 @@ export default class OfferController {
                 coo: coo,
                 pin_code: pin_code,
                 product_location: product_location,
-                attribute: attribute,
+                individual_pack: individual_pack,
+                master_pack: master_pack,
+                selling_unit: selling_unit,
+                conversion_unit: conversion_unit,
+                conversion_rate: conversion_rate,
                 product_id: product._id,
                 type: 1,//sell
                 status: 1,

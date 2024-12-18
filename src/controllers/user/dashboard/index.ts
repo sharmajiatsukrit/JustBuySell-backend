@@ -290,7 +290,10 @@ export default class DashboardController {
                     description: result.description,
                     category_id: result.category_id,
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    attributes:result.attributes,
+                    variations:result.variations,
+                    conversion_unit:result.conversion_unit,
+                    created_by: result.created_by,
+                    status: result.status,
                 };
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
             } else {
@@ -314,7 +317,7 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("_id id target_price buy_quantity product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
             
              
             console.log(results); 
@@ -338,6 +341,11 @@ export default class DashboardController {
                         targetPrice: item.target_price,
                         buyQuantity: item.buy_quantity,
                         productLocation: item.product_location,
+                        individual_pack: item.individual_pack,
+                        master_pack: item.master_pack,
+                        selling_unit: item.selling_unit,
+                        conversion_unit: item.conversion_unit,
+                        conversion_rate: item.conversion_rate,
                         createdBy: item.created_by,
                         rating_count: 0
                     }
@@ -366,7 +374,7 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
                    
             const totalCount = await Offers.countDocuments({ status: 1,type: 1,product_id:product._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
