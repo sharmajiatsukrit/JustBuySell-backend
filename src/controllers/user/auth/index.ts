@@ -53,7 +53,7 @@ export default class AuthController {
 
             if (!userData) {
                 // User does not exist, register the user
-                const newUser = await Customer.create({ phone: phone,parent_id:null });
+                const newUser = await Customer.create({ phone: phone,parent_id:null,status:1 });
                 userData = newUser;
             }
 
