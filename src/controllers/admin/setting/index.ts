@@ -27,15 +27,13 @@ export default class SettingController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale } = req.query;
+            const { locale,key } = req.query;
             this.locale = (locale as string) || "en";
 
-
-
-            const results = await Setting.findOne({ id: 2 }).lean();
+            const results = await Setting.findOne({ key: key }).select("value").lean();
 
             if (results) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["settings-fetched"]), { data: results });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["settings-fetched"]), { data: results.value });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -49,34 +47,23 @@ export default class SettingController {
         try {
             const fn = "[add]";
             // Set locale
-            const { locale } = req.query;
+            const { locale,key } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { app_name, support_email, support_phone, office_address } = req.body;
+            const { value } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
-            // let result: any;
-
-            // result = await Setting.create({
-            //     app_name: app_name,
-            //     support_email: support_email,
-            //     support_phone: support_phone,
-            //     office_address: office_address,
-            //     created_by: req.user.object_id
-            // });
+            
             let result: any = await Setting.findOneAndUpdate(
-                { id: 2 },
+                { key: key },
                 {
-                    app_name: app_name,
-                    support_email: support_email,
-                    support_phone: support_phone,
-                    office_address: office_address,
+                    value:value,
                     created_by: req.user.object_id
                 });
 
-            const updatedData: any = await Setting.findOne({ id: 2 }).lean();
+            const updatedData: any = await Setting.findOne({ key: key }).lean();
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "settings-saved"), result.doc);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "settings-saved"), updatedData.value);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

@@ -16,8 +16,10 @@ routes.get("/get-most-traded-products", validateRequest, authRequest, dashboardC
 routes.get("/get-newly-added-products", validateRequest, authRequest, dashboardController.getNewlyAddedProducts.bind(dashboardController));
 
 routes.get("/get-product-by-id/:id", validateRequest, authRequest, dashboardController.getProductByID.bind(dashboardController));
-routes.get("/get-buy-offer-by-product/:id", validateRequest, authRequest, dashboardController.getBuyOfferByProductID.bind(dashboardController));
-routes.get("/get-sell-offer-by-product/:id", validateRequest, authRequest, dashboardController.getSellOfferByProductID.bind(dashboardController));
+routes.post("/get-buy-offer-by-product/:id", validateRequest, authRequest, dashboardController.getBuyOfferByProductID.bind(dashboardController));
+routes.post("/get-sell-offer-by-product/:id", validateRequest, authRequest, dashboardController.getSellOfferByProductID.bind(dashboardController));
+
+routes.get("/get-offer-filters/:product_id", validateRequest, authRequest, dashboardController.getOfferFilters.bind(dashboardController));
 
 
 export default routes;

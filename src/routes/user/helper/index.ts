@@ -20,5 +20,6 @@ routes.get("/get-rating-by/customer/:id", validateRequest, authRequest, helperCo
 
 
 routes.get("/check-profile-completeness", validateRequest, authRequest, helperController.getProfileCompleteness.bind(helperController));
+routes.get("/get-tax-commision", validateRequest, authRequest, helperController.getTaxCommission.bind(helperController));
 
 export default routes;

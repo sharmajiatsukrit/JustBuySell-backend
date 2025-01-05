@@ -30,8 +30,13 @@ export default class ProductRequestController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await ProductRequest.find({})
+            let searchQuery:any = {};
+            if (search) {
+                searchQuery.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await ProductRequest.find(searchQuery)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .populate('created_by', 'id name')
@@ -39,7 +44,7 @@ export default class ProductRequestController {
                 .lean();
 
             // Get the total number of documents in the Category collection
-            const totalCount = await ProductRequest.countDocuments({});
+            const totalCount = await ProductRequest.countDocuments(searchQuery);
 
             // Calculate total pages
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -52,6 +57,7 @@ export default class ProductRequestController {
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
                     status: item.status,
+                    created_by: item.created_by,
                     // Add more fields as necessary
                 }));
 
@@ -68,6 +74,8 @@ export default class ProductRequestController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
+    
 
     //add
     public async add(req: Request, res: Response): Promise<any> {
@@ -192,7 +200,7 @@ export default class ProductRequestController {
             const fn = "[statusUpdate]";
 
             const { id } = req.params;
-            Logger.info(`${fileName + fn} category_id: ${id}`);
+            Logger.info(`${fileName + fn} request_id: ${id}`);
 
             const { locale } = req.query;
             this.locale = (locale as string) || "en";

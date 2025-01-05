@@ -6,8 +6,9 @@ interface ICustomer extends Document {
     name: string;
     phone: string;
     email: string;
-    company_name: string;
-    brand_name: string;
+    admin_commission: string;
+    trade_name: string;
+    leagal_name: string;
     company_logo: string;
     designation: string;
     gst: string;
@@ -34,6 +35,7 @@ const customerSchema: Schema = new Schema({
     name: { type: String, default: '' },
     phone: { type: String, required: true, index: { unique: true } },
     email: { type: String },
+    admin_commission: { type: String, default: '' },
     trade_name: { type: String, default: '' },
     designation: { type: String, default: '' },
     leagal_name: { type: String, default: '' },

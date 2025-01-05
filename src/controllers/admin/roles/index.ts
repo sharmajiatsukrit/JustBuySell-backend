@@ -32,15 +32,20 @@ export default class RolesController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await Roles.find({})
+            const filter:any = {};
+            if (search) {
+                filter.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await Roles.find(filter)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
             // Get the total number of documents in the Category collection
-            const totalCount = await Roles.countDocuments({});
+            const totalCount = await Roles.countDocuments(filter);
 
             // Calculate total pages
             const totalPages = Math.ceil(totalCount / limitNumber);

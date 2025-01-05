@@ -162,29 +162,43 @@ export default class AccountController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { amount, transaction_type, transaction_id, status } = req.body;
+            const { amount, payment_id,remarks,error_code, transaction_id, status } = req.body;
 
-            const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id }).lean();
+            
 
-            if (existing) {
-                const result: any = await Wallet.findOneAndUpdate(
-                    { customer_id: req.customer.object_id },
-                    {
-                        balance: existing.balance + amount,
+            if(status == 2){
+                const transaction: any = await Transaction.findOneAndUpdate({ transaction_id: transaction_id },{
+                    amount: amount,
+                    transaction_id: transaction_id,
+                    status: status,
+                    remarks:remarks,
+                    error_code:error_code,
+                    customer_id: req.customer.object_id
+                });
+            }else{
+                const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id }).lean();
+
+                if (existing) {
+                    const result: any = await Wallet.findOneAndUpdate(
+                        { customer_id: req.customer.object_id },
+                        {
+                            balance: existing.balance + amount,
+                        });
+                } else {
+                    const result: any = await Wallet.create({
+                        balance: amount,
+                        customer_id: req.customer.object_id
                     });
-            } else {
-                const result: any = await Wallet.create({
-                    balance: amount,
+                }
+                const transaction: any = await Transaction.findOneAndUpdate({ transaction_id: transaction_id },{
+                    amount: amount,
+                    transaction_id: transaction_id,
+                    razorpay_payment_id: payment_id,
+                    status: status,
                     customer_id: req.customer.object_id
                 });
             }
-            const transaction: any = await Transaction.create({
-                amount: amount,
-                transaction_type: 0,
-                transaction_id: transaction_id,
-                status: status,
-                customer_id: req.customer.object_id
-            });
+            
 
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
         } catch (err: any) {

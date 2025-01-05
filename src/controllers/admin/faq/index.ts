@@ -33,14 +33,20 @@ export default class FaqController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await Faqs.find({})
+            const filter:any = {};
+            if (search) {
+                filter.$or = [
+                    { question: { $regex: search, $options: 'i' } },
+                    { answer: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await Faqs.find(filter)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            const totalCount = await Faqs.countDocuments({});
+            const totalCount = await Faqs.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             console.log(req.user);
             if (results.length > 0) {

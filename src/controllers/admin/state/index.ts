@@ -34,14 +34,19 @@ export default class StateController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await State.find({})
+            const filter:any = {};
+            if (search) {
+                filter.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await State.find(filter)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean().populate("country_id","id name");
 
-            const totalCount = await State.countDocuments({});
+            const totalCount = await State.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
 

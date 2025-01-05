@@ -22,6 +22,7 @@ routes.post("/post-sell-offer", validateRequest, authRequest, offersController.p
 routes.get("/unlocked/list",  authRequest, validateRequest, offersController.getUnlockedOffersList.bind(offersController));
 routes.post("/unlock", validateRequest, authRequest, offersController.unlockOffer.bind(offersController));
 routes.get("/unlocked/by-id/:id",  authRequest, validateRequest, offersController.getUnlockedOfferById.bind(offersController));
+routes.put("/activate-offers", validateRequest, authRequest, offersController.activateOffers.bind(offersController));
 
 
 

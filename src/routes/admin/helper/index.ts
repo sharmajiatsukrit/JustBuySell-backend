@@ -15,5 +15,9 @@ routes.get("/get-states", validateRequest, authAdmin, helperController.getStates
 routes.get("/get-cities", validateRequest, authAdmin, helperController.getCities.bind(helperController));
 
 routes.get("/get-roles", validateRequest, authAdmin, helperController.getRoles.bind(helperController));
+routes.get("/get-customers", validateRequest, authAdmin, helperController.getCustomers.bind(helperController));
+
+
+routes.get("/dashboard/get-totals", validateRequest, authAdmin, helperController.getDashboardTotals.bind(helperController));
 
 export default routes;

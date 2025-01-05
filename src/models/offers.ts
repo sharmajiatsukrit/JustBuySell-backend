@@ -19,6 +19,8 @@ interface IOffers extends Document {
     selling_unit: string;
     conversion_unit: string;
     conversion_rate: string;
+    offer_validity: string;
+    publish_date: string;
     status: number;
     created_by: number;
     updated_by: number;
@@ -40,6 +42,10 @@ const offersSchema: Schema = new Schema({
     selling_unit: { type: Object, default: {} }, // Dynamic attributes
     conversion_unit: { type: Object, default: {} }, // Dynamic attributes
     conversion_rate: { type: Object, default: {} }, // Dynamic attributes
+    publish_date:{ type: String, default: '' },
+    offer_validity: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
     status: { type: Number, default: 1 },
     type: { type: String, default: 0 },
     created_by: { type: Schema.Types.ObjectId, ref: 'customers' },

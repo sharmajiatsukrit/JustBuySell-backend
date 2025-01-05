@@ -35,15 +35,20 @@ export default class PermissionController {
             const limitNumber = parseInt(limit as string) || 5;
 
             const skip = (pageNumber - 1) * limitNumber;
-
-            const result = await Permissions.find({})
+            const filter:any = {};
+            if (search) {
+                filter.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const result = await Permissions.find(filter)
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
             // Get the total number of documents in the Permissions collection
-            const totalCount = await Permissions.countDocuments({});
+            const totalCount = await Permissions.countDocuments(filter);
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);

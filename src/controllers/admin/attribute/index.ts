@@ -34,14 +34,19 @@ export default class AttributeController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await Attribute.find({})
+            let searchQuery:any = {};
+            if (search) {
+                searchQuery.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await Attribute.find(searchQuery)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
 
-            const totalCount = await Attribute.countDocuments({});
+            const totalCount = await Attribute.countDocuments(searchQuery);
             const totalPages = Math.ceil(totalCount / limitNumber);
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
 

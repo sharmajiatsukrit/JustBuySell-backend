@@ -34,14 +34,19 @@ export default class CityController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await City.find({})
+            let searchQuery:any = {};
+            if (search) {
+                searchQuery.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const results = await City.find(searchQuery)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean().populate("state_id","id name");
 
-            const totalCount = await City.countDocuments({});
+            const totalCount = await City.countDocuments(searchQuery);
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {

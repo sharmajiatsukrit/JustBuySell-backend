@@ -29,7 +29,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate} = req.body;
+            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate,offer_validity,city,state} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -45,6 +45,10 @@ export default class OfferController {
                 conversion_unit: conversion_unit,
                 conversion_rate: conversion_rate,
                 product_location: product_location,
+                offer_validity:offer_validity,
+                publish_date:moment().format('YYYY-MM-DD H:i:s'),
+                state:state,
+                city:city,
                 product_id: product._id,
                 type: 0,//buy
                 status: 1,
@@ -65,7 +69,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate} = req.body;
+            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate,offer_validity,city,state} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -81,6 +85,10 @@ export default class OfferController {
                 selling_unit: selling_unit,
                 conversion_unit: conversion_unit,
                 conversion_rate: conversion_rate,
+                offer_validity:offer_validity,
+                publish_date:moment().format('YYYY-MM-DD H:i:s'),
+                state:state,
+                city:city,
                 product_id: product._id,
                 type: 1,//sell
                 status: 1,
@@ -228,6 +236,28 @@ export default class OfferController {
         }
     }
 
+    // Status
+    public async activateOffers(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[status]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const { offer_ids,offer_validity } = req.body;
+            const updationstatus = await Offers.findOneAndUpdate({ id:offer_ids }, { offer_validity: offer_validity,publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),status:1 }).lean();
+            // const updatedData: any = await Offers.find({ id: id }).lean();
+            if (updationstatus) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-status"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
     //add
     public async updateBuyOffer(req: Request, res: Response): Promise<any> {
         try {
@@ -358,13 +388,15 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_id,price} = req.body;
+            const { offer_id,price,amount,gst} = req.body;
 
             let result: any;
             const offer:any = await Offers.findOne({ id: offer_id }).lean();
 
             const transaction: any = await Transaction.create({
-                amount: price,
+                amount: amount,
+                gst: gst,
+                price: price,
                 transaction_type: 1,
                 transaction_id: null,
                 status: 1,

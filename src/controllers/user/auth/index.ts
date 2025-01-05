@@ -6,11 +6,12 @@ import mongoose from "mongoose";
 import JWT from "jsonwebtoken";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Otps, Permissions, Sessions, User, Customer, Deviceid } from "../../../models";
+import { Otps, Permissions, Sessions, User, Customer, Deviceid, Setting, Wallet, Transaction } from "../../../models";
 import { removeObjectKeys, serverResponse, getDeviceDetails, serverErrorHandler, decryptText, removeSpace, constructResponseMsg, serverInvalidRequest } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import { UserData } from "../../../interfaces/user";
 import { updateSeesionWithIpInfo } from "../../../utils/query";
+import { sendSMS } from "../../../utils/pinnacle";
 import validate from "./validate";
 import { SessionManageData } from "../../../interfaces/session";
 // import { getSubscriberData, getUserEncryptedData } from "../../utils/query/subscriber";
@@ -54,12 +55,28 @@ export default class AuthController {
             if (!userData) {
                 // User does not exist, register the user
                 const newUser = await Customer.create({ phone: phone,parent_id:null,status:1 });
+                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
+                const reachare: any = await Wallet.create({
+                    balance: settings.value.new_registration_topup,
+                    customer_id: newUser._id
+                });
+
+                const transaction: any = await Transaction.create({
+                    amount: settings.value.new_registration_topup,
+                    gst: 0,
+                    transaction_id: '',
+                    razorpay_payment_id: '',
+                    status: 1,
+                    remarks: "Free registration TOPUP",
+                    customer_id: newUser._id
+                });
                 userData = newUser;
             }
 
             // Generate OTP for the user
             const otp = await this.generateOtp(userData.id);
-
+            // const mess = await sendSMS('8851039586',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
+            // console.log(mess.data.data);
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), {});
 
         } catch (err: any) {

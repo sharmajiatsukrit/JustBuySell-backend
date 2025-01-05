@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissions, User, Customer } from "../../../models";
+import { Roles, Permissions, User, Customer,Watchlist,WatchlistItem,Transaction,Invoice, Wallet } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -191,38 +191,38 @@ export default class UserController {
 
     public async update(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[update]";
-
-            const id = parseInt(req.params.id);
+            const fn = "[updateMyProfile]";
 
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, email, company_name, brand_name, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
+            const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, address_line_2,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
+            const id = parseInt(req.params.id);
+            // const customer:any = Customer.findOne({id:id}).lean();
+            
+            let result: any = await Customer.findOneAndUpdate(
+                { id: id },
+                {
+                    name: name,
+                    email: email,
+                    designation: designation,
+                    trade_name: trade_name,
+                    leagal_name: leagal_name,
+                    gst: gst,
+                    telephone: telephone,
+                    company_email: company_email,
+                    address_line_1: address_line_1,
+                    address_line_2: address_line_2,
+                    city: city,
+                    state: state,
+                    pincode: pincode,
+                    open_time: open_time,
+                    close_time: close_time,
+                    status: status
+                });
 
-            const result: any = await Customer.findOneAndUpdate({ id: id }, {
-                name: name,
-                phone: phone,
-                email: email,
-                company_name: company_name,
-                brand_name: brand_name,
-                gst: gst,
-                telephone: telephone,
-                company_email: company_email,
-                address_line_1: address_line_1,
-                address_line_2: address_line_2,
-                open_time: open_time,
-                close_time: close_time,
-                parent_id: parent_id,
-                status: status,
-            });
-
-            let company_logo: any;
-            if (req.file) {
-                company_logo = req?.file?.filename;
-                let resultimage: any = await Customer.findOneAndUpdate({ id: id }, { company_logo: company_logo });
-            }
-            const userData: any = await Customer.findOne({ id: id });
+            
+            const userData: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
         } catch (err: any) {
@@ -230,6 +230,27 @@ export default class UserController {
         }
     }
 
+    public async updateCompanyLogo(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[updateMyProfile]";
+
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const id = parseInt(req.params.id);
+            // const customer:any = Customer.findOne({id:id}).lean();
+            let company_logo: any;
+            if (req.file) {
+                company_logo = req?.file?.filename;
+                let resultimage: any = await Customer.findOneAndUpdate({ id: id }, { company_logo: company_logo });
+            }
+            // const userData: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
     // Checked
     public async delete(req: Request, res: Response): Promise<any> {
@@ -319,38 +340,53 @@ export default class UserController {
     //     }
     // }
 
-    public async updateProfileImg(req: Request, res: Response): Promise<any> {
+    
+
+    public async rechargeWallet(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[updateProfileImg]";
+            const fn = "[rechargeWallet]";
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
+            const { amount, remarks } = req.body;
+            const id = parseInt(req.params.id);
+            const customer:any = Customer.findOne({id:id}).lean();
+            
+                const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
 
-            const { id } = req.params;
+                const result: any = await Wallet.findOneAndUpdate(
+                    { customer_id: customer._id },
+                    {
+                        balance: existing.balance + amount,
+                    });
+                const transaction: any = await Transaction.create({
+                    amount: amount,
+                    remarks: remarks,
+                    customer_id: customer._id
+                });
+            
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
+        } catch (err: any) {
+            console.error(err);
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
-            let product_image: string | undefined;
-            if (req.files && typeof req.files === 'object') {
-
-                if ('product_image' in req.files) {
-                    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-                    product_image = files['product_image'][0].path;
-                }
-            }
-
-            // Fetch the user by id
-            const user = await Customer.findOne({ id: id }).lean();
-
-            if (!user) {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
-
-            // Update the user's profile image
-            const updateprofile = await User.findOneAndUpdate({ id: id }, { profile_img_url: product_image }).lean();
-
-            if (updateprofile) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["profile-img-updated"]), {});
+    // Checked
+    public async getWalletBalance(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const id = parseInt(req.params.id);
+            const customer:any = Customer.findOne({id:id}).lean();
+            const results: any = await Wallet.findOne({ customer_id: customer._id }).select('id balance').lean();
+            console.log(results);
+            if (results) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["update-failed"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -358,4 +394,271 @@ export default class UserController {
     }
 
 
+
+
+
+
+    // Checked
+    public async getWatchlistList(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getList]";
+            // Set locale
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const customer_id = parseInt(req.params.customer_id);
+            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            // console.log(customer);
+            const results = await Watchlist.find({ created_by: customer._id })
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+            
+            const totalCount = await Watchlist.countDocuments({ created_by: customer._id });
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getWatchlistById(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const result: any = await Watchlist.findOne({ id: id }).lean();
+            
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    public async addWatchlist(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[add]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const { name } = req.body;
+            const customer_id = parseInt(req.params.customer_id);
+            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            const result: any = await Watchlist.create({
+                name: name,
+                status: true,
+                created_by: customer._id
+            });
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-add"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["server-error"]));
+            }
+        } catch (err: any) {
+            console.error(err);
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async updateWatchlist(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[update]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const { id } = req.params; // Assuming the ID is passed as a URL parameter
+            const { name } = req.body;
+            const watchlist:any = await Watchlist.findOne({ id }).lean();
+            let result: any = await Watchlist.findOneAndUpdate(
+                { id: id },
+                {
+                    name: name,
+                    updated_by: watchlist.customer_id
+                });
+            // const watchlist = await Watchlist.find({ id });
+
+            // watchlist[0].name = name;
+            // await watchlist[0].save();
+
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-update"]), {});
+        } catch (err: any) {
+            console.error(err);
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async deleteWishlist(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[delete]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            // Log the id for debugging purposes
+
+            const id = parseInt(req.params.id);
+            const result = await Watchlist.deleteOne({ id: id });
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-delete"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    
+    // Checked
+    public async getProductsByWatchlistId(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getById]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const id = parseInt(req.params.id);
+            const watchlist: any = await Watchlist.findOne({ id: id }).lean();
+            const result: any = await WatchlistItem.find({ watchlist_id: watchlist._id }).populate({
+                path: 'product_id',
+                transform: (doc) => {
+                    if (doc && doc.product_image) {
+                        doc.product_image = `${process.env.RESOURCE_URL}${doc.product_image}`;
+                    }
+                    return doc;
+                }
+            }).sort({ _id: -1 }).lean();
+
+
+            if (result) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+
+    // Checked
+    public async getTransactions(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getList]";
+            // Set locale
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+
+            const skip = (pageNumber - 1) * limitNumber;
+            const customer_id = parseInt(req.params.customer_id);
+            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            const result = await Transaction.find({ customer_id: customer._id })
+                .sort({ id: -1 })
+                .skip(skip)
+                .limit(limitNumber)
+                .lean();
+
+            // Get the total number of documents in the transactions collection
+            const totalCount = await Transaction.countDocuments({ customer_id: customer._id });
+
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
+                    { result, totalPages }
+                );
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
+    public async getInvoices(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getList]";
+            // Set locale
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const customer_id = parseInt(req.params.customer_id);
+            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            const results = await Invoice.find({customer_id:customer._id})
+                .sort({ _id: -1 }) // Sort by _id in descending order
+                .skip(skip)
+                .limit(limitNumber).populate("customer_id")
+                .lean();
+
+            const totalCount = await Invoice.countDocuments({customer_id:customer._id});
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            // const result = await State.find({}).sort([['id', 'desc']]).lean();
+
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    public async adminSettings(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[update]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            // const { id } = req.params; // Assuming the ID is passed as a URL parameter
+
+            const id = parseInt(req.params.id);
+            const { admin_commission } = req.body;
+            let result: any = await Customer.findOneAndUpdate(
+                { id: id },
+                {
+                    admin_commission: admin_commission
+                });
+            console.log(result);
+
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-update"]), {});
+        } catch (err: any) {
+            console.error(err);
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 }

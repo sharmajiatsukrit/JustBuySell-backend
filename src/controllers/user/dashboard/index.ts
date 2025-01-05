@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, Banner, Category, Product,Offers,Rating } from "../../../models";
+import { Customer, Banner, Category, Product,Offers,Rating,WatchlistItem } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -102,12 +102,25 @@ export default class DashboardController {
         try {
             const fn = "[getTopCategories]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit,search } = req.query;
             this.locale = (locale as string) || "en";
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            const results: any = await Category.find({ status: true })
+
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { name: { $regex: search, $options: 'i' } },
+                    ]
+                };
+            } else {
+                searchQuery = {status: true};
+            }
+            const results: any = await Category.find(searchQuery)
                 .lean()
                 .skip(skip)
                 .limit(limitNumber)
@@ -135,7 +148,7 @@ export default class DashboardController {
         try {
             const fn = "[getProductsByCategory]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit,search } = req.query;
             this.locale = (locale as string) || "en";
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
@@ -143,29 +156,66 @@ export default class DashboardController {
             const id = parseInt(req.params.id);
             let results:any;
             let totalCount:any;
+            let searchQuery = {};
+            
             if(id == 0){
-                results = await Product.find({ status: true }).lean()
+                if (search) {
+                    searchQuery = {
+                        status: true,
+                        $or: [
+                            { name: { $regex: search, $options: 'i' } },
+                            { name: { $regex: search, $options: 'i' } },
+                        ]
+                    };
+                } else {
+                    searchQuery = {status: true};
+                }
+                results = await Product.find(searchQuery).lean()
                 .skip(skip)
                 .limit(limitNumber)
                 .sort({ id: -1 });
-                totalCount = await Product.countDocuments({ status: true});
+                totalCount = await Product.countDocuments(searchQuery);
             }else{
+
                 const category:any = await Category.findOne({id:id}).lean();
-                results = await Product.find({ status: true,category_id:category._id }).lean()
+                if (search) {
+                    searchQuery = {
+                        status: true,category_id:category._id,
+                        $or: [
+                            { name: { $regex: search, $options: 'i' } },
+                            { name: { $regex: search, $options: 'i' } },
+                        ]
+                    };
+                } else {
+                    searchQuery = {status: true,category_id:category._id,};
+                }
+                results = await Product.find(searchQuery).lean()
                 .skip(skip)
                 .limit(limitNumber)
                 .sort({ id: -1 });
-                totalCount = await Product.countDocuments({ status: true,category_id:category._id });
+                totalCount = await Product.countDocuments(searchQuery);
             }
             
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                const formattedResult = results.map((item: any) => ({
+                 // Fetch wishlist items for the customer
+                 const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
+                // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => ({
+                    productId: item.product_id.id.toString(),
+                    wishlistId: item.watchlist_id.id.toString()
+                }));
+                const formattedResult = results.map((item: any) => {
+                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
-                }));
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    wishlist: wishlist ? true : false,
+                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                }
+            });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -194,12 +244,24 @@ export default class DashboardController {
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                const formattedResult = results.map((item: any) => ({
+                 // Fetch wishlist items for the customer
+                 const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
+                // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => ({
+                    productId: item.product_id.id.toString(),
+                    wishlistId: item.watchlist_id.id.toString()
+                }));
+                const formattedResult = results.map((item: any) => {
+                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
-                }));
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    wishlist: wishlist ? true : false,
+                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                }
+                });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -226,12 +288,24 @@ export default class DashboardController {
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                const formattedResult = results.map((item: any) => ({
+                 // Fetch wishlist items for the customer
+                 const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
+                // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => ({
+                    productId: item.product_id.id.toString(),
+                    wishlistId: item.watchlist_id.id.toString()
+                }));
+                const formattedResult = results.map((item: any) => {
+                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
-                }));
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    wishlist: wishlist ? true : false,
+                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                }
+            });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -258,12 +332,24 @@ export default class DashboardController {
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                const formattedResult = results.map((item: any) => ({
+                 // Fetch wishlist items for the customer
+                 const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
+                // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => ({
+                    productId: item.product_id.id.toString(),
+                    wishlistId: item.watchlist_id.id.toString()
+                }));
+                const formattedResult = results.map((item: any) => {
+                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
-                }));
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    wishlist: wishlist ? true : false,
+                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                }
+            });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -284,6 +370,15 @@ export default class DashboardController {
             const result: any = await Product.findOne({ status: true,id:id }).populate('category_id', 'id name').lean();
             
             if (result) {
+                 // Fetch wishlist items for the customer
+                 const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
+                // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => ({
+                    productId: item.product_id.id.toString(),
+                    wishlistId: item.watchlist_id.id.toString()
+                }));
+
+                const wishlist = wishlistInfo.find((entry) => entry.productId === result.id.toString());
                 const formattedResult = {
                     id: result.id,
                     name: result.name,
@@ -294,6 +389,8 @@ export default class DashboardController {
                     conversion_unit:result.conversion_unit,
                     created_by: result.created_by,
                     status: result.status,
+                    wishlist: wishlist ? true : false,
+                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
                 };
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
             } else {
@@ -304,54 +401,121 @@ export default class DashboardController {
         }
     }
 
-
     // Checked
     public async getBuyOfferByProductID(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getBuyOfferByProductID]";
             // Set locale
-            const { locale, page, limit } = req.query;
+            const { locale, page, limit} = req.query;
             this.locale = (locale as string) || "en";
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            const id = parseInt(req.params.id);
-            const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 0,product_id:product._id }).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            // Extract the query parameters
             
-             
-            console.log(results); 
-            const totalCount = await Offers.countDocuments({ status: 1,type: 0,product_id:product._id });
+            // const master = req.query.master as string;
+            // const sorting = req.query.sorting as string;
+
+            const id = parseInt(req.params.id);
+            const { individual,master,sorting,filters} = req.body;
+            
+            const product:any = await Product.findOne({ id: id }).lean();
+            const filter:any = {};
+            filter.status = 1;
+            filter.type = 0;
+            filter.product_id = product._id;
+
+            if (individual) {
+                // const individual = req.query.individual as string;
+                const individualObj = individual;
+            
+                if(individualObj.size){
+                    filter["individual_pack.individualSize.id"] = individualObj.size;
+                }
+                if(individualObj.unit){
+                    filter["individual_pack.individualUnit.id"] = individualObj.unit;
+                }
+                
+                if(individualObj.type){
+                    filter["individual_pack.individualType.id"] = individualObj.type;
+                }
+                
+            }
+
+            if (master) {
+                // const master = req.query.master as string;
+                const masterObj = master;
+                if(masterObj.quantity){
+                    filter["master_pack.quantity"] = masterObj.quantity;
+                }
+                
+                if(masterObj.masterType){
+                    filter["master_pack.masterType.id"] = masterObj.masterType;
+                }
+                
+            }
+
+            if(filters){
+                // const filters = req.query.filters as string;
+                const filtersObj = filters;
+
+                if(filtersObj.rating){
+                    filter.rating = filtersObj.rating;
+                }
+                if(filtersObj.distance){
+                    filter.distance = filtersObj.distance;
+                }
+                if(filtersObj.coo){
+                    filter.coo = filtersObj.coo;
+                }
+                if(filtersObj.brand){
+                    filter.brand = filtersObj.brand;
+                }
+                if(filtersObj.state){
+                    filter.state = filtersObj.state;
+                }
+                if(filtersObj.city){
+                    filter.city = filtersObj.city;
+                }
+                // filter.city = filtersObj.city;
+            }
+
+            if(sorting){
+                // filter.master_pack.quantity = filtersObj.quantity;
+                // filter.master_pack.masterType.id = filtersObj.masterType;
+            }
+            
+            const results: any = await Offers.find(filter).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                const formattedResult = results.map(async (item: any) => {
-                    // console.log({
-                    //     id: item.id,
-                    //     productId: item.product_id,
-                    //     targetPrice: item.target_price,
-                    //     buyQuantity: item.buy_quantity,
-                    //     productLocation: item.product_location,
-                    //     createdBy: item.created_by,
-                    //     rating_count: 0
-                    // });
-                    // const total_ratings = await Rating.countDocuments({ offer_id:item._id });
+                // Map offers to include rating count
+            const formattedResult = await Promise.all(
+                results.map(async (offer: any) => {
+                    const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
                     return {
-                        id: item.id,
-                        productId: item.product_id,
-                        targetPrice: item.target_price,
-                        buyQuantity: item.buy_quantity,
-                        productLocation: item.product_location,
-                        individual_pack: item.individual_pack,
-                        master_pack: item.master_pack,
-                        selling_unit: item.selling_unit,
-                        conversion_unit: item.conversion_unit,
-                        conversion_rate: item.conversion_rate,
-                        createdBy: item.created_by,
-                        rating_count: 0
-                    }
-                //    return preparedData; 
-                });
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: results, totalPages, totalCount, currentPage: pageNumber });
+                        id: offer.id,
+                        product_id: offer.product_id,
+                        target_price: offer.target_price,
+                        buy_quantity: offer.buy_quantity,
+                        product_location: offer.product_location,
+                        brand: offer.brand,
+                        coo: offer.coo,
+                        individual_pack: offer.individual_pack,
+                        master_pack: offer.master_pack,
+                        selling_unit: offer.selling_unit,
+                        conversion_unit: offer.conversion_unit,
+                        conversion_rate: offer.conversion_rate,
+                        offer_validity: offer.offer_validity,
+                        publish_date: offer.publish_date,
+                        created_by: offer.created_by,
+                        rating_count: ratingCount,
+                        createdAt:offer.createdAt
+                    };
+                })
+            );
+            // console.log(formattedResult); 
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -359,8 +523,6 @@ export default class DashboardController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-    
 
     // Checked
     public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
@@ -373,14 +535,170 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
+            const { individual,master,sorting,filters} = req.body;
             const product:any = await Product.findOne({ id: id }).lean();
-            const results: any = await Offers.find({ status: 1,type: 1,product_id:product._id }).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const filter:any = {};
+            filter.status = 1;
+            filter.type = 1;
+            filter.product_id = product._id;
+
+            if (individual) {
+                // const individual = req.query.individual as string;
+                const individualObj = individual;
+            
+                if(individualObj.size){
+                    filter["individual_pack.individualSize.id"] = individualObj.size;
+                }
+                if(individualObj.unit){
+                    filter["individual_pack.individualUnit.id"] = individualObj.unit;
+                }
+                
+                if(individualObj.type){
+                    filter["individual_pack.individualType.id"] = individualObj.type;
+                }
+                
+            }
+
+            if (master) {
+                // const master = req.query.master as string;
+                const masterObj = master;
+                if(masterObj.quantity){
+                    filter["master_pack.quantity"] = masterObj.quantity;
+                }
+                
+                if(masterObj.masterType){
+                    filter["master_pack.masterType.id"] = masterObj.masterType;
+                }
+                
+            }
+
+            if(filters){
+                // const filters = req.query.filters as string;
+                const filtersObj = filters;
+
+                if(filtersObj.rating){
+                    filter.rating = filtersObj.rating;
+                }
+                if(filtersObj.distance){
+                    filter.distance = filtersObj.distance;
+                }
+                if(filtersObj.coo){
+                    filter.coo = filtersObj.coo;
+                }
+                if(filtersObj.brand){
+                    filter.brand = filtersObj.brand;
+                }
+                if(filtersObj.state){
+                    filter.state = filtersObj.state;
+                }
+                if(filtersObj.city){
+                    filter.city = filtersObj.city;
+                }
+                // filter.city = filtersObj.city;
+            }
+
+            if(sorting){
+                // filter.master_pack.quantity = filtersObj.quantity;
+                // filter.master_pack.masterType.id = filtersObj.masterType;
+            }
+
+            const results: any = await Offers.find(filter).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
                    
-            const totalCount = await Offers.countDocuments({ status: 1,type: 1,product_id:product._id });
+            const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
-                
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: results, totalPages, totalCount, currentPage: pageNumber });
+                // Format the results and add the rating count
+            const formattedResult = await Promise.all(
+                results.map(async (offer: any) => {
+                    const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
+                    return {
+                        id: offer.id,
+                        offer_price: offer.offer_price,
+                        moq: offer.moq,
+                        brand: offer.brand,
+                        coo: offer.coo,
+                        product_location: offer.product_location,
+                        individual_pack: offer.individual_pack,
+                        master_pack: offer.master_pack,
+                        selling_unit: offer.selling_unit,
+                        conversion_unit: offer.conversion_unit,
+                        conversion_rate: offer.conversion_rate,
+                        offer_validity: offer.offer_validity,
+                        publish_date: offer.publish_date,
+                        product_id: offer.product_id,
+                        createdBy: offer.created_by,
+                        ratingCount: ratingCount, // Total ratings for the offer
+                        createdAt:offer.createdAt
+                    };
+                })
+            );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async getOfferFilters(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getOfferFilters]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const product_id = parseInt(req.params.product_id);
+            const product:any = await Product.findOne({id:product_id}).lean(); 
+
+            const filters: any = {};
+            filters.ratings = [
+                {'label':'1 Star & Above','value':1},
+                {'label':'2 Star & Above','value':2},
+                {'label':'3 Star & Above','value':3},
+                {'label':'4 Star & Above','value':4}
+            ];
+            filters.distance = [
+                {'label':'Upto 5KM','value':5},
+                {'label':'Upto 10KM','value':10},
+                {'label':'Upto 50KM','value':50},
+                {'label':'Upto 100KM','value':100},
+                {'label':'Upto 200KM','value':200},
+                {'label':'Upto 500KM','value':500},
+                {'label':'Upto 1000KM','value':1000},
+            ];
+
+            const uniqueCoo = await Offers.distinct("coo",{product_id : product._id});
+            // Transform to label-value pair
+            filters.coo  = uniqueCoo.map((coo) => ({
+                label: coo,
+                value: coo,
+            }));
+            // filters.coo = [];
+            const uniqueState = await Offers.distinct("state",{product_id : product._id});
+            // Transform to label-value pair
+            filters.state  = uniqueState.map((state) => ({
+                label: state,
+                value: state,
+            }));
+            // filters.state = [];
+            const uniqueCity = await Offers.distinct("city",{product_id : product._id});
+            // Transform to label-value pair
+            filters.city  = uniqueCity.map((coo) => ({
+                label: coo,
+                value: coo,
+            }));
+            // filters.city = [];
+
+            const uniqueBrands = await Offers.distinct("brand",{product_id : product._id});
+            console.log(uniqueBrands,product);
+            // Transform to label-value pair
+            filters.brand  = uniqueBrands.map((brand) => ({
+                label: brand,
+                value: brand,
+            }));
+            // console.log(filters);
+            if(filters){
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), filters);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

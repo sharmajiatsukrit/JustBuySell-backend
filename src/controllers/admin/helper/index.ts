@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category, Unit, Country, State, City, Roles, Attribute, AttributeItem } from "../../../models";
+import { Customer,Category, Unit, Country, State, City, Roles, Attribute, AttributeItem, Product } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -290,6 +290,55 @@ export default class HelperController {
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async getCustomers(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getCustomers]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+
+            const result = await Customer.find({}).where('status').equals(1).sort([['id', 'desc']]).select('id name').lean();
+
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async getDashboardTotals(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getCustomers]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+
+            const customers = await Customer.countDocuments({});
+            const categories = await Category.countDocuments({});
+            const products = await Product.countDocuments({});
+            const totals = {
+                total_customer:customers,
+                total_categories:categories,
+                total_products:products,
+                total_buying_offers:products,
+                total_selling_offers:products,
+                total_earnings:products,
+            }
+            if (totals) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

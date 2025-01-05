@@ -31,8 +31,14 @@ export default class ProductController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            const results = await Product.find({})
+            let searchQuery:any = {};
+            if (search) {
+                searchQuery.$or = [
+                    { name: { $regex: search, $options: 'i' } }
+                ];
+            }
+            
+            const results = await Product.find(searchQuery)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)

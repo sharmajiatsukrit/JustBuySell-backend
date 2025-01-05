@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating,Setting } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -284,6 +284,30 @@ export default class HelperController {
                     percentage: completenessPercentage.toFixed(2) + '%',
                     isComplete: isComplete // true if 100%, false otherwise
                 });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getTaxCommission(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getTaxCommission]";
+            // Set locale
+            const { locale} = req.query;
+            this.locale = (locale as string) || "en";
+            const customer:any = Customer.findOne({_id:req.customer.object_id}).lean(); 
+            const result: any = await Setting.findOne({ key: "customer_settings" }).lean();
+            const taxCommission = {
+                gst:result.value.gst,
+                admin_commission:customer.admin_commission ? customer.admin_commission : result.value.admin_commission
+            };
+            if (taxCommission) {
+                
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
