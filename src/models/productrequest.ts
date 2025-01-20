@@ -14,7 +14,7 @@ interface IProductRequest extends Document {
     product_image: string;
     master_pack_type: string;
     description: string;
-    status: boolean;
+    status: number;
     created_by: number;
     updated_by: number;
 }
@@ -30,7 +30,7 @@ const productRequestSchema: Schema = new Schema({
     product_image: { type: String, default: '' },
     master_pack_type: { type: String, default: 0 },
     description: { type: String, default: 0 },
-    status: { type: Boolean, default: true },
+    status: { type: Number, default: 0 },
     created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' },
 

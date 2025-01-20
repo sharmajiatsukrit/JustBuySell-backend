@@ -222,7 +222,7 @@ export default class UserController {
                 });
 
             
-            const userData: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
+            const userData: any = await Customer.findOne({ id: id }).lean();
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
         } catch (err: any) {
@@ -353,7 +353,7 @@ export default class UserController {
             const customer:any = Customer.findOne({id:id}).lean();
             
                 const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
-
+                
                 const result: any = await Wallet.findOneAndUpdate(
                     { customer_id: customer._id },
                     {

@@ -5,11 +5,11 @@ async function sendSMS(to: string,message: string): AxiosPromise<any> {
     const url = "https://api.pinnacle.in/index.php/sms/send";
     const method = "POST";
     const messageObj = {
-        sender:"SSSTZN",
+        sender:"JBUYSL",
         numbers:to,
         message:message,
         messagetype:"TXT",
-        dlttempid:"1107173149373830185"
+        dlttempid:"1107173693764931229"
     };
     
     const reqHeaders = {

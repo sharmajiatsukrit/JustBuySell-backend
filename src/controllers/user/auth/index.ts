@@ -75,9 +75,9 @@ export default class AuthController {
 
             // Generate OTP for the user
             const otp = await this.generateOtp(userData.id);
-            // const mess = await sendSMS('8851039586',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
-            // console.log(mess.data.data);
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), {});
+            const mess = await sendSMS(phone,`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
+            // console.log(mess.data);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), mess.data);
 
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});

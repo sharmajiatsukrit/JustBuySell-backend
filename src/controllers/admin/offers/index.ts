@@ -118,7 +118,7 @@ export default class OfferController {
                     res,
                     HttpCodeEnum.OK,
                     ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]),
-                    { result, totalPages }
+                    { result,totalCount, totalPages }
                 );
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

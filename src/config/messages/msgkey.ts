@@ -106,7 +106,7 @@ export const MessageKey: IObjectKeys = {
 
     "customer-fetched": "customer-fetched",
     "customer-add": "customer-add",
-    "customer-updated": "customer-update",
+    "customer-updated": "customer-updated",
     "customer-status": "customer-status",
     "customer-deleted": "customer-delete",
 

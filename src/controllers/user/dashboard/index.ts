@@ -236,6 +236,7 @@ export default class DashboardController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
+            
             const results: any = await Product.find({ status: true })
                 .lean()
                 .skip(skip)
@@ -243,15 +244,23 @@ export default class DashboardController {
                 .sort({ id: -1 });
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
+            
             if (results.length > 0) {
+               
                  // Fetch wishlist items for the customer
                  const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
-                // Create an array of wishlist product ids and their corresponding wishlist_id
-                const wishlistInfo = wishlistItems.map((item: any) => ({
-                    productId: item.product_id.id.toString(),
-                    wishlistId: item.watchlist_id.id.toString()
-                }));
+                //  console.log(wishlistItems);
+                 // Create an array of wishlist product ids and their corresponding wishlist_id
+                const wishlistInfo = wishlistItems.map((item: any) => {
+                    // console.log(item);
+                    return {
+                        productId: item.product_id.id.toString(),
+                        wishlistId: item.watchlist_id.id.toString()
+                    }
+                });
+                // console.log("ee",wishlistInfo);
                 const formattedResult = results.map((item: any) => {
+                    console.log(item);
                     const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
                     return {
                     id: item.id,
@@ -485,7 +494,7 @@ export default class DashboardController {
                 // filter.master_pack.masterType.id = filtersObj.masterType;
             }
             
-            const results: any = await Offers.find(filter).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find(filter).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
             const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
@@ -602,7 +611,7 @@ export default class DashboardController {
                 // filter.master_pack.masterType.id = filtersObj.masterType;
             }
 
-            const results: any = await Offers.find(filter).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find(filter).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
                    
             const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);

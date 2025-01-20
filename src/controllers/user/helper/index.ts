@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating,Setting } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating,Setting, Attribute, AttributeItem } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -308,6 +308,56 @@ export default class HelperController {
             if (taxCommission) {
                 
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+
+    // Checked
+    public async getPRDropDown(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getPRDropDown]";
+            // Set locale
+            const { locale,search} = req.query;
+            this.locale = (locale as string) || "en";
+            const type = req.params.type;
+            let attribute_id:number = 0;
+            if(type== 'selling_unit'){
+                 attribute_id = 19;
+            }else if(type== 'ips'){
+                attribute_id = 8;
+            }else if(type== 'ipu'){
+                attribute_id = 16;
+            }else if(type== 'ipt'){
+                attribute_id = 17;
+            }else if(type== 'mpt'){
+                attribute_id = 18;
+            }else if(type== 'cu'){
+                attribute_id = 20;
+            }
+
+            const attribute: any = await Attribute.findOne({ id: attribute_id }).lean();
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    attribute_id:attribute._id,
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = { attribute_id:attribute._id,status: true, };
+            }
+            const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            
+            if (result.length > 0) {
+                
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

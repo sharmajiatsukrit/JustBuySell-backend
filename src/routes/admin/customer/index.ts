@@ -14,7 +14,7 @@ routes.delete("/delete/:id", validateRequest, authAdmin, customerController.dele
 routes.patch("/status/:id", validateRequest, authAdmin, customerController.status.bind(customerController));
 routes.put("/update-companylogo/:id", upload.single("company_logo"), authAdmin, validateRequest, customerController.updateCompanyLogo.bind(customerController));
 routes.get("/get-wallet-balance/:id", validateRequest, authAdmin, customerController.getWalletBalance.bind(customerController));
-routes.put("/recharge-wallet/:id",  authAdmin, validateRequest, customerController.updateCompanyLogo.bind(customerController));
+routes.put("/recharge-wallet/:id",  authAdmin, validateRequest, customerController.rechargeWallet.bind(customerController));
 
 
 routes.get("/watchlist/list/:customer_id",  validateRequest, authAdmin, customerController.getWatchlistList.bind(customerController));

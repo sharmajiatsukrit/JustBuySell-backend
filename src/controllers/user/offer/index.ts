@@ -46,7 +46,7 @@ export default class OfferController {
                 conversion_rate: conversion_rate,
                 product_location: product_location,
                 offer_validity:offer_validity,
-                publish_date:moment().format('YYYY-MM-DD H:i:s'),
+                publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
                 state:state,
                 city:city,
                 product_id: product._id,
@@ -86,7 +86,7 @@ export default class OfferController {
                 conversion_unit: conversion_unit,
                 conversion_rate: conversion_rate,
                 offer_validity:offer_validity,
-                publish_date:moment().format('YYYY-MM-DD H:i:s'),
+                publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
                 state:state,
                 city:city,
                 product_id: product._id,
@@ -246,7 +246,15 @@ export default class OfferController {
 
             const id = parseInt(req.params.id);
             const { offer_ids,offer_validity } = req.body;
-            const updationstatus = await Offers.findOneAndUpdate({ id:offer_ids }, { offer_validity: offer_validity,publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),status:1 }).lean();
+            // const updationstatus = await Offers.findOneAndUpdate({ id:offer_ids }, { offer_validity: offer_validity,publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),status:1 }).lean();
+            const updationstatus = await Offers.updateMany(
+                { id: { $in: offer_ids } },  // Match any document with id in the offer_ids array
+                {
+                  offer_validity: offer_validity,
+                  publish_date: moment().format('YYYY-MM-DD HH:mm:ss'),
+                  status: 1
+                }
+              );
             // const updatedData: any = await Offers.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-status"]), {});
