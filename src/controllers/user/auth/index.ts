@@ -144,7 +144,7 @@ export default class AuthController {
     private async generateOtp(userId: number): Promise<number> {
         const minNo = 100000;
         const maxNo = 999999;
-        const otp = 123456;//Math.floor(Math.random() * (maxNo - minNo + 1)) + minNo;
+        const otp = Math.floor(Math.random() * (maxNo - minNo + 1)) + minNo;
         const hashedOtp = await Bcrypt.hash(otp.toString(), 10);
 
         const isOTPExist = await Otps.where({ user_id: userId }).countDocuments();

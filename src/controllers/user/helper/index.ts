@@ -53,7 +53,16 @@ export default class HelperController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, selling_unit, individual_pack_size, individual_pack_unit, Individual_packing_type, master_pack_qty, master_pack_type, description } = req.body;
+            const { 
+                name, 
+                selling_unit_id,selling_unit,
+                individual_pack_size_id, individual_pack_size,
+                individual_pack_unit_id, individual_pack_unit,
+                individual_packing_type_id, individual_packing_type, 
+                master_pack_qty,master_pack_type_id, 
+                conversion_unit_id, conversion_unit, conversion_unit_rate,
+                master_pack_type, description 
+            } = req.body;
             let product_image: any;
             if (req.file) {
                 product_image = req?.file?.filename;
@@ -63,13 +72,21 @@ export default class HelperController {
 
             const result: any = await ProductRequest.create({
                 name: name,
+                selling_unit_id: selling_unit_id,
                 selling_unit: selling_unit,
+                individual_pack_size_id: individual_pack_size_id,
                 individual_pack_size: individual_pack_size,
+                individual_pack_unit_id: individual_pack_unit_id,
                 individual_pack_unit: individual_pack_unit,
-                Individual_packing_type: Individual_packing_type,
+                individual_packing_type_id: individual_packing_type_id,
+                individual_packing_type: individual_packing_type,
                 master_pack_qty: master_pack_qty,
+                master_pack_type_id: master_pack_type_id,
                 master_pack_type: master_pack_type,
                 description: description,
+                conversion_unit_id: conversion_unit_id,
+                conversion_unit: conversion_unit,
+                conversion_unit_rate: conversion_unit_rate,
                 product_image: product_image,
                 created_by: req.customer.object_id
             });
@@ -341,6 +358,7 @@ export default class HelperController {
             }
 
             const attribute: any = await Attribute.findOne({ id: attribute_id }).lean();
+            console.log(attribute);
             let searchQuery = {};
             if (search) {
                 searchQuery = {
