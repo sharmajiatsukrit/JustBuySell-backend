@@ -6,13 +6,11 @@ interface IReport extends Document {
     message: string;
     created_by: number;
     updated_by: number;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 const ReportSchema: Schema = new Schema({
     message: { type: String, default: '' },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
+    created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },
     {

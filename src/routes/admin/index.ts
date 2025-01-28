@@ -21,6 +21,7 @@ import Customer from "./customer";
 import Banner from "./banner";
 import Faq from "./faq";
 import Setting from "./setting";
+import BugReport from "./issue-report";
 
 const routes: Router = expres.Router();
 routes.use("/auth", AuthRoutes);
@@ -44,5 +45,6 @@ routes.use("/customer", Customer);
 routes.use("/banner", Banner);
 routes.use("/faq", Faq);
 routes.use("/setting", Setting);
+routes.use("/issue-report", BugReport);
 
 export default routes;
