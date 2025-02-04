@@ -6,7 +6,7 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 interface ICategory extends Document {
     name: string;
     description: string;
-    parent_id: number;
+    parent_id: string;
     status: boolean;
     cat_img: string;
     created_by: number;
@@ -16,7 +16,7 @@ interface ICategory extends Document {
 const categorySchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
-    parent_id: { type: Schema.Types.ObjectId, ref: 'categories' },
+    parent_id: { type: Schema.Types.ObjectId, ref: 'categories',default: null },
     status: { type: Boolean, default: true },
     cat_img: { type: String, default: '' },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },

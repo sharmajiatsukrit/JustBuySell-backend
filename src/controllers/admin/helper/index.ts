@@ -42,7 +42,32 @@ export default class HelperController {
             } else {
                 searchQuery = { status: true, };
             }
-            const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            // const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            const result: any = await Category.aggregate([
+                {
+                  $lookup: {
+                    from: "categories",
+                    localField: "_id",
+                    foreignField: "parent_id",
+                    as: "children",
+                  },
+                },
+                {
+                  $match: { children: { $size: 0 }, ...searchQuery }, // Get only last child categories
+                },
+                {
+                  $project: {
+                    id: 1,
+                    name: 1,
+                  },
+                },
+                {
+                  $sort: { id: -1 }, // Sorting based on ID
+                },
+                {
+                  $limit: 10,
+                },
+              ]);
             console.log(result);
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);

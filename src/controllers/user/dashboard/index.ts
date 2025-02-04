@@ -97,44 +97,140 @@ export default class DashboardController {
         }
     }
 
-    // Checked
     public async getTopCategories(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getTopCategories]";
             // Set locale
-            const { locale, page, limit,search } = req.query;
+            const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-
-            let searchQuery = {};
+    
+            let searchQuery: any = { status: true, $or: [{ parent_id: { $exists: false } }, { parent_id: null }] };
+    
             if (search) {
-                searchQuery = {
-                    status: true,
-                    $or: [
-                        { name: { $regex: search, $options: 'i' } },
-                        { name: { $regex: search, $options: 'i' } },
-                    ]
-                };
-            } else {
-                searchQuery = {status: true};
+                searchQuery.$and = [
+                    { $or: [{ name: { $regex: search, $options: 'i' } }] }
+                ];
             }
+    
             const results: any = await Category.find(searchQuery)
                 .lean()
                 .skip(skip)
                 .limit(limitNumber)
                 .sort({ id: -1 });
-            const totalCount = await Category.countDocuments({ status: true });
+    
+            const totalCount = await Category.countDocuments(searchQuery);
             const totalPages = Math.ceil(totalCount / limitNumber);
+    
             if (results.length > 0) {
+                // Fetch child counts for each category in parallel
+                const categoryIds = results.map((item: any) => item._id);
+                const childCounts = await Category.aggregate([
+                    { $match: { parent_id: { $in: categoryIds } } },
+                    { $group: { _id: "$parent_id", count: { $sum: 1 } } }
+                ]);
+    
+                // Map child counts to a lookup object
+                const childCountMap: Record<string, boolean> = {};
+                childCounts.forEach((entry) => {
+                    childCountMap[entry._id.toString()] = entry.count > 0;
+                });
+    
+                // Format response with `availableChild` field
                 const formattedResult = results.map((item: any) => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    cat_img: `${process.env.RESOURCE_URL}${item.cat_img}`
+                    cat_img: `${process.env.RESOURCE_URL}${item.cat_img}`,
+                    availableChild: childCountMap[item._id.toString()] || false
                 }));
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), { 
+                    data: formattedResult, 
+                    totalPages, 
+                    totalCount, 
+                    currentPage: pageNumber 
+                });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    // Checked
+    public async getChildCategories(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getChildCategories]";
+            // Extract query parameters
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+            const id = parseInt(req.params.id);
+    
+            // Validate parent_id
+            if (!id) {
+                return serverResponse(res, HttpCodeEnum.BADREQUEST, "Parent ID is required", {});
+            }
+    
+            // Fetch parent category
+            const parentCategory: any = await Category.findOne({ id: id }).lean();
+            if (!parentCategory) {
+                return serverResponse(res, HttpCodeEnum.NOTFOUND, "Parent category not found", {});
+            }
+    
+            // Build search query
+            let searchQuery: any = { status: true, parent_id: parentCategory._id };
+    
+            if (search) {
+                searchQuery.$or = [{ name: { $regex: search, $options: 'i' } }];
+            }
+    
+            // Fetch child categories
+            const results = await Category.find(searchQuery)
+                .lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 });
+    
+            // Count total child categories
+            const totalCount = await Category.countDocuments(searchQuery);
+            const totalPages = Math.ceil(totalCount / limitNumber);
+    
+            if (results.length > 0) {
+                // Fetch child counts for each category in parallel
+                const categoryIds = results.map((item: any) => item._id);
+                const childCounts = await Category.aggregate([
+                    { $match: { parent_id: { $in: categoryIds } } },
+                    { $group: { _id: "$parent_id", count: { $sum: 1 } } }
+                ]);
+    
+                // Map child counts to a lookup object
+                const childCountMap: Record<string, boolean> = {};
+                childCounts.forEach((entry) => {
+                    childCountMap[entry._id.toString()] = entry.count > 0;
+                });
+    
+                // Format response with `availableChild` field
+                const formattedResult = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    cat_img: `${process.env.RESOURCE_URL}${item.cat_img}`,
+                    availableChild: childCountMap[item._id.toString()] || false
+                }));
+    
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]), { 
+                    data: formattedResult, 
+                    totalPages, 
+                    totalCount, 
+                    currentPage: pageNumber 
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

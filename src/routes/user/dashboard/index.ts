@@ -10,6 +10,7 @@ const dashboardController = new DashboardController();
 routes.get("/search", validateRequest, authRequest, dashboardController.getSearch.bind(dashboardController));
 routes.get("/get-banners", validateRequest, authRequest, dashboardController.getBanners.bind(dashboardController));
 routes.get("/get-top-categories", validateRequest, authRequest, dashboardController.getTopCategories.bind(dashboardController));
+routes.get("/get-child-categories/:id", validateRequest, authRequest, dashboardController.getChildCategories.bind(dashboardController));
 routes.get("/get-productsby-cat/:id", validateRequest, authRequest, dashboardController.getProductsByCategory.bind(dashboardController));
 routes.get("/get-most-searched-products", validateRequest, authRequest, dashboardController.getMostSearchedProducts.bind(dashboardController));
 routes.get("/get-most-traded-products", validateRequest, authRequest, dashboardController.getMostTradedProducts.bind(dashboardController));
