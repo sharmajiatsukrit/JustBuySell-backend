@@ -29,7 +29,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate,offer_validity,city,state} = req.body;
+            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,offer_validity,city,state} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -41,9 +41,6 @@ export default class OfferController {
                 pin_code: pin_code,
                 individual_pack: individual_pack,
                 master_pack: master_pack,
-                selling_unit: selling_unit,
-                conversion_unit: conversion_unit,
-                conversion_rate: conversion_rate,
                 product_location: product_location,
                 offer_validity:offer_validity,
                 publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
@@ -69,7 +66,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,selling_unit,conversion_unit,conversion_rate,offer_validity,city,state} = req.body;
+            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,offer_validity,city,state} = req.body;
 
             let result: any;
             const product:any = await Product.findOne({ id: product_id }).lean();
@@ -82,9 +79,6 @@ export default class OfferController {
                 product_location: product_location,
                 individual_pack: individual_pack,
                 master_pack: master_pack,
-                selling_unit: selling_unit,
-                conversion_unit: conversion_unit,
-                conversion_rate: conversion_rate,
                 offer_validity:offer_validity,
                 publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
                 state:state,

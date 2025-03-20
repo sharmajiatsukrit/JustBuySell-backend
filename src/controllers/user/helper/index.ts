@@ -297,7 +297,9 @@ export default class HelperController {
                 // Calculate completeness percentage
                 const completenessPercentage = (filledCount / requiredFields.length) * 100;
                 const isComplete = completenessPercentage === 100;
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
+                const message:any = isComplete ? `Profile Completed` : `Complete your profile to claim ${settings.value.new_registration_topup} free topup`;
+                return serverResponse(res, HttpCodeEnum.OK, message, {
                     percentage: completenessPercentage.toFixed(2) + '%',
                     isComplete: isComplete // true if 100%, false otherwise
                 });

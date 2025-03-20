@@ -79,7 +79,25 @@ export default class AccountController {
                     close_time: close_time,
                     status: status
                 });
+            const checkTransaction:any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP",customer_id: req.customer.user_id }).lean();
+            if(!checkTransaction){
+                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
+                const reachare: any = await Wallet.create({
+                    balance: settings.value.new_registration_topup,
+                    customer_id: req.customer.user_id
+                });
 
+                const transaction: any = await Transaction.create({
+                    amount: settings.value.new_registration_topup,
+                    gst: 0,
+                    transaction_id: '',
+                    transaction_type: 0,
+                    razorpay_payment_id: '',
+                    status: 1,
+                    remarks: "REGISTRATIONTOPUP",
+                    customer_id: req.customer.user_id
+                });
+            }
             console.log(result);
             let company_logo: any;
             if (req.file) {

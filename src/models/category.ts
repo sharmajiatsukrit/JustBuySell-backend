@@ -9,6 +9,7 @@ interface ICategory extends Document {
     parent_id: string;
     status: boolean;
     cat_img: string;
+    commission: string;
     created_by: number;
     updated_by: number;
 }
@@ -19,6 +20,7 @@ const categorySchema: Schema = new Schema({
     parent_id: { type: Schema.Types.ObjectId, ref: 'categories',default: null },
     status: { type: Boolean, default: true },
     cat_img: { type: String, default: '' },
+    commission: { type: String, default: null },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },

@@ -58,6 +58,7 @@ export default class CategoryController {
                     name: item.name,
                     description: item.description,
                     parent_id: item.parent_id,
+                    commission: item.commission,
                     catImg: `${process.env.RESOURCE_URL}${item.cat_img}`, // Full URL of category image
                     status: item.status,
                     // Add more fields as necessary
@@ -76,6 +77,7 @@ export default class CategoryController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+    
     public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getById]";
@@ -115,13 +117,14 @@ export default class CategoryController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, parent_id, status } = req.body;
+            const { name, description, parent_id,commission, status } = req.body;
             const category: any = await Category.findOne({ id: parent_id }).lean();
             console.log(category);
             
             const result: any = await Category.create({
                 name: name,
                 description: description,
+                commission: commission,
                 parent_id: category?._id,
                 status: status,
                 created_by: req.user.object_id
@@ -142,6 +145,7 @@ export default class CategoryController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
     //Update
     public async update(req: Request, res: Response): Promise<any> {
         try {
@@ -153,13 +157,14 @@ export default class CategoryController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, parent_id, status } = req.body;
+            const { name, description, parent_id,commission, status } = req.body;
             const category: any = await Category.findOne({ id: parent_id }).lean();
             let result: any = await Category.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description: description,
+                    commission: commission,
                     parent_id: category?._id,
                     status: status,
                     updated_by: req.user.object_id

@@ -42,7 +42,7 @@ export default class ProductController {
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
-                .lean();
+                .lean().populate("category_id","id name");
 
             // Get the total number of documents in the Category collection
             const totalCount = await Product.countDocuments({});
@@ -57,6 +57,7 @@ export default class ProductController {
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
+                    category_id:item.category_id,
                     status: item.status,
                     // Add more fields as necessary
                 }));
@@ -86,8 +87,7 @@ export default class ProductController {
 
             const id = parseInt(req.params.id);
             const result: any = await Product.findOne({ id: id })
-                                        .populate('category_id', 'id name')
-                                        .populate('conversion_unit', 'id name').lean();
+                                        .populate('category_id', 'id name').lean();
             //const variations: any = await ProductVariations.findOne({ product_id: result._id }).populate('category_id', 'id name').lean();
             //console.log(result);
             if (result) {
@@ -98,7 +98,9 @@ export default class ProductController {
                     category_id: result.category_id,
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
                     variations:result.variations,
-                    conversion_unit:result.conversion_unit,
+                    search_tags:result.search_tags,
+                    individual_label:result.individual_label,
+                    master_label:result.master_label,
                     created_by: result.created_by,
                     status: result.status,
                 };
@@ -118,7 +120,7 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
     
-            const { name, description,search_tags, category_id,variations,selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit, status } = req.body;
+            const { name, description, category_id,variations,search_tags,individual_label,master_label, status } = req.body;
             let result: any;
             const variation = JSON.parse(variations);
             console.log(variation);
@@ -134,21 +136,16 @@ export default class ProductController {
                 })
               );
             if (categoryObjects) {
-                const sellingunit:any = await AttributeItem.findOne({id:selling_unit}).lean();
-                // const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
-                // const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
-                // const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
-                // const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
-                const conversionUnit:any = await AttributeItem.findOne({id:conversion_unit}).lean();
+                
                 // Create the main product
                 result = await Product.create({
                     name,
                     description,
-                    search_tags:search_tags,
                     category_id: categoryObjects,
-                    selling_unit:selling_unit ? sellingunit._id : null,
                     variations:variation,
-                    conversion_unit:conversion_unit ? conversionUnit._id : null,
+                    search_tags:search_tags,
+                    individual_label:individual_label,
+                    master_label:master_label,
                     status
                 });
     
@@ -185,7 +182,7 @@ export default class ProductController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description,search_tags, category_id,variations, selling_unit,individual_pack_size,individual_pack_unit,individual_packing_type,master_pack_qty,master_pack_type,conversion_unit,status } = req.body;
+            const { name, description, category_id,variations ,search_tags,individual_label,master_label,status } = req.body;
             const variation = JSON.parse(variations);
             const cat:any = JSON.parse(category_id);
             const categoryObjects = await Promise.all(
@@ -199,21 +196,17 @@ export default class ProductController {
                 })
               );
             if (categoryObjects) {
-                // const sellingunit:any = await AttributeItem.findOne({id:selling_unit}).lean();
-                // const individualpacksize:any = await AttributeItem.findOne({id:individual_pack_size}).lean();
-                // const individualpackunit:any = await AttributeItem.findOne({id:individual_pack_unit}).lean();
-                // const individualpackingtype:any = await AttributeItem.findOne({id:individual_packing_type}).lean();
-                // const masterpacktype:any = await AttributeItem.findOne({id:master_pack_type}).lean();
-                const conversionUnit:any = await AttributeItem.findOne({id:conversion_unit}).lean();
+               
                 let result: any = await Product.findOneAndUpdate(
                     { id: id },
                     {
                         name,
                         description,
-                        search_tags,
                         category_id: categoryObjects,
                         variations:variation,
-                        conversion_unit:conversion_unit ? conversionUnit._id : null,
+                        search_tags:search_tags,
+                        individual_label:individual_label,
+                        master_label:master_label,
                         status
                     });
                 let product_image: any;

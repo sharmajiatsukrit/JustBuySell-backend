@@ -55,21 +55,7 @@ export default class AuthController {
             if (!userData) {
                 // User does not exist, register the user
                 const newUser = await Customer.create({ phone: phone,parent_id:null,status:1 });
-                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
-                const reachare: any = await Wallet.create({
-                    balance: settings.value.new_registration_topup,
-                    customer_id: newUser._id
-                });
-
-                const transaction: any = await Transaction.create({
-                    amount: settings.value.new_registration_topup,
-                    gst: 0,
-                    transaction_id: '',
-                    razorpay_payment_id: '',
-                    status: 1,
-                    remarks: "Free registration TOPUP",
-                    customer_id: newUser._id
-                });
+                
                 userData = newUser;
             }
 

@@ -14,7 +14,7 @@ import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
 const fileName = "[admin][customer][index.ts]";
-export default class UserController {
+export default class CustomerController {
     public locale: string = "en";
     public emailService;
 
@@ -350,7 +350,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
             const { amount, remarks } = req.body;
             const id = parseInt(req.params.id);
-            const customer:any = Customer.findOne({id:id}).lean();
+            const customer:any = await Customer.findOne({id:id}).lean();
             
                 const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
                 
@@ -362,6 +362,7 @@ export default class UserController {
                 const transaction: any = await Transaction.create({
                     amount: amount,
                     remarks: remarks,
+                    transaction_type: 0,
                     customer_id: customer._id
                 });
             
@@ -380,9 +381,10 @@ export default class UserController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const id = parseInt(req.params.id);
-            const customer:any = Customer.findOne({id:id}).lean();
+            const customer:any = await Customer.findOne({id:id}).lean();
+            // console.log(customer);
             const results: any = await Wallet.findOne({ customer_id: customer._id }).select('id balance').lean();
-            console.log(results);
+            // console.log(results);
             if (results) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
             } else {

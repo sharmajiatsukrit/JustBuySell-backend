@@ -90,6 +90,49 @@ export default class HelperController {
         }
     }
 
+    // Checked
+    public async getCatCategories(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getAttributes]";
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+            // Constructing the search query
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    status: true,
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
+                    ]
+                };
+            } else {
+                searchQuery = { status: true, };
+            }
+            const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
+            console.log(result);
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
+            } else {
+                throw new Error(
+                    ServerMessages.errorMsgLocale(
+                        this.locale,
+                        ServerMessagesEnum["not-found"]
+                    )
+                );
+            }
+        } catch (err: any) {
+            return serverErrorHandler(
+                err,
+                res,
+                err.message,
+                HttpCodeEnum.SERVERERROR,
+                []
+            );
+        }
+    }
+
+    
+
 
     public async getUnits(req: Request, res: Response): Promise<any> {
         try {

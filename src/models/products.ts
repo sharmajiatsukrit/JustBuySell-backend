@@ -11,8 +11,8 @@ interface IProducts extends Document {
     attributes: Map<string, any[]>; // Dynamic attributes stored as key-value pairs
     variations: Map<string, any[]>; // Dynamic attributes stored as key-value pairs
     product_image: string;
-    conversion_unit: string;
-    offer_validity: string;
+    individual_label: string;
+    master_label: string;
     status: boolean;
     created_by: number;
     updated_by: number;
@@ -27,8 +27,8 @@ const productsSchema: Schema = new Schema({
     variations: { type: [Object], default: [] }, // Allow an array of objects // Dynamic attributes
     category_id: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
     product_image: { type: String, default: '' },
-    offer_validity: { type: String, default: '' },
-    conversion_unit: { type: Schema.Types.ObjectId, ref: 'attribute_items' },
+    individual_label: { type: String, default: '' },
+    master_label: { type: String, default: '' },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

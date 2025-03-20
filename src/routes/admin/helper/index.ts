@@ -5,6 +5,7 @@ import { authAdmin, validateRequest } from "../../../utils/middleware";
 const routes: Router = expres.Router();
 const helperController = new HelperController();
 
+routes.get("/get-cat-categories", validateRequest, authAdmin, helperController.getCatCategories.bind(helperController));
 routes.get("/get-categories", validateRequest, authAdmin, helperController.getCategories.bind(helperController));
 routes.get("/get-units", validateRequest, authAdmin, helperController.getUnits.bind(helperController));
 routes.get("/get-attributes", validateRequest, authAdmin, helperController.getAttributes.bind(helperController));
