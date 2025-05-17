@@ -7,6 +7,7 @@ interface IUnlockOffers extends Document {
     offer_id: string;
     transaction_id: string;
     price: number;
+    offer_counter: number;
     commision: number;
     gst: number;
     status: number;
@@ -20,6 +21,7 @@ const unlockoffersSchema: Schema = new Schema({
     price: { type: Number, default: '' },
     gst: { type: Number, default: '' },
     commision: { type: Number, default: '' },
+    offer_counter: { type: Number, default: 0 },
     status: { type: Number, default: 1 },
     created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'customers' }

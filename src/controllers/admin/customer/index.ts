@@ -51,6 +51,7 @@ export default class CustomerController {
                         { name: { $regex: search, $options: 'i' } },
                         { phone: { $regex: search, $options: 'i' } },
                         { date_of_birth: { $regex: search, $options: 'i' } },
+                        { gst: { $regex: search, $options: 'i' } },
                         { email: { $regex: search, $options: 'i' } }, // Case-insensitive search for name
                     ]
                 };

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
 import { Customer, ReportIssues, Faqs, Setting, Wallet, Transaction } from "../../../models";
-import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
+import { removeObjectKeys, serverResponseHandler,serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
@@ -54,9 +54,10 @@ export default class AccountController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, address_line_2,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
-            let checkGSt: any = await Customer.countDocuments({gst:gst});
+            let checkGSt: any = await Customer.countDocuments({gst:gst,_id: { $ne: req.customer.object_id }});
             if(checkGSt > 0){
-                return serverResponse(res, HttpCodeEnum.OK, 'GST No already associated with another account', {});
+                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'GST No already associated with another account', {});
+                // return serverResponse(res, HttpCodeEnum.OK, 'GST No already associated with another account', {});
             }
             
             let result: any = await Customer.findOneAndUpdate(
@@ -79,12 +80,12 @@ export default class AccountController {
                     close_time: close_time,
                     status: status
                 });
-            const checkTransaction:any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP",customer_id: req.customer.user_id }).lean();
+            const checkTransaction:any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP",customer_id: req.customer.object_id }).lean();
             if(!checkTransaction){
                 const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
-                    customer_id: req.customer.user_id
+                    customer_id: req.customer.object_id
                 });
 
                 const transaction: any = await Transaction.create({
@@ -95,7 +96,7 @@ export default class AccountController {
                     razorpay_payment_id: '',
                     status: 1,
                     remarks: "REGISTRATIONTOPUP",
-                    customer_id: req.customer.user_id
+                    customer_id: req.customer.object_id
                 });
             }
             console.log(result);
@@ -198,6 +199,7 @@ export default class AccountController {
                     error_code:error_code,
                     customer_id: req.customer.object_id
                 });
+                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'Transaction Cancelled/Rejected', {});
             }else{
                 const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id }).lean();
 
@@ -220,10 +222,10 @@ export default class AccountController {
                     status: status,
                     customer_id: req.customer.object_id
                 });
+
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
             }
             
-
-            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
         } catch (err: any) {
             console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -347,7 +349,10 @@ export default class AccountController {
             this.locale = (locale as string) || "en";
 
             const { name, phone, email, designation } = req.body;
-
+            const existCustomer:any = await Customer.countDocuments({phone: phone});
+            if(existCustomer > 0){
+                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'Phone No already exists', {});
+            }
             const result: any = await Customer.create({
                 name: name,
                 phone: phone,

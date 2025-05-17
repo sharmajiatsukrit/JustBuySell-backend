@@ -209,9 +209,19 @@ export default class HelperController {
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
             const gst = req.params.gst;
-            const authorization:any = {};
-            console.log(process.env.GSTINCHECK_APIKEY);
-            const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`);
+            const body:any = {
+                                "requestid": moment().unix(),
+                                "gstNumber": gst,
+                                "hsnDetails": true,
+                                "branchDetails": true,
+                                "filingDetails": true,
+                                "filingFrequency": true,
+                                "liabilityPaidDetails": true
+                            };
+            const headers = {token:process.env.GSTTOKEN,secretkey:process.env.GSTSECRET}
+            // console.log(process.env.GSTINCHECK_APIKEY);
+            // const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`,{},{});
+            const response = await networkRequest("POST", `https://api.rpacpc.com/services/get-gst-details`,body,headers);
             console.log(response.data);
             if (response.data.flag) {
                 const ResultData:any = {
@@ -298,7 +308,8 @@ export default class HelperController {
                 const completenessPercentage = (filledCount / requiredFields.length) * 100;
                 const isComplete = completenessPercentage === 100;
                 const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
-                const message:any = isComplete ? `Profile Completed` : `Complete your profile to claim ${settings.value.new_registration_topup} free topup`;
+                const message:any = isComplete ? `Profile Completed` : `Dear User,
+Complete your profile and receive Rs. ${settings.value.new_registration_topup} in your wallet for FREE! Use this amount to unlock leads on our platform.`;
                 return serverResponse(res, HttpCodeEnum.OK, message, {
                     percentage: completenessPercentage.toFixed(2) + '%',
                     isComplete: isComplete // true if 100%, false otherwise
@@ -318,14 +329,15 @@ export default class HelperController {
             // Set locale
             const { locale} = req.query;
             this.locale = (locale as string) || "en";
-            const customer:any = Customer.findOne({_id:req.customer.object_id}).lean(); 
+            const id = parseInt(req.params.id);
+            const category:any = await Category.findOne({id:id}).lean(); 
+            const customer:any = await Customer.findOne({_id:req.customer.object_id}).lean(); 
             const result: any = await Setting.findOne({ key: "customer_settings" }).lean();
             const taxCommission = {
                 gst:result.value.gst,
-                admin_commission:customer.admin_commission ? customer.admin_commission : result.value.admin_commission
+                admin_commission:customer.admin_commission ? parseInt(customer.admin_commission) : (category.commission ? parseInt(category.commission):  parseInt(result.value.admin_commission))
             };
             if (taxCommission) {
-                
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

@@ -244,11 +244,25 @@ export default class OfferController {
             const updationstatus = await Offers.updateMany(
                 { id: { $in: offer_ids } },  // Match any document with id in the offer_ids array
                 {
-                  offer_validity: offer_validity,
-                  publish_date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                  status: 1
+                  $set: {
+                    offer_validity: offer_validity,
+                    publish_date: moment().format('YYYY-MM-DD HH:mm:ss'),
+                    status: 1
+                  },
+                  $inc: {
+                    offer_counter: 1
+                  }
                 }
               );
+            // const updationstatus = await Offers.updateMany(
+            //     { id: { $in: offer_ids } },  // Match any document with id in the offer_ids array
+            //     {
+            //       offer_validity: offer_validity,
+            //       offer_counter:1,
+            //       publish_date: moment().format('YYYY-MM-DD HH:mm:ss'),
+            //       status: 1
+            //     }
+            //   );
             // const updatedData: any = await Offers.find({ id: id }).lean();
             if (updationstatus) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-status"]), {});
@@ -368,13 +382,24 @@ export default class OfferController {
                     ],
                     
                   });
-
+                
             const totalCount = await UnlockOffers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
+                const formattedResult = await Promise.all(
+                    results.map(async (offer: any) => {
+                        // Fetch the rating count for each offer
+                        const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
                 
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                        // Return the offer object along with the additional `rating_count` field
+                        return {
+                            ...offer,  // Spread all existing offer fields
+                            rating_count: ratingCount  // Add the rating_count field
+                        };
+                    })
+                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), { data: formattedResult, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -409,6 +434,7 @@ export default class OfferController {
                 transaction_id:transaction._id,
                 price: price,
                 offer_id: offer._id,
+                offer_counter: offer.offer_counter,
                 status: 1,
                 created_by:req.customer.object_id
             });

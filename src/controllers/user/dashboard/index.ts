@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, Banner, Category, Product,Offers,Rating,WatchlistItem } from "../../../models";
+import { Customer, Banner, Category, Product,Offers,Rating,WatchlistItem, UnlockOffers } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -253,7 +253,7 @@ export default class DashboardController {
             let results:any;
             let totalCount:any;
             let searchQuery = {};
-            
+            // console.log(id,searchQuery);
             if(id == 0){
                 if (search) {
                     searchQuery = {
@@ -274,6 +274,7 @@ export default class DashboardController {
             }else{
 
                 const category:any = await Category.findOne({id:id}).lean();
+                
                 if (search) {
                     searchQuery = {
                         status: true,category_id:category._id,
@@ -285,6 +286,7 @@ export default class DashboardController {
                 } else {
                     searchQuery = {status: true,category_id:category._id,};
                 }
+                
                 results = await Product.find(searchQuery).lean()
                 .skip(skip)
                 .limit(limitNumber)
@@ -296,20 +298,24 @@ export default class DashboardController {
             if (results.length > 0) {
                  // Fetch wishlist items for the customer
                  const wishlistItems = await WatchlistItem.find({ customer_id: req.customer.object_id }).populate("product_id","id").populate("watchlist_id", "id").lean();
-                // Create an array of wishlist product ids and their corresponding wishlist_id
+                //  console.log(wishlistItems);
+                 // Create an array of wishlist product ids and their corresponding wishlist_id
                 const wishlistInfo = wishlistItems.map((item: any) => ({
                     productId: item.product_id.id.toString(),
-                    wishlistId: item.watchlist_id.id.toString()
+                    wishlistId: item?.watchlist_id?.id.toString()
                 }));
+                console.log(wishlistInfo);
                 const formattedResult = results.map((item: any) => {
-                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    const wishlist:any = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+
+                    console.log(wishlist);
                     return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
-                    wishlist: wishlist ? true : false,
-                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                    wishlist: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? true : false,
+                    wishlist_id: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? wishlist.wishlistId : null // Add wishlist_id
                 }
             });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
@@ -351,20 +357,20 @@ export default class DashboardController {
                     // console.log(item);
                     return {
                         productId: item.product_id.id.toString(),
-                        wishlistId: item.watchlist_id.id.toString()
+                        wishlistId: item?.watchlist_id?.id.toString()
                     }
                 });
                 // console.log("ee",wishlistInfo);
                 const formattedResult = results.map((item: any) => {
                     console.log(item);
-                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    const wishlist:any = wishlistInfo.find((entry) => entry.productId === item.id.toString());
                     return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
-                    wishlist: wishlist ? true : false,
-                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                    wishlist: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? true : false,
+                    wishlist_id: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? wishlist.wishlistId : null // Add wishlist_id
                 }
                 });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
@@ -398,17 +404,17 @@ export default class DashboardController {
                 // Create an array of wishlist product ids and their corresponding wishlist_id
                 const wishlistInfo = wishlistItems.map((item: any) => ({
                     productId: item.product_id.id.toString(),
-                    wishlistId: item.watchlist_id.id.toString()
+                    wishlistId: item?.watchlist_id?.id.toString()
                 }));
                 const formattedResult = results.map((item: any) => {
-                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    const wishlist:any = wishlistInfo.find((entry) => entry.productId === item.id.toString());
                     return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
-                    wishlist: wishlist ? true : false,
-                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                    wishlist: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? true : false,
+                    wishlist_id: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? wishlist.wishlistId : null // Add wishlist_id
                 }
             });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
@@ -442,17 +448,18 @@ export default class DashboardController {
                 // Create an array of wishlist product ids and their corresponding wishlist_id
                 const wishlistInfo = wishlistItems.map((item: any) => ({
                     productId: item.product_id.id.toString(),
-                    wishlistId: item.watchlist_id.id.toString()
+                    wishlistId: item?.watchlist_id?.id.toString()
                 }));
                 const formattedResult = results.map((item: any) => {
-                    const wishlist = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    const wishlist:any = wishlistInfo.find((entry) => entry.productId === item.id.toString());
+                    console.log("chkwish",wishlist);
                     return {
                     id: item.id,
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
-                    wishlist: wishlist ? true : false,
-                    wishlist_id: wishlist ? wishlist.wishlistId : null // Add wishlist_id
+                    wishlist: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? true : false,
+                    wishlist_id: wishlist && typeof wishlist !== 'undefined' && typeof wishlist.wishlistId !== 'undefined' ? wishlist.wishlistId : null // Add wishlist_id
                 }
             });
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
@@ -517,7 +524,7 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             // Extract the query parameters
-            
+            const now = moment().toDate(); // Get current date
             // const master = req.query.master as string;
             // const sorting = req.query.sorting as string;
 
@@ -529,20 +536,35 @@ export default class DashboardController {
             filter.status = 1;
             filter.type = 0;
             filter.product_id = product._id;
-
+            filter.$expr = {
+                $gt: [
+                    {
+                        $add: [
+                            { $toDate: "$publish_date" }, // 👈 important fix
+                            { 
+                                $multiply: [
+                                    { $toInt: { $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0] } },
+                                    60 * 60 * 1000 // hours to milliseconds
+                                ] 
+                            }
+                        ]
+                    },
+                    now // current time
+                ]
+            };
             if (individual) {
                 // const individual = req.query.individual as string;
                 const individualObj = individual;
             
                 if(individualObj.size){
-                    filter["individual_pack.individualSize.id"] = individualObj.size;
+                    filter["individual_pack.individual.individualSize.id"] = individualObj.size;
                 }
                 if(individualObj.unit){
-                    filter["individual_pack.individualUnit.id"] = individualObj.unit;
+                    filter["individual_pack.individual.individualUnit.id"] = individualObj.unit;
                 }
                 
                 if(individualObj.type){
-                    filter["individual_pack.individualType.id"] = individualObj.type;
+                    filter["individual_pack.individual.individualType.id"] = individualObj.type;
                 }
                 
             }
@@ -551,7 +573,7 @@ export default class DashboardController {
                 // const master = req.query.master as string;
                 const masterObj = master;
                 if(masterObj.quantity){
-                    filter["master_pack.quantity"] = masterObj.quantity;
+                    filter["master_pack.quantity"] = masterObj.quantity.toString();
                 }
                 
                 if(masterObj.masterType){
@@ -585,12 +607,26 @@ export default class DashboardController {
                 // filter.city = filtersObj.city;
             }
 
+            const sortOption: any = {};
+            if (sorting && sorting == 0) {
+                sortOption["id"] = -1;
+            }else if(sorting && sorting == 1){
+                sortOption["id"] = -1;
+            }else if(sorting && sorting == 2){
+                sortOption["target_price"] = 1;
+            }else if(sorting && sorting == 3){
+                sortOption["buy_quantity"] = 1;
+            }else if(sorting && sorting == 1){
+                sortOption["buy_quantity"] = -1;
+            } else {
+                sortOption["_id"] = -1; // default sort
+            }
             if(sorting){
                 // filter.master_pack.quantity = filtersObj.quantity;
                 // filter.master_pack.masterType.id = filtersObj.masterType;
             }
             
-            const results: any = await Offers.find(filter).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find(filter).select("_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt offer_counter ").populate('product_id', 'id name').populate('created_by').sort(sortOption).lean();
             const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
@@ -598,6 +634,8 @@ export default class DashboardController {
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
                     const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
+                    const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id,created_by:req.customer.object_id,offer_counter:offer.offer_counter }).lean();
+                    // console.log(checkPurchase);
                     return {
                         id: offer.id,
                         product_id: offer.product_id,
@@ -614,6 +652,7 @@ export default class DashboardController {
                         offer_validity: offer.offer_validity,
                         publish_date: offer.publish_date,
                         created_by: offer.created_by,
+                        is_purchased: checkPurchase ? true : false,
                         rating_count: ratingCount,
                         createdAt:offer.createdAt
                     };
@@ -641,25 +680,41 @@ export default class DashboardController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const { individual,master,sorting,filters} = req.body;
+            const now = moment().toDate(); // Get current date
             const product:any = await Product.findOne({ id: id }).lean();
             const filter:any = {};
             filter.status = 1;
             filter.type = 1;
             filter.product_id = product._id;
-
+            filter.$expr = {
+                $gt: [
+                    {
+                        $add: [
+                            { $toDate: "$publish_date" }, // 👈 important fix
+                            { 
+                                $multiply: [
+                                    { $toInt: { $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0] } },
+                                    60 * 60 * 1000 // hours to milliseconds
+                                ] 
+                            }
+                        ]
+                    },
+                    now // current time
+                ]
+            };
             if (individual) {
                 // const individual = req.query.individual as string;
                 const individualObj = individual;
             
                 if(individualObj.size){
-                    filter["individual_pack.individualSize.id"] = individualObj.size;
+                    filter["individual_pack.individual.individualSize.id"] = individualObj.size;
                 }
                 if(individualObj.unit){
-                    filter["individual_pack.individualUnit.id"] = individualObj.unit;
+                    filter["individual_pack.individual.individualUnit.id"] = individualObj.unit;
                 }
                 
                 if(individualObj.type){
-                    filter["individual_pack.individualType.id"] = individualObj.type;
+                    filter["individual_pack.individual.individualType.id"] = individualObj.type;
                 }
                 
             }
@@ -668,7 +723,7 @@ export default class DashboardController {
                 // const master = req.query.master as string;
                 const masterObj = master;
                 if(masterObj.quantity){
-                    filter["master_pack.quantity"] = masterObj.quantity;
+                    filter["master_pack.quantity"] = masterObj.quantity.toString();
                 }
                 
                 if(masterObj.masterType){
@@ -702,12 +757,20 @@ export default class DashboardController {
                 // filter.city = filtersObj.city;
             }
 
-            if(sorting){
-                // filter.master_pack.quantity = filtersObj.quantity;
-                // filter.master_pack.masterType.id = filtersObj.masterType;
+            const sortOption: any = {};
+            if (sorting && sorting == 0) {
+                sortOption["id"] = -1;
+            }else if(sorting && sorting == 1){
+                sortOption["offer_price"] = 1;
+            }else if(sorting && sorting == 2){
+                sortOption["moq"] = 1;
+            }else if(sorting && sorting == 3){
+                sortOption["moq"] = -1;
+            } else {
+                sortOption["_id"] = -1; // default sort
             }
 
-            const results: any = await Offers.find(filter).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt").populate('product_id', 'id name').populate('created_by').sort({ _id: -1 }).lean();
+            const results: any = await Offers.find(filter).select("id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt offer_counter").populate('product_id', 'id name').populate('created_by').sort(sortOption).lean();
                    
             const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
@@ -716,6 +779,8 @@ export default class DashboardController {
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
                     const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
+                    const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id,created_by:req.customer.object_id,offer_counter:offer.offer_counter }).lean();
+                    // console.log(checkPurchase);
                     return {
                         id: offer.id,
                         offer_price: offer.offer_price,
@@ -732,11 +797,13 @@ export default class DashboardController {
                         publish_date: offer.publish_date,
                         product_id: offer.product_id,
                         createdBy: offer.created_by,
+                        is_purchased: checkPurchase ? true : false,
                         ratingCount: ratingCount, // Total ratings for the offer
                         createdAt:offer.createdAt
                     };
                 })
             );
+            // console.log(formattedResult);
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

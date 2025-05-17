@@ -7,6 +7,7 @@ import AppRoutes from "./routes";
 import { serverResponse } from "./utils";
 import Logger from "./utils/logger";
 import fs from 'fs';
+import './utils/cron';
 let protocol: any;
 let sslOptions = {};
 if (process.env.SSL === "enabled") {

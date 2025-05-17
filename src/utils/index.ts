@@ -41,6 +41,16 @@ function serverErrorHandler(err: any, response: Response, message: string = "", 
     });
 }
 
+function serverResponseHandler(response: Response, code: number,status: boolean, message: string, result: Array<Object> | Object): Response<any> {
+    const formattedData = camelcase(result, { deep: true });
+    return response.status(code).json({
+        status: status,
+        code: code,
+        message: message,
+        data: formattedData,
+    });
+}
+
 function serverInvalidRequest(req: Request, res: Response, message: string = "") {
     return res.status(HttpCodeEnum.BADREQUEST).json({
         status: false,
@@ -210,6 +220,7 @@ async function verificationCheck(email: string, website: string): Promise<boolea
 
 export {
     serverResponse,
+    serverResponseHandler,
     removeObjectKeys,
     getDeviceDetails,
     getDetailsFromIp,

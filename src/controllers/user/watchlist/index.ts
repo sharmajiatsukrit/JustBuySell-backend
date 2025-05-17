@@ -140,7 +140,11 @@ export default class WatchlistController {
             // Log the id for debugging purposes
 
             const id = parseInt(req.params.id);
+            const wishlist:any = await Watchlist.findOne({ id: id }).lean();
+            const watchItem = await WatchlistItem.deleteMany({ watchlist_id: wishlist._id });
+            
             const result = await Watchlist.deleteOne({ id: id });
+
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-delete"]), result);
