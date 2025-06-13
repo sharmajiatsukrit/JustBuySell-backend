@@ -438,6 +438,7 @@ export default class OfferController {
                 status: 1,
                 created_by:req.customer.object_id
             });
+            
             const walletBalance:any = await Wallet.findOne({customer_id:req.customer.object_id}).lean();
             console.log(walletBalance);
             const resultwallet: any = await Wallet.findOneAndUpdate(
@@ -445,7 +446,9 @@ export default class OfferController {
                 {
                     balance: walletBalance.balance - parseInt(price),
                 });
-            
+            if(offer.type == 0){
+                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id },{status: 0});
+            }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});
         } catch (err: any) {

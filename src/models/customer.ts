@@ -12,6 +12,7 @@ interface ICustomer extends Document {
     company_logo: string;
     designation: string;
     gst: string;
+    is_gst_verified: boolean;
     telephone: string;
     company_email: string;
     address_line_1: string;
@@ -41,6 +42,7 @@ const customerSchema: Schema = new Schema({
     leagal_name: { type: String, default: '' },
     company_logo: { type: String, default: '' },
     gst: { type: String, default: '' },
+    is_gst_verified: { type: Boolean, default: false },
     telephone: { type: String, default: '' },
     company_email: { type: String, default: '' },
     address_line_1: { type: String, default: '' },

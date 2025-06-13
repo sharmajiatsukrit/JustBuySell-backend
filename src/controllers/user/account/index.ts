@@ -54,11 +54,10 @@ export default class AccountController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, address_line_2,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
-            let checkGSt: any = await Customer.countDocuments({gst:gst,_id: { $ne: req.customer.object_id }});
-            if(checkGSt > 0){
-                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'GST No already associated with another account', {});
-                // return serverResponse(res, HttpCodeEnum.OK, 'GST No already associated with another account', {});
-            }
+            // let checkGSt: any = await Customer.countDocuments({gst:gst,_id: { $ne: req.customer.object_id }});
+            // if(checkGSt > 0){
+            //     return serverResponseHandler(res, HttpCodeEnum.OK,false, 'GST No already associated with another account', {});
+            // }
             
             let result: any = await Customer.findOneAndUpdate(
                 { id: req.customer.user_id },
@@ -68,7 +67,7 @@ export default class AccountController {
                     designation: designation,
                     trade_name: trade_name,
                     leagal_name: leagal_name,
-                    gst: gst,
+                    // gst: gst,
                     telephone: telephone,
                     company_email: company_email,
                     address_line_1: address_line_1,

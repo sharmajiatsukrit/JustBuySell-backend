@@ -15,6 +15,7 @@ routes.post("/remove-from-watchlist", validateRequest, authRequest, helperContro
 
 routes.get("/get-products-by-cat/:cat_id", validateRequest, authRequest, helperController.getProductsByCat.bind(helperController));
 routes.get("/get-gst-details/:gst", validateRequest, authRequest, helperController.getGSTDetails.bind(helperController));
+routes.patch("/verify-gst", validateRequest, authRequest, helperController.verifyGSTOTP.bind(helperController));
 
 routes.get("/get-rating-by/customer/:id", validateRequest, authRequest, helperController.getRatingByCustomer.bind(helperController));
 

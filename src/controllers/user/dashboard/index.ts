@@ -40,11 +40,21 @@ export default class DashboardController {
                 query.category_id = categoryid;
             }
 
-            if (search) {
-                query.$or = [
-                    { name: { $regex: search, $options: 'i' } },
-                    { description: { $regex: search, $options: 'i' } },
+            // if (search) {
+            //     const searchRegex = new RegExp(search, 'i');
+            //     query.$or = [
+            //         { name: { $regex: search, $options: 'i' } },
+            //         { description: { $regex: search, $options: 'i' } },
+            //         { search_tags: { $regex: searchRegex } },
                     
+            //     ];
+            // }
+            if (search && typeof search === 'string') {
+                const searchRegex = new RegExp(search, 'i');
+                query.$or = [
+                    { name: { $regex: searchRegex } },
+                    { description: { $regex: searchRegex } },
+                    { search_tags: { $regex: searchRegex } },
                 ];
             }
 
@@ -111,7 +121,9 @@ export default class DashboardController {
     
             if (search) {
                 searchQuery.$and = [
-                    { $or: [{ name: { $regex: search, $options: 'i' } }] }
+                    { $or: [
+                        { name: { $regex: search, $options: 'i' } }
+                    ] }
                 ];
             }
     
@@ -252,19 +264,17 @@ export default class DashboardController {
             const id = parseInt(req.params.id);
             let results:any;
             let totalCount:any;
-            let searchQuery = {};
+            let searchQuery:any = {};
             // console.log(id,searchQuery);
+            searchQuery.status = true;
             if(id == 0){
-                if (search) {
-                    searchQuery = {
-                        status: true,
-                        $or: [
-                            { name: { $regex: search, $options: 'i' } },
-                            { name: { $regex: search, $options: 'i' } },
-                        ]
-                    };
-                } else {
-                    searchQuery = {status: true};
+                if (search && typeof search === 'string') {
+                    const searchRegex = new RegExp(search, 'i');
+                    searchQuery.$or = [
+                        { name: { $regex: searchRegex } },
+                        { description: { $regex: searchRegex } },
+                        { search_tags: { $regex: searchRegex } },
+                    ];
                 }
                 results = await Product.find(searchQuery).lean()
                 .skip(skip)
@@ -275,16 +285,18 @@ export default class DashboardController {
 
                 const category:any = await Category.findOne({id:id}).lean();
                 
-                if (search) {
-                    searchQuery = {
-                        status: true,category_id:category._id,
-                        $or: [
-                            { name: { $regex: search, $options: 'i' } },
-                            { name: { $regex: search, $options: 'i' } },
-                        ]
-                    };
+                if (search && typeof search === 'string') {
+                    
+                    const searchRegex = new RegExp(search, 'i');
+                    searchQuery.category_id=category._id;
+                    searchQuery.$or = [
+                        { name: { $regex: searchRegex } },
+                        { description: { $regex: searchRegex } },
+                        { search_tags: { $regex: searchRegex } },
+                    ];
+                
                 } else {
-                    searchQuery = {status: true,category_id:category._id,};
+                    searchQuery = {category_id:category._id,};
                 }
                 
                 results = await Product.find(searchQuery).lean()
@@ -499,6 +511,8 @@ export default class DashboardController {
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
                     variations:result.variations,
                     conversion_unit:result.conversion_unit,
+                    individual_label:result.individual_label,
+                    master_label:result.master_label,
                     created_by: result.created_by,
                     status: result.status,
                     wishlist: wishlist ? true : false,

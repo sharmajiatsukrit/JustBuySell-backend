@@ -118,6 +118,13 @@ export default class CategoryController {
             this.locale = (locale as string) || "en";
 
             const { name, description, parent_id,commission, status } = req.body;
+
+            const existingCategoryName = await Category.findOne({name: name }).lean();
+            if (existingCategoryName) {
+                console.log("Category with this name already exists");
+                return serverInvalidRequest(req, res, "Category with this name already exists");
+            }
+
             const category: any = await Category.findOne({ id: parent_id }).lean();
             console.log(category);
             
@@ -125,7 +132,7 @@ export default class CategoryController {
                 name: name,
                 description: description,
                 commission: commission,
-                parent_id: category?._id,
+                parent_id: parent_id ? category._id : null,
                 status: status,
                 created_by: req.user.object_id
             });
@@ -165,7 +172,7 @@ export default class CategoryController {
                     name: name,
                     description: description,
                     commission: commission,
-                    parent_id: category?._id,
+                    parent_id: parent_id ? category._id : null,
                     status: status,
                     updated_by: req.user.object_id
                 });
