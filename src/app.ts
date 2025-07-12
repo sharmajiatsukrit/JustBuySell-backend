@@ -8,6 +8,10 @@ import { serverResponse } from "./utils";
 import Logger from "./utils/logger";
 import fs from 'fs';
 import './utils/cron';
+import moment from 'moment-timezone';
+
+// Set default timezone once at the app start (top of index.ts or app.ts)
+moment.tz.setDefault('Asia/Kolkata');
 let protocol: any;
 let sslOptions = {};
 if (process.env.SSL === "enabled") {

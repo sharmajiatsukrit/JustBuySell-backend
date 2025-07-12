@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
-import moment from "moment";
+// import moment from "moment";
 import { Customer, Banner, Category, Product,Offers,Rating,WatchlistItem, UnlockOffers } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
@@ -8,7 +8,9 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-
+import moment from 'moment';
+// import moment from 'moment-timezone';
+// moment.tz.setDefault('Asia/Kolkata');
 
 const fileName = "[user][dashboard][index.ts]";
 export default class DashboardController {
@@ -538,7 +540,9 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             // Extract the query parameters
-            const now = moment().toDate(); // Get current date
+            const now = moment().format('YYYY-MM-DDTHH:mm:ss.SSSZ'); // Get current date
+            // const now = new Date();
+            console.log(now);
             // const master = req.query.master as string;
             // const sorting = req.query.sorting as string;
 
@@ -566,6 +570,8 @@ export default class DashboardController {
                     now // current time
                 ]
             };
+            
+            console.log(filter);
             if (individual) {
                 // const individual = req.query.individual as string;
                 const individualObj = individual;
@@ -647,7 +653,18 @@ export default class DashboardController {
                 // Map offers to include rating count
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
-                    const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
+                    const ratingResult = await Rating.aggregate([
+                                            { $match: { offer_id: offer._id } },
+                                            {
+                                                $group: {
+                                                _id: '$offer_id',
+                                                averageRating: { $avg: '$rating' },
+                                                totalRatings: { $sum: 1 }
+                                                }
+                                            }
+                                            ]);
+                    const averageRating = ratingResult[0]?.averageRating || 0;
+                    const ratingCount = ratingResult[0]?.totalRatings || 0;
                     const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id,created_by:req.customer.object_id,offer_counter:offer.offer_counter }).lean();
                     // console.log(checkPurchase);
                     return {
@@ -668,6 +685,7 @@ export default class DashboardController {
                         created_by: offer.created_by,
                         is_purchased: checkPurchase ? true : false,
                         rating_count: ratingCount,
+                        average_rating: averageRating,
                         createdAt:offer.createdAt
                     };
                 })
@@ -792,7 +810,18 @@ export default class DashboardController {
                 // Format the results and add the rating count
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
-                    const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
+                     const ratingResult = await Rating.aggregate([
+                                            { $match: { offer_id: offer._id } },
+                                            {
+                                                $group: {
+                                                _id: '$offer_id',
+                                                averageRating: { $avg: '$rating' },
+                                                totalRatings: { $sum: 1 }
+                                                }
+                                            }
+                                            ]);
+                    const averageRating = ratingResult[0]?.averageRating || 0;
+                    const ratingCount = ratingResult[0]?.totalRatings || 0;
                     const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id,created_by:req.customer.object_id,offer_counter:offer.offer_counter }).lean();
                     // console.log(checkPurchase);
                     return {
@@ -812,7 +841,8 @@ export default class DashboardController {
                         product_id: offer.product_id,
                         createdBy: offer.created_by,
                         is_purchased: checkPurchase ? true : false,
-                        ratingCount: ratingCount, // Total ratings for the offer
+                        rating_count: ratingCount,
+                        average_rating: averageRating,
                         createdAt:offer.createdAt
                     };
                 })

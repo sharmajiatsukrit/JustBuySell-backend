@@ -2,6 +2,7 @@ import { Document, Schema, model } from 'mongoose';
 import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
+import { DateTime } from 'luxon';
 
 interface IOffers extends Document {
     product_id: string;
@@ -43,7 +44,7 @@ const offersSchema: Schema = new Schema({
     selling_unit: { type: Object, default: {} }, // Dynamic attributes
     conversion_unit: { type: Object, default: {} }, // Dynamic attributes
     conversion_rate: { type: Object, default: {} }, // Dynamic attributes
-    publish_date:{ type: String, default: '' },
+    publish_date:{ type: String, default: null },
     offer_validity: { type: String, default: '' },
     city: { type: String, default: '' },
     state: { type: String, default: '' },
@@ -64,8 +65,8 @@ offersSchema.virtual('ratings', {
     justOne: true, // Set to false to retrieve an array of ratings
     });
       
-      offersSchema.set('toObject', { virtuals: true });
-      offersSchema.set('toJSON', { virtuals: true });
+offersSchema.set('toObject', { virtuals: true });
+offersSchema.set('toJSON', { virtuals: true });
 offersSchema.plugin(autoIncrement, { model: 'offers', field: 'id', startAt: 1 });
 
 const Offers = model<IOffers>('offers', offersSchema);

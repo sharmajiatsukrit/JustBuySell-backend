@@ -9,7 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 
-const fileName = "[admin][faq][index.ts]";
+const fileName = "[admin][setting][index.ts]";
 export default class SettingController {
     public locale: string = "en";
     public emailService;
@@ -25,6 +25,7 @@ export default class SettingController {
     // Checked
     public async getSettings(req: Request, res: Response): Promise<any> {
         try {
+            
             const fn = "[getList]";
             // Set locale
             const { locale,key } = req.query;

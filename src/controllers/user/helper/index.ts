@@ -11,6 +11,7 @@ import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { networkRequest } from '../../../utils/request'
 import { sendSMS } from "../../../utils/pinnacle";
+import { sendMail } from "../../../utils/mail";
 
 const fileName = "[user][helper][index.ts]";
 export default class HelperController {
@@ -244,6 +245,8 @@ export default class HelperController {
                 console.log(response.data.data.basicDetails);
                 console.log(otp);
                 // console.log(response.data.data);
+
+                const mail = await sendMail(response.data.data.basicDetails.email,'Verify your GST',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,[])
                 const mess = await sendSMS(phone,`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
                 const mess3 = await sendSMS('8319116594',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
                 // console.log("ss",mess);

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
-import moment from "moment";
+// import moment from "moment";
 import { Offers,Product,Rating,UnlockOffers,Transaction, Wallet } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
@@ -8,7 +8,8 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-
+import moment from 'moment-timezone';
+moment.tz.setDefault('Asia/Kolkata');
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
     public locale: string = "en";
@@ -43,7 +44,7 @@ export default class OfferController {
                 master_pack: master_pack,
                 product_location: product_location,
                 offer_validity:offer_validity,
-                publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
+                publish_date:moment().format('YYYY-MM-DDTHH:mm:ss.SSSZ'),
                 state:state,
                 city:city,
                 product_id: product._id,

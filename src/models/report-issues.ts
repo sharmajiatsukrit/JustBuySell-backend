@@ -4,7 +4,7 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IReport extends Document {
     message: string;
-    created_by: number;
+    created_by: string;
     updated_by: number;
 }
 
