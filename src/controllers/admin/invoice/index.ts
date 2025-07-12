@@ -73,7 +73,12 @@ export default class InvoiceController {
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
             if (results.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                 const formattedResult = results.map((item: any) => ({
+                    ...item,
+                    file: `${process.env.RESOURCE_URL}${item.file}`,
+
+                }));
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), { data: formattedResult, totalCount, totalPages, currentPage: pageNumber });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -96,6 +101,7 @@ export default class InvoiceController {
             // console.log(result);
 
             if (result) {
+                result.file = `${process.env.RESOURCE_URL}${result.file}`;
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

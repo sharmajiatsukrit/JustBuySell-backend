@@ -1,9 +1,12 @@
 import expres, { Router } from "express";
 import HelperController from "../../../controllers/admin/helper";
 import { authAdmin, validateRequest } from "../../../utils/middleware";
+import CronController from "../../../controllers/cron";
 
 const routes: Router = expres.Router();
 const helperController = new HelperController();
+const testController = new CronController();
+
 
 routes.get("/get-cat-categories", validateRequest, authAdmin, helperController.getCatCategories.bind(helperController));
 routes.get("/get-categories", validateRequest, authAdmin, helperController.getCategories.bind(helperController));
@@ -20,5 +23,6 @@ routes.get("/get-customers", validateRequest, authAdmin, helperController.getCus
 
 
 routes.get("/dashboard/get-totals", validateRequest, authAdmin, helperController.getDashboardTotals.bind(helperController));
+routes.get("/test-pdf", testController.generateInvoice.bind(testController));
 
 export default routes;
