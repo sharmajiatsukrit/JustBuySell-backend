@@ -8,6 +8,8 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import { generateInvoicePDF } from "../../../utils/generate-pdf/pdf";
+
 
 const fileName = "[admin][helper][index.ts]";
 export default class HelperController {
@@ -410,6 +412,15 @@ export default class HelperController {
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+        public async getTestPDf(req: Request, res: Response): Promise<any> {
+        try {
+           
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

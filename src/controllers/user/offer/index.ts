@@ -428,6 +428,7 @@ export default class OfferController {
                 transaction_type: 1,
                 transaction_id: null,
                 status: 1,
+                remarks:"BUYOFFER",
                 customer_id: req.customer.object_id
             });
             console.log(transaction);

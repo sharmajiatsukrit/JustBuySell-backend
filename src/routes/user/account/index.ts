@@ -13,6 +13,7 @@ routes.put("/update-profile", validateRequest, authRequest, upload.single("compa
 routes.post("/wallet/recharge-wallet", validateRequest, authRequest, accountController.rechargeWallet.bind(accountController));
 routes.get("/wallet/balance", validateRequest, authRequest, accountController.getWalletBalance.bind(accountController));
 routes.get("/transactions", validateRequest, authRequest, accountController.getTransactions.bind(accountController));
+routes.get("/invoices", validateRequest, authRequest, accountController.getInvoices.bind(accountController));
 
 
 routes.post("/report-issue", validateRequest, authRequest, accountController.ReportIssue.bind(accountController));

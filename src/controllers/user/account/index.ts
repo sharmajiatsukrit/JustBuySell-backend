@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer, ReportIssues, Faqs, Setting, Wallet, Transaction } from "../../../models";
+import { Customer, ReportIssues, Faqs, Setting, Wallet, Transaction, Invoice } from "../../../models";
 import { removeObjectKeys, serverResponseHandler,serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -289,6 +289,42 @@ export default class AccountController {
         }
     }
 
+    public async getInvoices(req: Request, res: Response): Promise<any> {
+    try {
+        const fn = "[getList]";
+        // Set locale
+        const { locale, page, limit, search } = req.query;
+        this.locale = (locale as string) || "en";
+
+        const pageNumber = parseInt(page as string) || 1;
+        const limitNumber = parseInt(limit as string) || 10;
+
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const result = await Invoice.find({ customer_id: req.customer.object_id })
+            .sort({ id: -1 })
+            .skip(skip)
+            .limit(limitNumber)
+            .lean();
+
+        // Get the total number of documents in the Permissions collection
+        const totalCount = await Invoice.countDocuments({});
+
+        if (result.length > 0) {
+            const totalPages = Math.ceil(totalCount / limitNumber);
+            return serverResponse(
+                res,
+                HttpCodeEnum.OK,
+                ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
+                { result, totalPages }
+            );
+        } else {
+            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+        }
+    } catch (err: any) {
+        return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    }
+}
     // Checked
     public async getTeamMemberList(req: Request, res: Response): Promise<any> {
         try {

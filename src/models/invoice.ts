@@ -19,6 +19,7 @@ const InvoiceSchema: Schema = new Schema({
     amount: { type: String, default: '', required: true },
     gst: { type: String, default: '' },
     invoice_id: { type: String, default: '' },
+    invoice_number: { type: String, default: '' },
     start_date: { type: String, default: '' },
     end_date: { type: String, default: '' },
     month: { type: String, default: '' },
