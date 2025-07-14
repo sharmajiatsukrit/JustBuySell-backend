@@ -267,7 +267,7 @@ export default class HelperController {
             this.locale = (locale as string) || "en";
 
             // Req Body
-            const { gst, otp,trade_name, leagal_name,address_line_1,address_line_2 } = req.body;
+            const { gst, otp,trade_name, leagal_name,address_line_1,landmark } = req.body;
             const verifyOtp = await this.verifyOtp(req.customer.user_id, otp);
             
             if (!verifyOtp) {
@@ -280,7 +280,7 @@ export default class HelperController {
                     trade_name: trade_name,
                     leagal_name: leagal_name,
                     address_line_1: address_line_1,
-                    address_line_2: address_line_2,
+                    landmark: landmark,
                     is_gst_verified: true,
                     updated_by: req.customer.object_id
                 });

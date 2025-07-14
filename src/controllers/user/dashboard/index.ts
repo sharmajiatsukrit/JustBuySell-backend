@@ -654,7 +654,7 @@ export default class DashboardController {
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
                     const ratingResult = await Rating.aggregate([
-                                            { $match: { offer_id: offer._id } },
+                                            { $match: { customer_id: offer.created_by } },
                                             {
                                                 $group: {
                                                 _id: '$offer_id',
@@ -811,7 +811,7 @@ export default class DashboardController {
             const formattedResult = await Promise.all(
                 results.map(async (offer: any) => {
                      const ratingResult = await Rating.aggregate([
-                                            { $match: { offer_id: offer._id } },
+                                            { $match: { customer_id: offer.created_by } },
                                             {
                                                 $group: {
                                                 _id: '$offer_id',

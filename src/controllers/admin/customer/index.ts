@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissions, User, Customer,Watchlist,WatchlistItem,Transaction,Invoice, Wallet } from "../../../models";
+import { Roles, Permissions, User, Customer, Watchlist, WatchlistItem, Transaction, Invoice, Wallet } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -26,7 +26,6 @@ export default class CustomerController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
@@ -42,37 +41,32 @@ export default class CustomerController {
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-
             let searchQuery = {};
             if (search) {
                 searchQuery = {
-
                     $or: [
-                        { name: { $regex: search, $options: 'i' } },
-                        { phone: { $regex: search, $options: 'i' } },
-                        { date_of_birth: { $regex: search, $options: 'i' } },
-                        { gst: { $regex: search, $options: 'i' } },
-                        { email: { $regex: search, $options: 'i' } }, // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } },
+                        { phone: { $regex: search, $options: "i" } },
+                        { date_of_birth: { $regex: search, $options: "i" } },
+                        { gst: { $regex: search, $options: "i" } },
+                        { email: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
                 searchQuery = {};
             }
-            const result = await Customer.find(searchQuery)
-                .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber).lean();
+            const result = await Customer.find(searchQuery).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
 
             const totalCount = await Customer.countDocuments({});
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]),
-                    { data: result, totalPages, totalCount, currentPage: pageNumber }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), {
+                    data: result,
+                    totalPages,
+                    totalCount,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -80,7 +74,6 @@ export default class CustomerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     // Checked
     public async getById(req: Request, res: Response): Promise<any> {
@@ -110,15 +103,29 @@ export default class CustomerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const { name, phone, email, company_name, brand_name, company_logo, gst, telephone, company_email, address_line_1, address_line_2, open_time, close_time, parent_id, status } = req.body;
+            const {
+                name,
+                phone,
+                email,
+                company_name,
+                brand_name,
+                company_logo,
+                gst,
+                telephone,
+                company_email,
+                address_line_1,
+                landmark,
+                open_time,
+                close_time,
+                parent_id,
+                status,
+            } = req.body;
 
             // Check if email already exists
             const existingUser = await Customer.findOne({ phone: phone });
             if (existingUser) {
                 return serverResponse(res, HttpCodeEnum.BADREQUEST, constructResponseMsg(this.locale, "email-already-exists"), {});
             }
-
 
             const result: any = await Customer.create({
                 name: name,
@@ -130,7 +137,7 @@ export default class CustomerController {
                 telephone: telephone,
                 company_email: company_email,
                 address_line_1: address_line_1,
-                address_line_2: address_line_2,
+                landmark: landmark,
                 open_time: open_time,
                 close_time: close_time,
                 parent_id: parent_id,
@@ -144,7 +151,6 @@ export default class CustomerController {
                 }
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-add"), {});
             } else {
-
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -165,7 +171,7 @@ export default class CustomerController {
             }
 
             userData._doc.user_date_format = userData._doc.date_format;
-            userData._doc.user_time_format = (userData._doc.time_format === "24") ? "HH:mm" : "hh:mm a";
+            userData._doc.user_time_format = userData._doc.time_format === "24" ? "HH:mm" : "hh:mm a";
             userData._doc.user_date_time_format = userData._doc.user_date_format + " " + userData._doc.user_time_format;
 
             const formattedUserData: any = userData._doc;
@@ -181,7 +187,7 @@ export default class CustomerController {
         const messageToSearchWith: any = new User({ email });
         messageToSearchWith.encryptFieldsSync();
 
-        const userData: any = await Customer.findOne({ "$or": [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
+        const userData: any = await Customer.findOne({ $or: [{ email: messageToSearchWith.email }, { communication_email: messageToSearchWith.email }] });
 
         if (userData) {
             return Promise.resolve(userData._doc);
@@ -197,10 +203,29 @@ export default class CustomerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, address_line_2,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
+            const {
+                name,
+                phone,
+                designation,
+                email,
+                trade_name,
+                leagal_name,
+                gst,
+                telephone,
+                company_email,
+                address_line_1,
+                landmark,
+                city,
+                state,
+                pincode,
+                open_time,
+                close_time,
+                parent_id,
+                status,
+            } = req.body;
             const id = parseInt(req.params.id);
             // const customer:any = Customer.findOne({id:id}).lean();
-            
+
             let result: any = await Customer.findOneAndUpdate(
                 { id: id },
                 {
@@ -213,16 +238,16 @@ export default class CustomerController {
                     telephone: telephone,
                     company_email: company_email,
                     address_line_1: address_line_1,
-                    address_line_2: address_line_2,
+                    landmark: landmark,
                     city: city,
                     state: state,
                     pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
-                    status: status
-                });
+                    status: status,
+                }
+            );
 
-            
             const userData: any = await Customer.findOne({ id: id }).lean();
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "customer-updated"), userData);
@@ -341,8 +366,6 @@ export default class CustomerController {
     //     }
     // }
 
-    
-
     public async rechargeWallet(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[rechargeWallet]";
@@ -351,22 +374,26 @@ export default class CustomerController {
             this.locale = (locale as string) || "en";
             const { amount, remarks } = req.body;
             const id = parseInt(req.params.id);
-            const customer:any = await Customer.findOne({id:id}).lean();
-            
-                const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
-                
-                const result: any = await Wallet.findOneAndUpdate(
+            const customer: any = await Customer.findOne({ id: id }).lean();
+
+            const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
+            if (existing) {
+                await Wallet.findOneAndUpdate(
                     { customer_id: customer._id },
                     {
                         balance: existing.balance + amount,
-                    });
-                const transaction: any = await Transaction.create({
-                    amount: amount,
-                    remarks: remarks,
-                    transaction_type: 0,
-                    customer_id: customer._id
-                });
-            
+                    }
+                );
+            } else {
+                await Wallet.create({ customer_id: customer._id, balance: amount });
+            }
+            const transaction: any = await Transaction.create({
+                amount: amount,
+                remarks: remarks,
+                transaction_type: 0,
+                customer_id: customer._id,
+            });
+
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
         } catch (err: any) {
             console.error(err);
@@ -382,9 +409,9 @@ export default class CustomerController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const id = parseInt(req.params.id);
-            const customer:any = await Customer.findOne({id:id}).lean();
+            const customer: any = await Customer.findOne({ id: id }).lean();
             // console.log(customer);
-            const results: any = await Wallet.findOne({ customer_id: customer._id }).select('id balance').lean();
+            const results: any = await Wallet.findOne({ customer_id: customer._id }).select("id balance").lean();
             // console.log(results);
             if (results) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
@@ -395,11 +422,6 @@ export default class CustomerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
-
-
-
 
     // Checked
     public async getWatchlistList(req: Request, res: Response): Promise<any> {
@@ -413,19 +435,24 @@ export default class CustomerController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             const customer_id = parseInt(req.params.customer_id);
-            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            const customer: any = await Customer.findOne({ id: customer_id }).lean();
             // console.log(customer);
             const results = await Watchlist.find({ created_by: customer._id })
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
                 .lean();
-            
+
             const totalCount = await Watchlist.countDocuments({ created_by: customer._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), {
+                    data: results,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -444,7 +471,7 @@ export default class CustomerController {
 
             const id = parseInt(req.params.id);
             const result: any = await Watchlist.findOne({ id: id }).lean();
-            
+
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
             } else {
@@ -463,11 +490,11 @@ export default class CustomerController {
 
             const { name } = req.body;
             const customer_id = parseInt(req.params.customer_id);
-            const customer:any = await Customer.findOne({id:customer_id}).lean();
+            const customer: any = await Customer.findOne({ id: customer_id }).lean();
             const result: any = await Watchlist.create({
                 name: name,
                 status: true,
-                created_by: customer._id
+                created_by: customer._id,
             });
 
             if (result) {
@@ -490,13 +517,14 @@ export default class CustomerController {
 
             const { id } = req.params; // Assuming the ID is passed as a URL parameter
             const { name } = req.body;
-            const watchlist:any = await Watchlist.findOne({ id }).lean();
+            const watchlist: any = await Watchlist.findOne({ id }).lean();
             let result: any = await Watchlist.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
-                    updated_by: watchlist.customer_id
-                });
+                    updated_by: watchlist.customer_id,
+                }
+            );
             // const watchlist = await Watchlist.find({ id });
 
             // watchlist[0].name = name;
@@ -526,13 +554,11 @@ export default class CustomerController {
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-    
     // Checked
     public async getProductsByWatchlistId(req: Request, res: Response): Promise<any> {
         try {
@@ -543,16 +569,18 @@ export default class CustomerController {
 
             const id = parseInt(req.params.id);
             const watchlist: any = await Watchlist.findOne({ id: id }).lean();
-            const result: any = await WatchlistItem.find({ watchlist_id: watchlist._id }).populate({
-                path: 'product_id',
-                transform: (doc) => {
-                    if (doc && doc.product_image) {
-                        doc.product_image = `${process.env.RESOURCE_URL}${doc.product_image}`;
-                    }
-                    return doc;
-                }
-            }).sort({ _id: -1 }).lean();
-
+            const result: any = await WatchlistItem.find({ watchlist_id: watchlist._id })
+                .populate({
+                    path: "product_id",
+                    transform: (doc) => {
+                        if (doc && doc.product_image) {
+                            doc.product_image = `${process.env.RESOURCE_URL}${doc.product_image}`;
+                        }
+                        return doc;
+                    },
+                })
+                .sort({ _id: -1 })
+                .lean();
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
@@ -563,8 +591,6 @@ export default class CustomerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
 
     // Checked
     public async getTransactions(req: Request, res: Response): Promise<any> {
@@ -579,24 +605,15 @@ export default class CustomerController {
 
             const skip = (pageNumber - 1) * limitNumber;
             const customer_id = parseInt(req.params.customer_id);
-            const customer:any = await Customer.findOne({id:customer_id}).lean();
-            const result = await Transaction.find({ customer_id: customer._id })
-                .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber)
-                .lean();
+            const customer: any = await Customer.findOne({ id: customer_id }).lean();
+            const result = await Transaction.find({ customer_id: customer._id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
 
             // Get the total number of documents in the transactions collection
             const totalCount = await Transaction.countDocuments({ customer_id: customer._id });
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
-                    { result, totalPages }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { result, totalPages });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -604,7 +621,6 @@ export default class CustomerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     // Checked
     public async getInvoices(req: Request, res: Response): Promise<any> {
@@ -618,19 +634,25 @@ export default class CustomerController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             const customer_id = parseInt(req.params.customer_id);
-            const customer:any = await Customer.findOne({id:customer_id}).lean();
-            const results = await Invoice.find({customer_id:customer._id})
+            const customer: any = await Customer.findOne({ id: customer_id }).lean();
+            const results = await Invoice.find({ customer_id: customer._id })
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
-                .limit(limitNumber).populate("customer_id")
+                .limit(limitNumber)
+                .populate("customer_id")
                 .lean();
 
-            const totalCount = await Invoice.countDocuments({customer_id:customer._id});
+            const totalCount = await Invoice.countDocuments({ customer_id: customer._id });
             const totalPages = Math.ceil(totalCount / limitNumber);
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
             if (results.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), {
+                    data: results,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -638,7 +660,6 @@ export default class CustomerController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     public async adminSettings(req: Request, res: Response): Promise<any> {
         try {
@@ -654,9 +675,9 @@ export default class CustomerController {
             let result: any = await Customer.findOneAndUpdate(
                 { id: id },
                 {
-                    admin_commission: admin_commission
-                });
-            console.log(result);
+                    admin_commission: admin_commission,
+                }
+            );
 
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-update"]), {});
         } catch (err: any) {

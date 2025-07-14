@@ -21,6 +21,8 @@ const TransactionSchema: Schema = new Schema({
 
     amount: { type: Number, default: 0 },
     gst: { type: Number, default: 0 },
+    sgst: { type: Number, default: 0 },
+    cgst: { type: Number, default: 0 },
     transaction_type: { type: Number, default: 0 },
     transaction_id: { type: String, default: '' },
     razorpay_order_id: { type: String, default: '' },

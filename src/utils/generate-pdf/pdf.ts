@@ -9,11 +9,11 @@ const uploadPath = process.env.UPLOAD_PATH;
 export function generateInvoiceHtml(data: any): string {
     const itemRows = data.transactions
         .map((item:any) => {
-            const amount = (item.amount || 0).toFixed(2);
             return `
       <tr>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.item}</td>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.description}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.dateOfTxn}</td>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;">₹${item.amount.toFixed(2)}</td>
       </tr>
     `;
@@ -54,11 +54,12 @@ export function generateInvoiceHtml(data: any): string {
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
-                      <div style="font-weight: bold; margin-bottom: 8px;">Invoice number: 5118575990</div>
+                      <div style="font-weight: bold; margin-bottom: 8px;">Invoice number: ${data.invoiceDetails.invoiceNumber}</div>
                       <div style="font-size: 14px; color: #666; line-height: 1.5;">
-                        Company Address<br>
-                        GSTIN: 06AACCG0527D1ZB<br>
-                        PAN: AACCG0527D
+                        SSS Trade Zone Private Limited<br>
+                        GSTIN: 07AAOCS3727K1ZV<br>
+                        PAN: AAOCS3727K<br>
+                        Khasra No. 19/4, Khamruddin Nagar, Najafgarh Road, Nangloi, Delhi - 110041
                       </div>
                     </div>
                     <div>
@@ -93,7 +94,7 @@ export function generateInvoiceHtml(data: any): string {
 
               <!-- Summary Section -->
               <div style="border: 1px solid #e0e0e0; border-radius: 4px; padding: 16px; margin-bottom: 16px;">
-                <div style="font-weight: bold; margin-bottom: 8px;">Summary for ${data?.startOfMonth} to ${data?.endOfMonth}</div>
+                <div style="font-weight: bold; margin-bottom: 8px;">Summary from ${data?.startOfMonth} to ${data?.endOfMonth}</div>
                 <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 8px 0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                   <div>
@@ -130,19 +131,20 @@ export function generateInvoiceHtml(data: any): string {
                     <tr style="background-color: #f5f5f5;">
                       <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Item</th>
                       <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Description</th>
+                      <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Date</th>
                       <th style="padding: 12px 8px; text-align: right; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Amount(₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${itemRows}
                     <tr>
-                      <td colspan="3" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Subtotal in INR</span> ₹${data.subTotal.toFixed(2)}</td>
+                      <td colspan="4" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Subtotal in INR</span> ₹${data.subTotal.toFixed(2)}</td>
                     </tr>
                     <tr>
-                      <td colspan="3" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Integrated GST (18%)</span> ₹${data.totalGst.toFixed(2)}</td>
+                      <td colspan="4" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Integrated GST (18%)</span> ₹${data.totalGst.toFixed(2)}</td>
                     </tr>
                     <tr>
-                      <td colspan="3" style="padding: 12px 8px; font-weight: bold; text-align: right;"><span style="margin-right: 14px;">Total in INR</span> ₹${data.totalAmount.toFixed(2)}</td>
+                      <td colspan="4" style="padding: 12px 8px; font-weight: bold; text-align: right;"><span style="margin-right: 14px;">Total in INR</span> ₹${data.totalAmount.toFixed(2)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -159,7 +161,6 @@ export function generateInvoiceHtml(data: any): string {
 
 export async function generateInvoicePDF(data: any, filename: string) {
     try {
-      console.log("hello2")
         const htmlContent = generateInvoiceHtml(data);
         const browser = await puppeteer.launch({
             headless: true,
@@ -188,7 +189,6 @@ export async function generateInvoicePDF(data: any, filename: string) {
         // Save to file
         const filePath = path.resolve(uploadPath as string, filename);
         fs.writeFileSync(filePath, pdf);
-        console.log(`✅ PDF generated: ${filePath}`);
         return filePath;
     } catch (err) {
         console.error("Error generating PDF:", err);
