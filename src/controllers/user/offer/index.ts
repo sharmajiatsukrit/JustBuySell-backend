@@ -416,7 +416,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_id,price,amount,gst} = req.body;
+            const { offer_id,price,amount,gst,sgst,cgst} = req.body;
 
             let result: any;
             const offer:any = await Offers.findOne({ id: offer_id }).lean();
@@ -424,14 +424,15 @@ export default class OfferController {
             const transaction: any = await Transaction.create({
                 amount: amount,
                 gst: gst,
+                sgst: sgst,
+                cgst: cgst,
                 price: price,
                 transaction_type: 1,
                 transaction_id: null,
                 status: 1,
-                remarks:"BUYOFFER",
+                remarks:"PURCHASEOFFER",
                 customer_id: req.customer.object_id
             });
-            console.log(transaction);
             result = await UnlockOffers.create({
                 transaction_id:transaction._id,
                 price: price,
@@ -442,7 +443,6 @@ export default class OfferController {
             });
             
             const walletBalance:any = await Wallet.findOne({customer_id:req.customer.object_id}).lean();
-            console.log(walletBalance);
             const resultwallet: any = await Wallet.findOneAndUpdate(
                 { customer_id: req.customer.object_id },
                 {
