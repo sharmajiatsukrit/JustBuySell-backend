@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 // import moment from "moment";
-import { Offers,Product,Rating,UnlockOffers,Transaction, Wallet } from "../../../models";
+import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-import moment from 'moment-timezone';
-moment.tz.setDefault('Asia/Kolkata');
+import moment from "moment-timezone";
+moment.tz.setDefault("Asia/Kolkata");
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
     public locale: string = "en";
@@ -30,10 +30,10 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity,brand,coo,pin_code, product_location, product_id,individual_pack,master_pack,offer_validity,city,state} = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
 
             let result: any;
-            const product:any = await Product.findOne({ id: product_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.create({
                 target_price: target_price,
                 buy_quantity: buy_quantity,
@@ -43,16 +43,15 @@ export default class OfferController {
                 individual_pack: individual_pack,
                 master_pack: master_pack,
                 product_location: product_location,
-                offer_validity:offer_validity,
-                publish_date:moment().format('YYYY-MM-DDTHH:mm:ss.SSSZ'),
-                state:state,
-                city:city,
+                offer_validity: offer_validity,
+                publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+                state: state,
+                city: city,
                 product_id: product._id,
-                type: 0,//buy
+                type: 0, //buy
                 status: 1,
-                created_by:req.customer.object_id
+                created_by: req.customer.object_id,
             });
-
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
         } catch (err: any) {
@@ -67,10 +66,10 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,pin_code,product_location, product_id,individual_pack,master_pack,offer_validity,city,state} = req.body;
+            const { offer_price, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
 
             let result: any;
-            const product:any = await Product.findOne({ id: product_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.create({
                 offer_price: offer_price,
                 moq: moq,
@@ -80,16 +79,15 @@ export default class OfferController {
                 product_location: product_location,
                 individual_pack: individual_pack,
                 master_pack: master_pack,
-                offer_validity:offer_validity,
-                publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),
-                state:state,
-                city:city,
+                offer_validity: offer_validity,
+                publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+                state: state,
+                city: city,
                 product_id: product._id,
-                type: 1,//sell
+                type: 1, //sell
                 status: 1,
-                created_by:req.customer.object_id
+                created_by: req.customer.object_id,
             });
-
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
         } catch (err: any) {
@@ -102,7 +100,7 @@ export default class OfferController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit, search,offerType,status } = req.query;
+            const { locale, page, limit, search, offerType, status } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
@@ -122,13 +120,19 @@ export default class OfferController {
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
                 .limit(limitNumber)
-                .lean().populate("product_id","id name");
+                .lean()
+                .populate("product_id", "id name");
 
             const totalCount = await Offers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]), {
+                    data: results,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -146,8 +150,7 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Offers.findOne({ id: id }).lean().populate("product_id","id name");
-
+            const result: any = await Offers.findOne({ id: id }).lean().populate("product_id", "id name");
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-fetched"]), result);
@@ -172,8 +175,9 @@ export default class OfferController {
                 { id: id },
                 {
                     name: name,
-                    updated_by: req.customer.object_id
-                });
+                    updated_by: req.customer.object_id,
+                }
+            );
             // const watchlist = await Watchlist.find({ id });
 
             // watchlist[0].name = name;
@@ -203,13 +207,12 @@ export default class OfferController {
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-       // Status
+    // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[status]";
@@ -240,21 +243,21 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const { offer_ids,offer_validity } = req.body;
+            const { offer_ids, offer_validity } = req.body;
             // const updationstatus = await Offers.findOneAndUpdate({ id:offer_ids }, { offer_validity: offer_validity,publish_date:moment().format('YYYY-MM-DD HH:mm:ss'),status:1 }).lean();
             const updationstatus = await Offers.updateMany(
-                { id: { $in: offer_ids } },  // Match any document with id in the offer_ids array
+                { id: { $in: offer_ids } }, // Match any document with id in the offer_ids array
                 {
-                  $set: {
-                    offer_validity: offer_validity,
-                    publish_date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                    status: 1
-                  },
-                  $inc: {
-                    offer_counter: 1
-                  }
+                    $set: {
+                        offer_validity: offer_validity,
+                        publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+                        status: 1,
+                    },
+                    $inc: {
+                        offer_counter: 1,
+                    },
                 }
-              );
+            );
             // const updationstatus = await Offers.updateMany(
             //     { id: { $in: offer_ids } },  // Match any document with id in the offer_ids array
             //     {
@@ -282,10 +285,10 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, product_location, product_id} = req.body;
+            const { target_price, buy_quantity, product_location, product_id } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
-            const product:any = await Product.findOne({ id: product_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
 
             result = await Offers.findOneAndUpdate(
                 { id: id },
@@ -294,12 +297,11 @@ export default class OfferController {
                     buy_quantity: buy_quantity,
                     product_location: product_location,
                     product_id: product._id,
-                    type: 0,//buy
+                    type: 0, //buy
                     status: 1,
-                    updated_by: req.customer.object_id
-                });
-            
-
+                    updated_by: req.customer.object_id,
+                }
+            );
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
         } catch (err: any) {
@@ -314,10 +316,10 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand,coo,product_location, product_id} = req.body;
+            const { offer_price, moq, brand, coo, product_location, product_id } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
-            const product:any = await Product.findOne({ id: product_id }).lean();
+            const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.findOneAndUpdate(
                 { id: id },
                 {
@@ -327,12 +329,11 @@ export default class OfferController {
                     coo: coo,
                     product_location: product_location,
                     product_id: product._id,
-                    type: 1,//sell
+                    type: 1, //sell
                     status: 1,
-                    updated_by: req.customer.object_id
-                });
-            
-
+                    updated_by: req.customer.object_id,
+                }
+            );
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
         } catch (err: any) {
@@ -340,13 +341,12 @@ export default class OfferController {
         }
     }
 
-
     // Checked
     public async getUnlockedOffersList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getUnlockedOffersList]";
             // Set locale
-            const { locale, page, limit, search,offerType,status } = req.query;
+            const { locale, page, limit, search, offerType, status } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
@@ -355,7 +355,6 @@ export default class OfferController {
             // Create filter object for status and offerType
             let filter: any = { created_by: req.customer.object_id };
 
-            
             const results = await UnlockOffers.find(filter)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
@@ -364,26 +363,25 @@ export default class OfferController {
                 .populate("offer_id")
                 .populate("transaction_id")
                 .populate({
-                    path: 'offer_id',
+                    path: "offer_id",
                     populate: [
                         {
-                            path: 'ratings', // Use the virtual "ratings" field
+                            path: "ratings", // Use the virtual "ratings" field
                             match: { created_by: req.customer.object_id }, // Filter by the user who created the rating
-                            select: 'id rating rating_comment', // Select only the required fields
-                            model: 'Rating', // Reference the Rating model
+                            select: "id rating rating_comment", // Select only the required fields
+                            model: "Rating", // Reference the Rating model
                         },
                         {
-                            path: 'product_id', // Populate the product_id field as well
-                            model: 'products', // Reference the Product model
+                            path: "product_id", // Populate the product_id field as well
+                            model: "products", // Reference the Product model
                         },
                         {
-                            path: 'created_by', // Populate the product_id field as well
-                            model: 'customers', // Reference the Product model
-                        }
+                            path: "created_by", // Populate the product_id field as well
+                            model: "customers", // Reference the Product model
+                        },
                     ],
-                    
-                  });
-                
+                });
+
             const totalCount = await UnlockOffers.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
 
@@ -392,15 +390,20 @@ export default class OfferController {
                     results.map(async (offer: any) => {
                         // Fetch the rating count for each offer
                         const ratingCount = await Rating.countDocuments({ offer_id: offer._id });
-                
+
                         // Return the offer object along with the additional `rating_count` field
                         return {
-                            ...offer,  // Spread all existing offer fields
-                            rating_count: ratingCount  // Add the rating_count field
+                            ...offer, // Spread all existing offer fields
+                            rating_count: ratingCount, // Add the rating_count field
                         };
                     })
                 );
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), { data: formattedResult, totalCount, totalPages, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), {
+                    data: formattedResult,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -416,40 +419,66 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_id,price,amount,gst,sgst,cgst} = req.body;
+            const { offer_id, commission, amount, gst, sgst, cgst, igst, particular, offer_price, discount } = req.body;
 
             let result: any;
-            const offer:any = await Offers.findOne({ id: offer_id }).lean();
+            const offer: any = await Offers.findOne({ id: offer_id }).lean();
 
             const transaction: any = await Transaction.create({
-                amount: amount,
-                gst: gst,
-                sgst: sgst,
-                cgst: cgst,
-                price: price,
+                amount, // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
+                gst,
+                sgst,
+                cgst,
+                igst,
+                commission,
                 transaction_type: 1,
+                particular,
+                offer_price,
+                discount,
                 transaction_id: null,
                 status: 1,
-                remarks:"PURCHASEOFFER",
-                customer_id: req.customer.object_id
+                remarks: "PURCHASEOFFER",
+                customer_id: req.customer.object_id,
             });
             result = await UnlockOffers.create({
-                transaction_id:transaction._id,
-                price: price,
+                transaction_id: transaction._id,
+                price: amount,
                 offer_id: offer._id,
                 offer_counter: offer.offer_counter,
                 status: 1,
-                created_by:req.customer.object_id
+                created_by: req.customer.object_id,
             });
+
             
-            const walletBalance:any = await Wallet.findOne({customer_id:req.customer.object_id}).lean();
-            const resultwallet: any = await Wallet.findOneAndUpdate(
-                { customer_id: req.customer.object_id },
-                {
-                    balance: walletBalance.balance - parseInt(price),
-                });
-            if(offer.type == 0){
-                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id },{status: 0});
+            const customerId = req.customer.object_id;
+            const defaultAmountToDeduct = Number(amount);
+            const promoAmountToDeduct = Number(discount);
+
+
+            // Update Wallet Type 0 default wallet
+            const wallet0: any = await Wallet.findOne({ customer_id: customerId, type: 0 }).lean();
+            if (wallet0) {
+                await Wallet.findOneAndUpdate(
+                    { customer_id: customerId, type: 0 },
+                    {
+                        balance: Math.max(0, wallet0.balance - defaultAmountToDeduct),
+                    }
+                );
+            }
+
+            // Update Wallet Type 1 promo wallet
+            const wallet1: any = await Wallet.findOne({ customer_id: customerId, type: 1 }).lean();
+            if (wallet1) {
+                await Wallet.findOneAndUpdate(
+                    { customer_id: customerId, type: 1 },
+                    {
+                        balance: Math.max(0, wallet1.balance - promoAmountToDeduct),
+                    }
+                );
+            }
+
+            if (offer.type == 0) {
+                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});
@@ -467,29 +496,29 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await UnlockOffers.findOne({ id: id }).lean().populate("offer_id")
-            .populate("transaction_id")
-            .populate({
-                path: 'offer_id',
-                populate: [
-                    {
-                        path: 'ratings', // Use the virtual "ratings" field
-                        match: { created_by: req.customer.object_id }, // Filter by the user who created the rating
-                        select: 'id rating rating_comment', // Select only the required fields
-                        model: 'Rating', // Reference the Rating model
-                    },
-                    {
-                        path: 'product_id', // Populate the product_id field as well
-                        model: 'products', // Reference the Product model
-                    },
-                    {
-                        path: 'created_by', // Populate the product_id field as well
-                        model: 'customers', // Reference the Product model
-                    }
-                ],
-                
-              });
-
+            const result: any = await UnlockOffers.findOne({ id: id })
+                .lean()
+                .populate("offer_id")
+                .populate("transaction_id")
+                .populate({
+                    path: "offer_id",
+                    populate: [
+                        {
+                            path: "ratings", // Use the virtual "ratings" field
+                            match: { created_by: req.customer.object_id }, // Filter by the user who created the rating
+                            select: "id rating rating_comment", // Select only the required fields
+                            model: "Rating", // Reference the Rating model
+                        },
+                        {
+                            path: "product_id", // Populate the product_id field as well
+                            model: "products", // Reference the Product model
+                        },
+                        {
+                            path: "created_by", // Populate the product_id field as well
+                            model: "customers", // Reference the Product model
+                        },
+                    ],
+                });
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unlocked-offers-fetched"]), result);
@@ -510,8 +539,7 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Rating.findOne({ id: id }).lean().populate("offer_id","id name");
-
+            const result: any = await Rating.findOne({ id: id }).lean().populate("offer_id", "id name");
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["rating-fetched"]), result);
@@ -530,19 +558,18 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_id,rating, rating_comment} = req.body;
+            const { offer_id, rating, rating_comment } = req.body;
 
             let result: any;
-            const offer:any = await Offers.findOne({ id: offer_id }).lean();
+            const offer: any = await Offers.findOne({ id: offer_id }).lean();
             result = await Rating.create({
                 rating: rating,
                 rating_comment: rating_comment,
                 offer_id: offer._id,
-                customer_id:offer.created_by,
+                customer_id: offer.created_by,
                 status: 1,
-                created_by:req.customer.object_id
+                created_by: req.customer.object_id,
             });
-
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "rating-submitted"), {});
         } catch (err: any) {
@@ -557,7 +584,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { rating, rating_comment} = req.body;
+            const { rating, rating_comment } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
             result = await Rating.findOneAndUpdate(
@@ -565,15 +592,13 @@ export default class OfferController {
                 {
                     rating: rating,
                     rating_comment: rating_comment,
-                    updated_by: req.customer.object_id
-                });
-            
-
+                    updated_by: req.customer.object_id,
+                }
+            );
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "rating-updated"), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-} 
-
+}

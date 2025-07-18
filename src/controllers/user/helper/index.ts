@@ -424,10 +424,14 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
             const id = parseInt(req.params.id);
             const category:any = await Category.findOne({id:id}).lean(); 
             const customer:any = await Customer.findOne({_id:req.customer.object_id}).lean(); 
+            const sameState = customer?.gst?.substring(0, 2) === "07AAOCS3727K1ZV"?.substring(0, 2);
             const result: any = await Setting.findOne({ key: "customer_settings" }).lean();
             const taxCommission = {
                 gst:result.value.gst,
-                admin_commission:customer.admin_commission ? parseInt(customer.admin_commission) : (category.commission ? parseInt(category.commission):  parseInt(result.value.admin_commission))
+                igst:!sameState?result.value.igst:0,
+                cgst:sameState?result.value.cgst:0,
+                sgst:sameState?result.value.sgst:0,
+                admin_commission:customer.admin_commission ? Number(customer.admin_commission) : (category.commission ? Number(category.commission):  Number(result.value.admin_commission))
             };
             if (taxCommission) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
