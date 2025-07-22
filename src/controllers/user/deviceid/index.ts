@@ -23,15 +23,15 @@ export default class BannerController {
             const existingDevice: any = await Deviceid.findOne({ device_id, type, created_by: userid });
     
             if (!existingDevice) {
-                console.log("Adding new device");
+                // console.log("Adding new device");
     
                 const addDevice = await Deviceid.create({ device_id, type, created_by: userid });
     
-                console.log(addDevice);
+                // console.log(addDevice);
     
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "deviceid-add"), {});
             } else {
-                console.log("Updating existing device");
+                // console.log("Updating existing device");
     
                 existingDevice.device_id = device_id;
                 existingDevice.type = type;

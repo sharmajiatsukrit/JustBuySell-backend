@@ -20,70 +20,59 @@ export default class CronController {
 
     // Checked
     public async updateExpiredOffers(): Promise<any> {
-        console.log("hello");
         try {
-            const fn = "[updateExpiredOffers]";
-            const filter: any = {};
             const now = moment().tz("Asia/Kolkata").toDate();
-            console.log(now, moment().toDate());
-
-            await Offers.updateMany(
-                {
-                    status: 1,
-                    $expr: {
-                        $lte: [
-                            {
-                                $add: [
-                                    {
-                                        $dateFromString: {
-                                            dateString: "$publish_date",
-                                            format: "%Y-%m-%d %H:%M:%S",
-                                            timezone: "Asia/Kolkata",
+            const result =  await Offers.updateMany(
+                    {
+                        status: 1,
+                        $expr: {
+                            $lte: [
+                                {
+                                    $add: [
+                                        {
+                                            $dateFromString: {
+                                                dateString: "$publish_date",
+                                                format: "%Y-%m-%d %H:%M:%S",
+                                                timezone: "Asia/Kolkata",
+                                            },
                                         },
-                                    },
-                                    {
-                                        $add: [
-                                            {
-                                                $multiply: [
-                                                    {
-                                                        $toInt: {
-                                                            $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0],
+                                        {
+                                            $add: [
+                                                {
+                                                    $multiply: [
+                                                        {
+                                                            $toInt: {
+                                                                $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0],
+                                                            },
                                                         },
-                                                    },
-                                                    60 * 60 * 1000, // hours → ms
-                                                ],
-                                            },
-                                            {
-                                                $multiply: [
-                                                    {
-                                                        $toInt: {
-                                                            $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 1],
+                                                        60 * 60 * 1000, // hours → ms
+                                                    ],
+                                                },
+                                                {
+                                                    $multiply: [
+                                                        {
+                                                            $toInt: {
+                                                                $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 1],
+                                                            },
                                                         },
-                                                    },
-                                                    60 * 1000, // minutes → ms
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            now,
-                        ],
+                                                        60 * 1000, // minutes → ms
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                now,
+                            ],
+                        },
                     },
-                },
-                {
-                    $set: { status: 0 },
-                }
-            );
-            // console.log(offers);
+                    {
+                        $set: { status: 0 },
+                    }
+                );
         } catch (err: any) {
-            // return serverErrorHandler(
-            //     err,
-            //     res,
-            //     err.message,
-            //     HttpCodeEnum.SERVERERROR,
-            //     {}
-            // );
+            // Handle error
+            console.log(err,"err")
         }
     }
 
@@ -95,9 +84,7 @@ export default class CronController {
 
             const startOfMonth = moment().startOf("month").toDate();
             const endOfMonth = moment().endOf("month").toDate();
-            console.log(moment().toDate());
-            const customers = await Customer.find({ id: 163, is_gst_verified: true, status: 1 });
-
+            const customers = await Customer.find({ is_gst_verified: true, status: 1 });
             for (const customer of customers) {
                 const transactions = await Transaction.find({
                     customer_id: customer._id,
@@ -105,21 +92,32 @@ export default class CronController {
                     status: 1,
                     createdAt: { $gte: startOfMonth, $lte: endOfMonth },
                 });
-                console.log(transactions);
                 if (transactions.length === 0) continue;
-                const totalAmount = transactions.reduce((sum, txn) => sum + txn.amount, 0);
-                const totalGst = transactions.reduce((sum, txn) => sum + txn.gst, 0);
+                const subTotalAmount = transactions.reduce((sum: any, txn: any) => sum + (Number(txn.commission) - Number(txn.discount)), 0);
+                const totalDiscount = transactions.reduce((sum: any, txn: any) => sum + Number(txn.discount), 0);
+                const totalGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.gst), 0);
+                const totalIGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.igst), 0);
+                const totalCGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.cgst), 0);
+                const totalSGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.sgst), 0);
+
                 const sameState = customer?.gst?.substring(0, 2) === "07AAOCS3727K1ZV"?.substring(0, 2);
+               
                 const invoice = new Invoice({
-                    customerId: customer._id,
+                    customer_id: customer._id,
                     customerName: customer.name,
-                    gst: totalGst,
+                    sub_total_amount: subTotalAmount.toFixed(2),
+                    total_amount: (subTotalAmount + totalGst).toFixed(2),
+                    total_discount: totalDiscount.toFixed(2),
+                    gst: totalGst.toFixed(2),
+                    igst: totalIGst.toFixed(2),
+                    cgst: totalCGst.toFixed(2),
+                    sgst: totalSGst.toFixed(2),
                     start_date: moment(startOfMonth).format("YYYY-MM-DD"),
                     end_date: moment(endOfMonth).format("YYYY-MM-DD"),
                     month: moment(startOfMonth).format("MM"),
                     year: moment(startOfMonth).format("YYYY"),
                     transactions: transactions.map((txn) => txn._id),
-                    amount: totalAmount,
+
                 });
 
                 await invoice.save();
@@ -137,9 +135,9 @@ export default class CronController {
                         gstNumber: customer.gst || "",
                     },
                     summaryDetails: {
-                        subTotal: totalAmount - totalGst,
-                        totalGst: totalGst,
-                        total: totalAmount,
+                        subTotal: subTotalAmount.toFixed(2),
+                        totalGst: totalGst.toFixed(2),
+                        total: (subTotalAmount + totalGst).toFixed(2),
                     },
                     invoiceDetails: {
                         invoiceNumber: invoiceNumber,
@@ -148,24 +146,32 @@ export default class CronController {
                     transactions: transactions.map((txn: any, index) => ({
                         item: index + 1,
                         description: txn.remarks,
-                        amount: txn.amount,
+                        amount: (txn.commission - txn.discount).toFixed(2),
                         dateOfTxn: moment(txn.createdAt).utcOffset("+05:30").format("DD-MM-YYYY"),
-                        gst: txn.gst,
-                        igst: txn.igst,
-                        cgst: txn.cgst,
-                        sgst: txn.sgst,
-                        discount: txn.discount,
-                        commission: txn.commission,
-                        offer_price: txn.offer_price,
+                        gst: Number(txn.gst).toFixed(2),
+                        igst: Number(txn.igst).toFixed(2),
+                        cgst: Number(txn.cgst).toFixed(2),
+                        sgst: Number(txn.sgst).toFixed(2),
+                        discount: Number(txn.discount).toFixed(2),
+                        commission: Number(txn.commission).toFixed(2),
+                        offer_price: Number(txn.offer_price).toFixed(2),
                         particular: txn.particular,
                     })),
-                    totalAmount,
-                    subTotal: totalAmount - totalGst,
-                    gstLabel:sameState?`GST(18%) (IGST:9%, SGST:9%)`:"",
-                    totalGst,
+                    totalAmount: (subTotalAmount + totalGst).toFixed(2),
+                    totalDiscount: totalDiscount.toFixed(2),
+                    subTotal: subTotalAmount.toFixed(2),
+                    gstLabel: sameState ? `CGST:(9%) SGST:(9%)` : " IGST:(18%) ",
+                    igstLabel: !sameState ? `IGST(18%)` : false,
+                    cgstLabel: sameState ? `CGST:(9%)` : false,
+                    sgstLabel: sameState ? `SGST:(9%) ` : false,
+                    totalGst: totalGst.toFixed(2),
+                    totalIGst: totalIGst.toFixed(2),
+                    totalCGst: totalCGst.toFixed(2),
+                    totalSGst: totalSGst.toFixed(2),
                     startOfMonth: moment(startOfMonth).format("DD-MM-YYYY"),
                     endOfMonth: moment(endOfMonth).format("DD-MM-YYYY"),
                 };
+               
                 await generateInvoicePDF(dataForPdf, pdfName);
             }
         } catch (err: any) {

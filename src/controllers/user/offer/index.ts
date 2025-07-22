@@ -285,7 +285,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, product_location, product_id } = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
@@ -295,7 +295,16 @@ export default class OfferController {
                 {
                     target_price: target_price,
                     buy_quantity: buy_quantity,
+                    brand: brand,
+                    coo: coo,
+                    pin_code: pin_code,
+                    individual_pack: individual_pack,
+                    master_pack: master_pack,
                     product_location: product_location,
+                    offer_validity: offer_validity,
+                    publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+                    state: state,
+                    city: city,
                     product_id: product._id,
                     type: 0, //buy
                     status: 1,
@@ -316,18 +325,25 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand, coo, product_location, product_id } = req.body;
+            const { offer_price, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.findOneAndUpdate(
                 { id: id },
                 {
-                    offer_price: offer_price,
+                   offer_price: offer_price,
                     moq: moq,
                     brand: brand,
                     coo: coo,
+                    pin_code: pin_code,
                     product_location: product_location,
+                    individual_pack: individual_pack,
+                    master_pack: master_pack,
+                    offer_validity: offer_validity,
+                    publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+                    state: state,
+                    city: city,
                     product_id: product._id,
                     type: 1, //sell
                     status: 1,
@@ -420,7 +436,7 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const { offer_id, commission, amount, gst, sgst, cgst, igst, particular, offer_price, discount } = req.body;
-
+            console.log("******************",req.body,"*******************************")
             let result: any;
             const offer: any = await Offers.findOne({ id: offer_id }).lean();
 
@@ -449,11 +465,9 @@ export default class OfferController {
                 created_by: req.customer.object_id,
             });
 
-            
             const customerId = req.customer.object_id;
             const defaultAmountToDeduct = Number(amount);
             const promoAmountToDeduct = Number(discount);
-
 
             // Update Wallet Type 0 default wallet
             const wallet0: any = await Wallet.findOne({ customer_id: customerId, type: 0 }).lean();

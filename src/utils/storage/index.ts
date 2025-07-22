@@ -49,8 +49,7 @@ async function deleteFile(fileUrl: string): Promise<any> {
         };
 
         const data = await s3.deleteObject(params).promise();
-        console.log('data', data);
-
+      
         return Promise.resolve(true);
     } catch (err) {
         return Promise.reject(err);

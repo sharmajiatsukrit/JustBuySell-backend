@@ -89,7 +89,7 @@ export default class ProductController {
             const result: any = await Product.findOne({ id: id })
                                         .populate('category_id', 'id name').lean();
             //const variations: any = await ProductVariations.findOne({ product_id: result._id }).populate('category_id', 'id name').lean();
-            //console.log(result);
+            
             if (result) {
                 const formattedResult = {
                     id: result.id,
@@ -123,7 +123,7 @@ export default class ProductController {
             const { name, description, category_id,variations,search_tags,individual_label,master_label, status } = req.body;
             let result: any;
             const variation = JSON.parse(variations);
-            console.log(variation);
+            
             const cat:any = JSON.parse(category_id);
             const categoryObjects = await Promise.all(
                 cat.map(async (categoryId:any) => {

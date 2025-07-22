@@ -39,7 +39,7 @@ export default class AttributeItemController {
             if (!attribute) {
                 return serverResponse(res, HttpCodeEnum.SERVERERROR, "Attribute Not Available to use.", {});
             }
-            console.log(attribute);
+            
             const results = await AttributeItem.find({ attribute_id: attribute._id })
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
@@ -74,8 +74,7 @@ export default class AttributeItemController {
             const id = parseInt(req.params.id);
             const result: any = await AttributeItem.findOne({ id: id }).populate('attribute_id', 'id name')
                 .populate('created_by', 'id name').lean();
-            // console.log(result);
-
+           
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["attribute-item-fetched"]), result);
             } else {

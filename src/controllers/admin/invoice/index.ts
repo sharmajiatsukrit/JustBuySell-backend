@@ -98,7 +98,7 @@ export default class InvoiceController {
 
             const id = parseInt(req.params.id);
             const result: any = await Invoice.findOne({ id: id }).lean();
-            // console.log(result);
+            
 
             if (result) {
                 result.file = `${process.env.RESOURCE_URL}${result.file}`;

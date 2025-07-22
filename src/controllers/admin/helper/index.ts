@@ -70,7 +70,7 @@ export default class HelperController {
                   $limit: 10,
                 },
               ]);
-            console.log(result);
+           
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
             } else {
@@ -111,7 +111,7 @@ export default class HelperController {
                 searchQuery = { status: true, };
             }
             const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            console.log(result);
+            
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
             } else {
@@ -177,7 +177,7 @@ export default class HelperController {
                 searchQuery = { status: true, };
             }
             const result: any = await Attribute.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            console.log(result);
+            
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-fetched"), result);
             } else {
@@ -221,7 +221,7 @@ export default class HelperController {
                 searchQuery = { attribute_id:attribute._id,status: true, };
             }
             const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            console.log(result);
+            
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-item-fetched"), result);
             } else {
@@ -265,7 +265,7 @@ export default class HelperController {
                 searchQuery = { attribute_id:attribute._id,status: true, };
             }
             const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            console.log(result);
+            
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-item-fetched"), result);
             } else {

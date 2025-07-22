@@ -148,7 +148,7 @@ export default class RolesController {
 
             let result: any;
             const permission = await Permissions.find({ id: permissions }).select('id name description').lean();
-            //console.log(permission);
+            
             result = await Roles.create({
                 name: name,
                 description: description,

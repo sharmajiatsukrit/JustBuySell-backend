@@ -1,23 +1,22 @@
 import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer";
-import dotenv from 'dotenv';
-dotenv.config(); 
+import dotenv from "dotenv";
+dotenv.config();
 const uploadPath = process.env.UPLOAD_PATH;
 
 // Your HTML generation function remains the same
 export function generateInvoiceHtml(data: any): string {
     const itemRows = data.transactions
-        .map((item:any) => {
+        .map((item: any) => {
             return `
       <tr>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.item}</td>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.particular}</td>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.dateOfTxn}</td>
-        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.offer_price.toFixed(2)}</td>
-        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.discount.toFixed(2)}</td>
-        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.commission.toFixed(2)}</td>
-        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">₹${item.amount.toFixed(2)}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">₹${item.offer_price}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">₹${item.discount}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">₹${item.amount}</td>
       </tr>
     `;
         })
@@ -102,14 +101,14 @@ export function generateInvoiceHtml(data: any): string {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                   <div>
                     <div style="font-size: 14px; color: #666;">Subtotal in INR</div>
-                    <div style="font-weight: bold;">₹${data.summaryDetails.subTotal.toFixed(2)}</div>
+                    <div style="font-weight: bold;">₹${data.summaryDetails.subTotal}</div>
                   </div>
                   <div>
                     <div style="font-size: 14px; color: #666;">Integrated ${data?.gstLabel}</div>
-                    <div style="font-weight: bold;">₹${data.summaryDetails.totalGst.toFixed(2)}</div>
+                    <div style="font-weight: bold;">₹${data.summaryDetails.totalGst}</div>
                   </div>
                   <div style="grid-column: span 2;">
-                    <div style="font-size: 18px; font-weight: bold; margin-top: 8px;">Total in INR: ₹${data.summaryDetails.total.toFixed(2)}</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 8px;">Total in INR: ₹${data.summaryDetails.total}</div>
                   </div>
                 </div>
               </div>
@@ -137,20 +136,44 @@ export function generateInvoiceHtml(data: any): string {
                       <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Date</th>
                       <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Offer Price(₹)</th>
                       <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Discount(₹)</th>
-                      <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Commission(₹)</th>
                       <th style="padding: 12px 8px; text-align: right; border-bottom: 1px solid #e0e0e0; font-weight: bold;">Amount(₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${itemRows}
                     <tr>
-                      <td colspan="7" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Subtotal in INR</span> ₹${data.subTotal.toFixed(2)}</td>
+                      <td colspan="6" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Subtotal in INR</span> ₹${data.subTotal}</td>
                     </tr>
-                    <tr>
-                      <td colspan="7" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Integrated ${data?.gstLabel}</span> ₹${data.totalGst.toFixed(2)}</td>
+                     <tr>
+                      <td colspan="6" style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;"><span style="margin-right: 14px;">Discount </span> ₹${data.totalDiscount}</td>
                     </tr>
+                   ${data.igstLabel
+                      ? `<tr>
+                          <td colspan="6" style="padding: 12px 8px; text-align: right;">
+                            <span style="margin-right: 14px;">${data.igstLabel}</span> ₹${data.totalIGst}
+                          </td>
+                        </tr>`
+                      : ''
+                    }
+                    ${data.cgstLabel
+                      ? `<tr>
+                          <td colspan="6" style="padding: 12px 8px; text-align: right;">
+                            <span style="margin-right: 14px;">${data.cgstLabel}</span> ₹${data.totalCGst}
+                          </td>
+                        </tr>`
+                      : ''
+                    }
+                    ${data.sgstLabel
+                      ? `<tr>
+                          <td colspan="6" style="padding: 12px 8px; text-align: right;">
+                            <span style="margin-right: 14px;">${data.sgstLabel}</span> ₹${data.totalSGst}
+                          </td>
+                        </tr>`
+                      : ''
+                    }
+
                     <tr>
-                      <td colspan="7" style="padding: 12px 8px; font-weight: bold; text-align: right;"><span style="margin-right: 14px;">Total in INR</span> ₹${data.totalAmount.toFixed(2)}</td>
+                      <td colspan="7" style="padding: 12px 8px; font-weight: bold; text-align: right;"><span style="margin-right: 14px;">Total in INR</span> ₹${data.totalAmount}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -167,7 +190,7 @@ export function generateInvoiceHtml(data: any): string {
 
 export async function generateInvoicePDF(data: any, filename: string) {
     try {
-      console.log(data)
+        // console.log(data);
         const htmlContent = generateInvoiceHtml(data);
         const browser = await puppeteer.launch({
             headless: true,
@@ -202,4 +225,3 @@ export async function generateInvoicePDF(data: any, filename: string) {
         // throw err;
     }
 }
-

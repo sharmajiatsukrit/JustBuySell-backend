@@ -8,6 +8,7 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import mongoose from "mongoose";
 
 const fileName = "[user][account][index.ts]";
 export default class AccountController {
@@ -202,14 +203,13 @@ export default class AccountController {
             this.locale = (locale as string) || "en";
 
             const { amount, payment_id, remarks, error_code, transaction_id, status } = req.body;
-
-            if (status == 2) {
+            if (error_code) {
                 const transaction: any = await Transaction.findOneAndUpdate(
                     { transaction_id: transaction_id },
                     {
                         amount: amount,
                         transaction_id: transaction_id,
-                        status: status,
+                        status: 2,
                         remarks: remarks,
                         error_code: error_code,
                         customer_id: req.customer.object_id,
@@ -241,7 +241,7 @@ export default class AccountController {
                         transaction_id: transaction_id,
                         razorpay_payment_id: payment_id,
                         remarks: "Amount added successful.",
-                        status: status,
+                        status: 1,
                         customer_id: req.customer.object_id,
                     }
                 );
@@ -303,7 +303,6 @@ export default class AccountController {
                 balance,
                 promoBalance,
             };
-console.log(response)
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), response);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -322,8 +321,20 @@ console.log(response)
             const limitNumber = parseInt(limit as string) || 10;
 
             const skip = (pageNumber - 1) * limitNumber;
-
-            const result = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+            const customerId = new mongoose.Types.ObjectId(req.customer.object_id);
+            // const results = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+            const result = await Transaction.aggregate([
+                { $match: { customer_id: customerId } },
+                { $sort: { id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                {
+                    $addFields: {
+                        created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                        created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                    },
+                },
+            ]);
 
             // Get the total number of documents in the Permissions collection
             const totalCount = await Transaction.countDocuments({});
@@ -352,13 +363,16 @@ console.log(response)
             const skip = (pageNumber - 1) * limitNumber;
 
             const result = await Invoice.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
-
+            const formattedResults = result.map((item: any) => ({
+                ...item,
+                file:`${process.env.RESOURCE_URL}${item.file}`,
+            }));
             // Get the total number of documents in the Permissions collection
             const totalCount = await Invoice.countDocuments({});
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { result, totalPages });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { results:formattedResults, totalPages });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

@@ -48,7 +48,7 @@ export default class FaqController {
 
             const totalCount = await Faqs.countDocuments(filter);
             const totalPages = Math.ceil(totalCount / limitNumber);
-            console.log(req.user);
+           
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
@@ -69,7 +69,7 @@ export default class FaqController {
 
             const id = parseInt(req.params.id);
             const result: any = await Faqs.findOne({ id: id }).lean();
-            // console.log(result);
+            
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-fetched"]), result);
