@@ -53,8 +53,6 @@ export default class SettingController {
 
             const { value } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
-
-            
             let result: any = await Setting.findOneAndUpdate(
                 { key: key },
                 {

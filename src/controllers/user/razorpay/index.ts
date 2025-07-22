@@ -64,7 +64,7 @@ export default class RazorpayController {
 
             const { payment_id, amount } = req.body;
             const result = await RazorpayUtil.capturePayment(payment_id, amount);
-            console.log(result);
+            // console.log(result);
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});

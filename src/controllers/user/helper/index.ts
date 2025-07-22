@@ -112,11 +112,11 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { watchlist_id, product_id } = req.body;
-            console.log(watchlist_id, product_id);
+            // console.log(watchlist_id, product_id);
             const watchlist: any = await Watchlist.findOne({ id: watchlist_id }).lean();
             const product: any = await Product.findOne({ id: product_id }).lean();
-            console.log(watchlist.id);
-            console.log(product._id);
+            // console.log(watchlist.id);
+            // console.log(product._id);
             const result: any = await WatchlistItem.create({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
@@ -144,11 +144,11 @@ export default class HelperController {
             const watchlist: any = await Watchlist.findOne({ id: watchlist_id }).lean();
             const product: any = await Product.findOne({ id: product_id }).lean();
 
-            console.log({
-                product_id: product._id,
-                watchlist_id: watchlist._id,
-                customer_id: req.customer.object_id
-            });
+            // console.log({
+            //     product_id: product._id,
+            //     watchlist_id: watchlist._id,
+            //     customer_id: req.customer.object_id
+            // });
             const result = await WatchlistItem.deleteOne({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
@@ -177,7 +177,6 @@ export default class HelperController {
             const skip = (pageNumber - 1) * limitNumber;
             const cat_id = parseInt(req.params.cat_id);
             const category_id: any = await Category.findOne({ id: cat_id }).lean();
-            console.log(category_id);
             if (!category_id) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -226,7 +225,7 @@ export default class HelperController {
             // console.log(process.env.GSTINCHECK_APIKEY);
             // const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`,{},{});
             const response = await networkRequest("POST", `https://api.rpacpc.com/services/get-gst-details`,body,headers);
-            console.log(response.data.status);
+            // console.log(response.data.status);
             if (response.data.status == 'SUCCESS') {
                 const ResultData:any = {
                     "leagal_name":response.data.data.basicDetails.Legal_Name,
@@ -242,13 +241,13 @@ export default class HelperController {
                 // const phone:any = parseInt('9711150083');
                 // const email = response.data.data.basicDetails.email;
                 const otp = await this.generateOtp(req.customer.user_id);
-                console.log(response.data.data.basicDetails);
+                // console.log(response.data.data.basicDetails);
                 console.log(otp);
                 // console.log(response.data.data);
 
                 const mail = await sendMail(response.data.data.basicDetails.email,'Verify your GST',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,[])
-                const mess = await sendSMS(phone,`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
-                const mess3 = await sendSMS('8319116594',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
+                const mess = await sendSMS(phone,`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
+                const mess3 = await sendSMS('8319116594',`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
                 // console.log("ss",mess);
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["gst-fetched"]), ResultData);
             } else {
@@ -346,13 +345,13 @@ export default class HelperController {
             const skip = (pageNumber - 1) * limitNumber;
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
-            console.log(customer);
+            // console.log(customer);
             const data:any = {};
             data.customer = customer;
             const results: any = await Rating.find({ customer_id: customer._id }).lean()
                 .skip(skip)
                 .limit(limitNumber)
-                .sort({ id: -1 }).populate("customer_id");
+                .sort({ id: -1 }).populate("customer_id").populate("created_by");
             const totalCount = await Rating.countDocuments({ customer_id: customer._id,status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
@@ -384,7 +383,7 @@ export default class HelperController {
             this.locale = (locale as string) || "en";
            
             const customer: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
-            console.log(customer);
+            // console.log(customer);
             if (customer) {
                 const requiredFields = ['name', 'phone', 'email', 'trade_name', 'leagal_name','gst','is_gst_verified','address_line_1'];
                 let filledCount = 0;
@@ -424,10 +423,15 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
             const id = parseInt(req.params.id);
             const category:any = await Category.findOne({id:id}).lean(); 
             const customer:any = await Customer.findOne({_id:req.customer.object_id}).lean(); 
+            const sameState = customer?.gst?.substring(0, 2) === "07AAOCS3727K1ZV"?.substring(0, 2);
             const result: any = await Setting.findOne({ key: "customer_settings" }).lean();
+
             const taxCommission = {
                 gst:result.value.gst,
-                admin_commission:customer.admin_commission ? parseInt(customer.admin_commission) : (category.commission ? parseInt(category.commission):  parseInt(result.value.admin_commission))
+                igst:!sameState?result.value.igst:0,
+                cgst:sameState?result.value.cgst:0,
+                sgst:sameState?result.value.sgst:0,
+                admin_commission:customer.admin_commission ? Number(customer.admin_commission) : (category.commission ? Number(category.commission):  Number(result.value.admin_commission))
             };
             if (taxCommission) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
@@ -464,7 +468,7 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
             }
 
             const attribute: any = await Attribute.findOne({ id: attribute_id }).lean();
-            console.log(attribute);
+            // console.log(attribute);
             let searchQuery = {};
             if (search) {
                 searchQuery = {

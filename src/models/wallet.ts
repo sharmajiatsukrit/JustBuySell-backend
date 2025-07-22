@@ -6,11 +6,13 @@ import { autoIncrement } from 'mongoose-plugin-autoinc';
 interface IWallet extends Document {
     customer_id: string;
     balance: number;
+    type:number
 }
 
 const walletSchema: Schema = new Schema({
 
     balance: { type: Number, default: 0 },
+    type: { type: Number, default: 0 },
     customer_id: { type: Schema.Types.ObjectId, ref: 'customers' }
 },
     {

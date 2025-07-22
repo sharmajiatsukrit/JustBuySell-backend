@@ -17,7 +17,7 @@ async function addSubscriberToOctopus(body: any): Promise<any> {
         return Promise.resolve(response.data);
     }
 
-    console.log(response);
+    // console.log(response);
 
     return Promise.reject("New notification not created");
 }

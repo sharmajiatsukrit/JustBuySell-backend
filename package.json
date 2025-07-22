@@ -34,6 +34,8 @@
         "multer": "^1.4.5-lts.1",
         "node-cron": "^3.0.3",
         "nodemailer": "^7.0.3",
+        "num-words": "^1.2.3",
+        "number-to-words": "^1.2.4",
         "path": "^0.12.7",
         "pinnacle_sms_plugin": "^1.0.2",
         "puppeteer": "^24.12.1",

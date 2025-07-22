@@ -136,7 +136,7 @@ export default class BannerController {
 
             const { name, external_url,start_date,end_date, status } = req.body;
             const { id } = req.params;
-            console.log({ name, external_url,start_date,end_date, status });
+           
             let banner: any;
             if (req.file) {
                 banner = req?.file?.filename;

@@ -1,6 +1,4 @@
 import { Document, Schema, model } from 'mongoose';
-import { BillingGatewayEnum } from "../enums";
-import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface ITransaction extends Document {
@@ -18,17 +16,22 @@ interface ITransaction extends Document {
 }
 
 const TransactionSchema: Schema = new Schema({
-
     amount: { type: Number, default: 0 },
     gst: { type: Number, default: 0 },
+    igst: { type: Number, default: 0 },
     sgst: { type: Number, default: 0 },
     cgst: { type: Number, default: 0 },
+    discount: { type: Number, default: 0 },
+    commission:{type: Number, default: 0},
+    offer_price: { type: Number, default: 0 },
+    particular: { type: String, default: "" },
     transaction_type: { type: Number, default: 0 },
     transaction_id: { type: String, default: '' },
     razorpay_order_id: { type: String, default: '' },
     razorpay_order_amount: { type: String, default: '' },
     razorpay_payment_id:{ type: String, default: '' },
     razorpay_signature:{ type: String, default: '' },
+    type: { type: Number, default: 0 },
     status: { type: Number, default: 0 },
     error_code: { type: Number, default: null },
     remarks: { type: String, default: '' },

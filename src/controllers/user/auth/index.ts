@@ -61,13 +61,13 @@ export default class AuthController {
             // let otp:any;
             
             // Generate OTP for the user
-               const  otp = await this.generateOtp(userData.id);
-            console.log(otp);
-            const mess = await sendSMS(phone,`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`);
-            // console.log(mess.data);
+            const  otp = await this.generateOtp(userData.id);
+            const mess = await sendSMS(phone,`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,"1107173693764931229");
+           
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-sent"), mess.data);
 
         } catch (err: any) {
+            
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
@@ -593,7 +593,7 @@ export default class AuthController {
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             const device: any = await Deviceid.findOne({ device_id: device_id }).lean();
-            console.log(device);
+            // console.log(device);
             if (!device) {
                 await Deviceid.create({ device_id: device_id, type: type, created_by: req.customer.object_id });
             }

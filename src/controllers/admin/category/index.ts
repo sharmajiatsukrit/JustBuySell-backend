@@ -121,13 +121,12 @@ export default class CategoryController {
 
             const existingCategoryName = await Category.findOne({name: name }).lean();
             if (existingCategoryName) {
-                console.log("Category with this name already exists");
+                
                 return serverInvalidRequest(req, res, "Category with this name already exists");
             }
 
             const category: any = await Category.findOne({ id: parent_id }).lean();
-            console.log(category);
-            
+           
             const result: any = await Category.create({
                 name: name,
                 description: description,

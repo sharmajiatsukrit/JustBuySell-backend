@@ -12,6 +12,7 @@ import EmailService from "../../../utils/email";
 import { getPostsForAdmin, getPostsForAdminBySubscriberId, getChatCount, getPostCount, postDelete } from "../../../services/Chat";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import PromoTransaction from "../../../models/promo-transaction";
 
 const fileName = "[admin][customer][index.ts]";
 export default class CustomerController {
@@ -372,25 +373,27 @@ export default class CustomerController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { amount, remarks } = req.body;
+            const { amount, remarks, expiry_date } = req.body;
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
+            const promoTransaction = await PromoTransaction.create({ customer_id: customer._id, amount, remarks, expiry_date });
 
-            const existing: any = await Wallet.findOne({ customer_id: customer._id }).lean();
+            const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean();
             if (existing) {
                 await Wallet.findOneAndUpdate(
-                    { customer_id: customer._id },
+                    { customer_id: customer._id, type: 1 }, // type 1 means promo wallet
                     {
                         balance: existing.balance + amount,
                     }
                 );
             } else {
-                await Wallet.create({ customer_id: customer._id, balance: amount });
+                await Wallet.create({ customer_id: customer._id, balance: amount, type: 1 }); // type 1 means promo wallet
             }
             const transaction: any = await Transaction.create({
-                amount: amount,
+                amount,
                 remarks: remarks,
                 transaction_type: 0,
+                status:1,
                 customer_id: customer._id,
             });
 
@@ -410,15 +413,36 @@ export default class CustomerController {
             this.locale = (locale as string) || "en";
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
-            // console.log(customer);
-            const results: any = await Wallet.findOne({ customer_id: customer._id }).select("id balance").lean();
-            // console.log(results);
+            
+            const customerId = customer.object_id;
+            const wallets: any = await Wallet.find({
+                customer_id: customerId,
+                type: { $in: [0, 1] },
+            })
+                .select("id balance type")
+                .lean();
+
+            // Prepare response
+            let balance = 0;
+            let promoBalance = 0;
+
+            for (const wallet of wallets) {
+                if (wallet.type === 0) balance = wallet.balance;
+                if (wallet.type === 1) promoBalance = wallet.balance;
+            }
+
+            const results = {
+                balance,
+                promoBalance,
+            };
+
             if (results) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
+            console.log(err)
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
@@ -436,7 +460,7 @@ export default class CustomerController {
             const skip = (pageNumber - 1) * limitNumber;
             const customer_id = parseInt(req.params.customer_id);
             const customer: any = await Customer.findOne({ id: customer_id }).lean();
-            // console.log(customer);
+            
             const results = await Watchlist.find({ created_by: customer._id })
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)

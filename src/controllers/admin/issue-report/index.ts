@@ -66,7 +66,7 @@ export default class UnitController {
 
             const id = parseInt(req.params.id);
             const result: any = await ReportIssues.findOne({ id: id }).lean();
-            // console.log(result);
+            
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);

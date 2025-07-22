@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
 import { Customer, ReportIssues, Faqs, Setting, Wallet, Transaction, Invoice } from "../../../models";
-import { removeObjectKeys, serverResponseHandler,serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
+import { removeObjectKeys, serverResponseHandler, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-
+import mongoose from "mongoose";
 
 const fileName = "[user][account][index.ts]";
 export default class AccountController {
@@ -23,7 +23,6 @@ export default class AccountController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getMyProfile(req: Request, res: Response): Promise<any> {
         try {
@@ -34,7 +33,6 @@ export default class AccountController {
 
             const results: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
             if (results.company_logo.length) {
-
             }
             if (results) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), results);
@@ -53,12 +51,31 @@ export default class AccountController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, phone, designation,email, trade_name, leagal_name, gst, telephone, company_email, address_line_1, landmark,city,state,pincode, open_time, close_time, parent_id, status } = req.body;
+            const {
+                name,
+                phone,
+                designation,
+                email,
+                trade_name,
+                leagal_name,
+                gst,
+                telephone,
+                company_email,
+                address_line_1,
+                landmark,
+                city,
+                state,
+                pincode,
+                open_time,
+                close_time,
+                parent_id,
+                status,
+            } = req.body;
             // let checkGSt: any = await Customer.countDocuments({gst:gst,_id: { $ne: req.customer.object_id }});
             // if(checkGSt > 0){
             //     return serverResponseHandler(res, HttpCodeEnum.OK,false, 'GST No already associated with another account', {});
             // }
-            
+
             let result: any = await Customer.findOneAndUpdate(
                 { id: req.customer.user_id },
                 {
@@ -77,28 +94,29 @@ export default class AccountController {
                     pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
-                    status: status
-                });
-            const checkTransaction:any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP",customer_id: req.customer.object_id }).lean();
-            if(!checkTransaction){
-                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
+                    status: status,
+                }
+            );
+            const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
+            if (!checkTransaction) {
+                const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
-                    customer_id: req.customer.object_id
+                    type: 1,
+                    customer_id: req.customer.object_id,
                 });
 
                 const transaction: any = await Transaction.create({
                     amount: settings.value.new_registration_topup,
                     gst: 0,
-                    transaction_id: '',
+                    transaction_id: "",
                     transaction_type: 0,
-                    razorpay_payment_id: '',
+                    razorpay_payment_id: "",
                     status: 1,
                     remarks: "REGISTRATIONTOPUP",
-                    customer_id: req.customer.object_id
+                    customer_id: req.customer.object_id,
                 });
             }
-            console.log(result);
             let company_logo: any;
             if (req.file) {
                 company_logo = req?.file?.filename;
@@ -123,7 +141,7 @@ export default class AccountController {
 
             const result: any = await ReportIssues.create({
                 message: message,
-                created_by: req.customer.object_id
+                created_by: req.customer.object_id,
             });
 
             if (result) {
@@ -165,7 +183,7 @@ export default class AccountController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const results: any = await Faqs.find({ status: true }).select('id question answer').lean();
+            const results: any = await Faqs.find({ status: true }).select("id question answer").lean();
 
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["faq-fetched"]), results);
@@ -177,7 +195,6 @@ export default class AccountController {
         }
     }
 
-
     public async rechargeWallet(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[rechargeWallet]";
@@ -185,48 +202,52 @@ export default class AccountController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { amount, payment_id,remarks,error_code, transaction_id, status } = req.body;
-
-            
-
-            if(status == 2){
-                const transaction: any = await Transaction.findOneAndUpdate({ transaction_id: transaction_id },{
-                    amount: amount,
-                    transaction_id: transaction_id,
-                    status: status,
-                    remarks:remarks,
-                    error_code:error_code,
-                    customer_id: req.customer.object_id
-                });
-                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'Transaction Cancelled/Rejected', {});
-            }else{
-                const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id }).lean();
+            const { amount, payment_id, remarks, error_code, transaction_id, status } = req.body;
+            if (error_code) {
+                const transaction: any = await Transaction.findOneAndUpdate(
+                    { transaction_id: transaction_id },
+                    {
+                        amount: amount,
+                        transaction_id: transaction_id,
+                        status: 2,
+                        remarks: remarks,
+                        error_code: error_code,
+                        customer_id: req.customer.object_id,
+                    }
+                );
+                return serverResponseHandler(res, HttpCodeEnum.OK, false, "Transaction Cancelled/Rejected", {});
+            } else {
+                const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id, type: 0 }).lean(); //type 0 means real wallet
 
                 if (existing) {
                     const result: any = await Wallet.findOneAndUpdate(
-                        { customer_id: req.customer.object_id },
+                        { customer_id: req.customer.object_id, type: 0 },
                         {
                             balance: existing.balance + amount,
-                        });
+                        }
+                    );
                 } else {
                     const result: any = await Wallet.create({
                         balance: amount,
-                        customer_id: req.customer.object_id
+                        type: 0,
+                        customer_id: req.customer.object_id,
                     });
                 }
-                
-                const transaction: any = await Transaction.findOneAndUpdate({ transaction_id: transaction_id },{
-                    amount: amount,
-                    transaction_id: transaction_id,
-                    razorpay_payment_id: payment_id,
-                    remarks: "Amount added successful.",
-                    status: status,
-                    customer_id: req.customer.object_id
-                });
+
+                const transaction: any = await Transaction.findOneAndUpdate(
+                    { transaction_id: transaction_id },
+                    {
+                        amount: amount,
+                        transaction_id: transaction_id,
+                        razorpay_payment_id: payment_id,
+                        remarks: "Amount added successful.",
+                        status: 1,
+                        customer_id: req.customer.object_id,
+                    }
+                );
 
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
             }
-            
         } catch (err: any) {
             console.error(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
@@ -234,20 +255,55 @@ export default class AccountController {
     }
 
     // Checked
+    // public async getWalletBalance(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getById]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const results: any = await Wallet.findOne({ customer_id: req.customer.object_id }).select('id balance').lean();
+
+    //         if (results) {
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
     public async getWalletBalance(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getById]";
+            const fn = "[getWalletBalance]";
+
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const results: any = await Wallet.findOne({ customer_id: req.customer.object_id }).select('id balance').lean();
+            const customerId = req.customer.object_id;
 
-            if (results) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), results);
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            // Fetch both types
+            const wallets: any = await Wallet.find({
+                customer_id: customerId,
+                type: { $in: [0, 1] },
+            }).select('id balance type').lean();
+
+            // Prepare response
+            let balance = 0;
+            let promoBalance = 0;
+
+            for (const wallet of wallets) {
+                if (wallet.type === 0) balance = wallet.balance;
+                if (wallet.type === 1) promoBalance = wallet.balance;
             }
+
+            const response = {
+                balance,
+                promoBalance,
+            };
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-balance-fetched"]), response);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -265,24 +321,27 @@ export default class AccountController {
             const limitNumber = parseInt(limit as string) || 10;
 
             const skip = (pageNumber - 1) * limitNumber;
-
-            const result = await Transaction.find({ customer_id: req.customer.object_id })
-                .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber)
-                .lean();
+            const customerId = new mongoose.Types.ObjectId(req.customer.object_id);
+            // const results = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+            const result = await Transaction.aggregate([
+                { $match: { customer_id: customerId } },
+                { $sort: { id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                {
+                    $addFields: {
+                        created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                        created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                    },
+                },
+            ]);
 
             // Get the total number of documents in the Permissions collection
             const totalCount = await Transaction.countDocuments({});
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
-                    { result, totalPages }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { result, totalPages });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -292,41 +351,35 @@ export default class AccountController {
     }
 
     public async getInvoices(req: Request, res: Response): Promise<any> {
-    try {
-        const fn = "[getList]";
-        // Set locale
-        const { locale, page, limit, search } = req.query;
-        this.locale = (locale as string) || "en";
+        try {
+            const fn = "[getList]";
+            // Set locale
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
 
-        const pageNumber = parseInt(page as string) || 1;
-        const limitNumber = parseInt(limit as string) || 10;
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
 
-        const skip = (pageNumber - 1) * limitNumber;
+            const skip = (pageNumber - 1) * limitNumber;
 
-        const result = await Invoice.find({ customer_id: req.customer.object_id })
-            .sort({ id: -1 })
-            .skip(skip)
-            .limit(limitNumber)
-            .lean();
+            const result = await Invoice.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+            const formattedResults = result.map((item: any) => ({
+                ...item,
+                file:`${process.env.RESOURCE_URL}${item.file}`,
+            }));
+            // Get the total number of documents in the Permissions collection
+            const totalCount = await Invoice.countDocuments({});
 
-        // Get the total number of documents in the Permissions collection
-        const totalCount = await Invoice.countDocuments({});
-
-        if (result.length > 0) {
-            const totalPages = Math.ceil(totalCount / limitNumber);
-            return serverResponse(
-                res,
-                HttpCodeEnum.OK,
-                ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
-                { result, totalPages }
-            );
-        } else {
-            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            if (result.length > 0) {
+                const totalPages = Math.ceil(totalCount / limitNumber);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { results:formattedResults, totalPages });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    } catch (err: any) {
-        return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
     }
-}
     // Checked
     public async getTeamMemberList(req: Request, res: Response): Promise<any> {
         try {
@@ -349,7 +402,12 @@ export default class AccountController {
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["team-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["team-fetched"]), {
+                    data: results,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -368,7 +426,6 @@ export default class AccountController {
             const id = parseInt(req.params.id);
             const result: any = await Customer.findOne({ id: id }).lean();
 
-
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["team-fetched"]), result);
             } else {
@@ -386,16 +443,16 @@ export default class AccountController {
             this.locale = (locale as string) || "en";
 
             const { name, phone, email, designation } = req.body;
-            const existCustomer:any = await Customer.countDocuments({phone: phone});
-            if(existCustomer > 0){
-                return serverResponseHandler(res, HttpCodeEnum.OK,false, 'Phone No already exists', {});
+            const existCustomer: any = await Customer.countDocuments({ phone: phone });
+            if (existCustomer > 0) {
+                return serverResponseHandler(res, HttpCodeEnum.OK, false, "Phone No already exists", {});
             }
             const result: any = await Customer.create({
                 name: name,
                 phone: phone,
                 email: email,
                 designation: designation,
-                parent_id: req.customer.object_id
+                parent_id: req.customer.object_id,
             });
 
             if (result) {
@@ -425,8 +482,9 @@ export default class AccountController {
                     phone: phone,
                     email: email,
                     designation: designation,
-                    updated_by: req.customer.object_id
-                });
+                    updated_by: req.customer.object_id,
+                }
+            );
             // const watchlist = await Watchlist.find({ id });
 
             // watchlist[0].name = name;
@@ -456,7 +514,6 @@ export default class AccountController {
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
