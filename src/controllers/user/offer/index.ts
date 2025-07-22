@@ -30,7 +30,7 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } = req.body;
 
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
@@ -48,6 +48,8 @@ export default class OfferController {
                 state: state,
                 city: city,
                 product_id: product._id,
+                offer_price: offer_price,
+                moq: moq,
                 type: 0, //buy
                 status: 1,
                 created_by: req.customer.object_id,
@@ -66,24 +68,26 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } = req.body;
 
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.create({
-                offer_price: offer_price,
-                moq: moq,
+                target_price: target_price,
+                buy_quantity: buy_quantity,
                 brand: brand,
                 coo: coo,
                 pin_code: pin_code,
-                product_location: product_location,
                 individual_pack: individual_pack,
                 master_pack: master_pack,
+                product_location: product_location,
                 offer_validity: offer_validity,
                 publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
                 state: state,
                 city: city,
                 product_id: product._id,
+                offer_price: offer_price,
+                moq: moq,
                 type: 1, //sell
                 status: 1,
                 created_by: req.customer.object_id,
@@ -459,6 +463,7 @@ export default class OfferController {
             result = await UnlockOffers.create({
                 transaction_id: transaction._id,
                 price: amount,
+                commision:commission,
                 offer_id: offer._id,
                 offer_counter: offer.offer_counter,
                 status: 1,

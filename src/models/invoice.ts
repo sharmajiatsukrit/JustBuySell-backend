@@ -4,7 +4,6 @@ import { BillingAdressType } from "../interfaces";
 import { autoIncrement } from 'mongoose-plugin-autoinc';
 
 interface IInvoice extends Document {
-    sub_total_amount: string;
     total_amount: string;
     gst: string;
     invoice: string;
@@ -17,7 +16,6 @@ interface IInvoice extends Document {
 }
 
 const InvoiceSchema: Schema = new Schema({
-    sub_total_amount: { type: String, default: '', required: true },
     total_amount: { type: String, default: '', required: true },
     total_discount: { type: String, default: '', required: true },
     gst: { type: String, default: '' },
