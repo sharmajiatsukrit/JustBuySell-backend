@@ -2,15 +2,15 @@ import fs from "fs";
 import path from "path";
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-import numWords from 'num-words';
+import numWords from "num-words";
 dotenv.config();
 const uploadPath = process.env.UPLOAD_PATH;
 
 // Your HTML generation function remains the same
 export function generateInvoiceHtml(data: any): string {
-  const itemRows = data.transactions
-    .map((item: any) => {
-      return `
+    const itemRows = data.transactions
+        .map((item: any) => {
+            return `
         <tr>
           <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.item}</td>
           <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: left;">${item.dateOfTxn}</td>
@@ -18,10 +18,10 @@ export function generateInvoiceHtml(data: any): string {
           <td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: right;">₹${item.amount}</td>
         </tr>
       `;
-    })
-    .join("");
+        })
+        .join("");
 
-  return `
+    return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -120,26 +120,31 @@ export function generateInvoiceHtml(data: any): string {
 
             <!-- Summary -->
             <div style="padding: 4px 10px;">
-              <div style="display: flex; justify-content: space-between; font-family: Arial, sans-serif; font-size: 14px; margin-top: 20px;">
-                <div style="text-align: right;font-weight: bold; width: 100%;">
-                  <span style="margin-right: 8px">Total (in words):</span>
-                  <span>${amountInWords(data.totalAmount)}</span>
-                </div>
-              </div>
-
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; font-family: Arial, sans-serif; font-size: 14px;">
-                <div style="font-weight: bold; width: 70%;">
-                </div>
-                <div style="width: 30%;">
-                 ${generateSummaryRow("Total Amount", data.totalAmount, true)}
+            <table style="width: 100%; font-family: Arial, sans-serif; font-size: 14px; border-collapse: collapse;">
+              <tr>
+                <!-- Left cell: Total (in words) -->
+                <td style="padding: 8px 0; text-align: left; font-weight: bold; width: 70%; vertical-align: top;">
+                
+                  <span style="margin-right: 8px;">Total (in words):</span>
+                  <span>${amountInWords(data.subTotalAmount)}</span>
+                
+                </td>
+                <!-- Right cell: First summary item -->
+                <td style="width: 30%; vertical-align: top; padding: 8px 0;">
+                  <div style="display: flex; justify-content: space-between;font-weight: bold;">
+                    <span>Total Amount</span>
+                    <span>₹${data.subTotalAmount}</span>
+                  </div>
+                </td>
+              </tr>
                   ${generateSummaryRow("Discount Applied <br/>(- Free Credit)", data.totalDiscount)}
                   ${generateSummaryRow("Taxable Amount", data.totalTaxableAmount)}
                   ${data.cgstLabel ? generateSummaryRow("CGST (9%)", data.totalCGst) : ""}
                   ${data.sgstLabel ? generateSummaryRow("SGST (9%)", data.totalSGst) : ""}
-                  ${data.igstLabel ? generateSummaryRow("IGST (9%)", data.totalIGst) : ""}
+                  ${data.igstLabel ? generateSummaryRow("IGST (18%)", data.totalIGst) : ""}
                   ${generateSummaryRow("Total INR", data.totalAmount, true)}
-                </div>
-              </div>
+            </table>
+              <div style="clear: both;"></div>
             </div>
 
             <!-- Footer -->
@@ -164,44 +169,63 @@ export function generateInvoiceHtml(data: any): string {
   `;
 }
 function amountInWords(amount: string | number): string {
-  let num = Number(amount);
-  if (isNaN(num)) return '';
-  // Split into rupees and paise
-  const [rupees, paise] = num.toFixed(2).split(".");
-  let words = '';
-  if (Number(rupees) > 0) {
-    words += toTitleCase(numWords(Number(rupees))) + (Number(rupees) === 1 ? ' Rupee' : ' Rupees');
-  }
-  if (Number(paise) > 0) {
-    words += ' and ' + toTitleCase(numWords(Number(paise))) + (Number(paise) === 1 ? ' Paise' : ' Paise');
-  }
-  if (words) words += ' Only';
-  return words;
+    let num = Number(amount);
+    if (isNaN(num)) return "";
+    // Split into rupees and paise
+    const [rupees, paise] = num.toFixed(2).split(".");
+    let words = "";
+    const rupeeNum = Number(rupees);
+    const paiseNum = Number(paise);
+
+    if (rupeeNum > 0) {
+        words += toTitleCase(numWords(rupeeNum)) + (rupeeNum === 1 ? " Rupee" : " Rupees");
+    }
+    if (paiseNum > 0) {
+        // Only add 'and' if rupees part is present
+        if (words) {
+            words += " and ";
+        }
+        words += toTitleCase(numWords(paiseNum)) + (paiseNum === 1 ? " Paise" : " Paise");
+    }
+    if (words) {
+        words += " Only";
+    }
+    return words;
 }
+
 
 // Utility to format to Title Case with spaces
 function toTitleCase(str: string): string {
-  return str
-    .replace(/-/g, ' ')
-    .replace(/\s+/g, ' ')
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-    .trim();
+    return str
+        .replace(/-/g, " ")
+        .replace(/\s+/g, " ")
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+        .trim();
 }
 
 function generateSummaryRow(label: string, value: any, bold = false): string {
-  return `
+    return `
+   <tr style="${bold ? "font-weight: bold;" : ""}">
+                <td></td>
+                <td style="padding: 5px 0;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>${label}</span>
+                    <span>₹${value}</span>
+                  </div>
+                </td>
+              </tr>
     <div style="display: flex; justify-content: space-between; margin-top: 11px; ${bold ? "font-weight: bold;" : ""}">
-      <span style="width: 70%; text-align: right;margin-right:8px">${label}</span>
-      <span style="width: 28%;text-align: right;">₹${value}</span>
+      <span style="width: 70%; text-align: right;margin-right:8px"></span>
+      <span style="width: 28%;text-align: right;"></span>
     </div>
   `;
 }
 
 export async function generateInvoicePDF(data: any, filename: string) {
     try {
-      // console.log("Generating PDF for data:", data);
+        // console.log("Generating PDF for data:", data);
         // console.log(data);
         const htmlContent = generateInvoiceHtml(data);
         const browser = await puppeteer.launch({

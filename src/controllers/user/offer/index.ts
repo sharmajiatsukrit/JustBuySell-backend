@@ -329,26 +329,26 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
+            const { offer_price,target_price, buy_quantity, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
             const id = parseInt(req.params.id);
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.findOneAndUpdate(
                 { id: id },
                 {
-                   offer_price: offer_price,
-                    moq: moq,
                     brand: brand,
                     coo: coo,
                     pin_code: pin_code,
-                    product_location: product_location,
                     individual_pack: individual_pack,
                     master_pack: master_pack,
+                    product_location: product_location,
                     offer_validity: offer_validity,
                     publish_date: moment().format("YYYY-MM-DD HH:mm:ss"),
                     state: state,
                     city: city,
                     product_id: product._id,
+                    offer_price: offer_price,
+                    moq: moq,
                     type: 1, //sell
                     status: 1,
                     updated_by: req.customer.object_id,
@@ -497,7 +497,7 @@ export default class OfferController {
             }
 
             if (offer.type == 0) {
-                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
+                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 1 });
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

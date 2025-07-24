@@ -9,6 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import moment from "moment";
+import mongoose from "mongoose";
 // import moment from 'moment-timezone';
 // moment.tz.setDefault('Asia/Kolkata');
 
@@ -622,8 +623,9 @@ export default class DashboardController {
                 // Map offers to include rating count
                 const formattedResult = await Promise.all(
                     results.map(async (offer: any) => {
+                        const customerId = new mongoose.Types.ObjectId(offer.created_by?._id);
                         const ratingResult = await Rating.aggregate([
-                            { $match: { customer_id: offer.created_by } },
+                            { $match: { customer_id: customerId } },
                             {
                                 $group: {
                                     _id: "$offer_id",
@@ -813,8 +815,9 @@ export default class DashboardController {
                 // Format the results and add the rating count
                 const formattedResult = await Promise.all(
                     results.map(async (offer: any) => {
+                        const customerId = new mongoose.Types.ObjectId(offer.created_by?._id);
                         const ratingResult = await Rating.aggregate([
-                            { $match: { customer_id: offer.created_by } },
+                            { $match: { customer_id: customerId } },
                             {
                                 $group: {
                                     _id: "$offer_id",

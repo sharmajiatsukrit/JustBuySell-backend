@@ -84,7 +84,7 @@ export default class CronController {
 
             const startOfMonth = moment().startOf("month").toDate();
             const endOfMonth = moment().endOf("month").toDate();
-            const customers = await Customer.find({ id:163,is_gst_verified: true, status: 1 });
+            const customers = await Customer.find({ is_gst_verified: true, status: 1 });
             for (const customer of customers) {
                 const transactions = await Transaction.find({
                     customer_id: customer._id,
@@ -93,7 +93,7 @@ export default class CronController {
                     createdAt: { $gte: startOfMonth, $lte: endOfMonth },
                 });
                 if (transactions.length === 0) continue;
-                const totalAmount = transactions.reduce((sum: any, txn: any) => sum + ((Number(txn.amount) + Number(txn.discount))), 0);
+                const subTotalAmount = transactions.reduce((sum: any, txn: any) => sum + Number(txn.commission), 0);
                 const totalDiscount = transactions.reduce((sum: any, txn: any) => sum + Number(txn.discount), 0);
                 const totalGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.gst), 0);
                 const totalIGst = transactions.reduce((sum: any, txn: any) => sum + Number(txn.igst), 0);
@@ -105,7 +105,7 @@ export default class CronController {
                 const invoice = new Invoice({
                     customer_id: customer._id,
                     customerName: customer.name,
-                    total_amount: (totalAmount).toFixed(2),
+                    total_amount: ((subTotalAmount-totalDiscount)+totalGst).toFixed(2),
                     total_discount: totalDiscount.toFixed(2),
                     gst: totalGst.toFixed(2),
                     igst: totalIGst.toFixed(2),
@@ -140,7 +140,7 @@ export default class CronController {
                     transactions: transactions.map((txn: any, index) => ({
                         item: index + 1,
                         description: txn.remarks,
-                        amount: Number((txn.commission + txn.discount)-totalGst).toFixed(2),
+                        amount: Number(txn.commission).toFixed(2),
                         dateOfTxn: moment(txn.createdAt).utcOffset("+05:30").format("DD-MM-YYYY"),
                         gst: Number(txn.gst).toFixed(2),
                         igst: Number(txn.igst).toFixed(2),
@@ -151,9 +151,10 @@ export default class CronController {
                         offer_price: Number(txn.offer_price).toFixed(2),
                         particular: txn.particular,
                     })),
-                    totalAmount: Number(totalAmount-totalGst).toFixed(2),
+                    subTotalAmount: Number(subTotalAmount).toFixed(2),
                     totalDiscount: Number(totalDiscount).toFixed(2),
-                    totalTaxableAmount: Number(totalAmount-totalDiscount).toFixed(2),
+                    totalTaxableAmount: Number(subTotalAmount-totalDiscount).toFixed(2),
+                    totalAmount: Number((subTotalAmount-totalDiscount)+totalGst).toFixed(2),
                     gstLabel: sameState ? `CGST:(9%) SGST:(9%)` : " IGST:(18%) ",
                     igstLabel: !sameState ? `IGST(18%)` : false,
                     cgstLabel: sameState ? `CGST:(9%)` : false,
