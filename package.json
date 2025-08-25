@@ -38,7 +38,7 @@
         "number-to-words": "^1.2.4",
         "path": "^0.12.7",
         "pinnacle_sms_plugin": "^1.0.2",
-        "puppeteer": "^24.12.1",
+        "puppeteer": "^24.17.0",
         "razorpay": "^2.9.5",
         "stripe": "^12.17.0",
         "ua-parser-js": "^1.0.35",
