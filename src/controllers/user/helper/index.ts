@@ -244,7 +244,6 @@ export default class HelperController {
                 // console.log(response.data.data.basicDetails);
                 console.log(otp);
                 // console.log(response.data.data);
-
                 const mail = await sendMail(response.data.data.basicDetails.email,'Verify your GST',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,[])
                 const mess = await sendSMS(phone,`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
                 const mess3 = await sendSMS('8319116594',`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
@@ -257,22 +256,38 @@ export default class HelperController {
         //     return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         // }
     }
-
+   
     public async verifyGSTOTP(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[verifyOtpForForgetPassword]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
+    try {
+        const fn = "[verifyOtpForForgetPassword]";
+        // Set locale
+        const { locale } = req.query;
+        this.locale = (locale as string) || "en";
 
-            // Req Body
-            const { gst, otp,trade_name, leagal_name,address_line_1,landmark } = req.body;
-            const verifyOtp = await this.verifyOtp(req.customer.user_id, otp);
-            
-            if (!verifyOtp) {
-                throw new Error(constructResponseMsg(this.locale, "in-otp"));
-            }else{
-                let result: any = await Customer.findOneAndUpdate(
+        // Req Body
+        const { gst, otp, trade_name, leagal_name, address_line_1, landmark } = req.body;
+
+        // Check if GST already exists for another verified user
+        const gstExists = await Customer.findOne({
+            gst: gst,
+            is_gst_verified: true,
+        });
+
+        if (gstExists) {
+            return serverResponse(
+                res,
+                HttpCodeEnum.BADREQUEST,
+                "User already exists with this GST",
+                {}
+            );
+        }
+
+        // Verify OTP
+        const verifyOtp = await this.verifyOtp(req.customer.user_id, otp);
+        if (!verifyOtp) {
+            throw new Error(constructResponseMsg(this.locale, "in-otp"));
+        } else {
+            await Customer.findOneAndUpdate(
                 { id: req.customer.user_id },
                 {
                     gst: gst,
@@ -282,16 +297,27 @@ export default class HelperController {
                     landmark: landmark,
                     is_gst_verified: true,
                     updated_by: req.customer.object_id
-                });
-                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), {});
-            }
-
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+                }
+            );
+            return serverResponse(
+                res,
+                HttpCodeEnum.OK,
+                constructResponseMsg(this.locale, "otp-verified"),
+                {}
+            );
         }
+    } catch (err: any) {
+        return serverErrorHandler(
+            err,
+            res,
+            err.message,
+            HttpCodeEnum.SERVERERROR,
+            {}
+        );
     }
+}
 
-    // Checked with encryption
+    
     private async verifyOtp(userId: number, otp: number): Promise<boolean> {
         const otpFromDB = await Otps.findOne({ user_id: userId }).lean();
 

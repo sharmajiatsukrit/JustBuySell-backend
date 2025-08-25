@@ -27,7 +27,7 @@ export default class TransactionController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit, search, customer_id, start_date, end_date } = req.query;
+            const { locale, page, limit, search, customer_id, start_date, end_date, type, status } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
@@ -52,7 +52,24 @@ export default class TransactionController {
                     $lte: new Date(end_date as string),
                 };
             }
-           
+            if (type) {
+                const typeNumber = Number(type);
+                
+                if (typeNumber === 1) {// Debit
+                    console.log(typeNumber,"Debit")
+                    filter.status = 1;
+                    filter.transaction_type = 1;
+                } else if (typeNumber === 2) {// Credit
+                    console.log(typeNumber,"Cebit")
+                    filter.status = 1;
+                    filter.transaction_type = 0;
+                }
+            }
+            if(status){
+
+            }
+            console.log(filter)
+
             const results = await Transaction.aggregate([
                 { $match: filter },
                 { $sort: { _id: -1 } },
@@ -68,10 +85,10 @@ export default class TransactionController {
                         },
                     },
                 },
-               
+
                 {
                     $lookup: {
-                        from: "customers", 
+                        from: "customers",
                         localField: "customer_id",
                         foreignField: "_id",
                         as: "customer_id",
@@ -150,11 +167,29 @@ export default class TransactionController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Transaction.findOne({ id: id }).populate("customer_id").lean();
-            // console.log(result);
+            const result: any = await Transaction.aggregate([
+                { $match: { id: id } },
+                {
+                    $addFields: {
+                        created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                        created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+            ]);
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result[0]);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
