@@ -134,7 +134,7 @@ export default class AuthController {
         const minNo = 100000;
         const maxNo = 999999;
         let otp:any;
-        if(userId == 147){
+        if(userId == 202){
             otp = "654321";
         }else{
             otp = Math.floor(Math.random() * (maxNo - minNo + 1)) + minNo; 
