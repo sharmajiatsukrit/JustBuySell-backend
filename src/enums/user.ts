@@ -1,5 +1,5 @@
 export enum UserAccountStatus {
-    Default = 0,
+    Default = 0, // this is inactive case
     Active = 1,
     Deactive = 2,
     Blocked = 3,

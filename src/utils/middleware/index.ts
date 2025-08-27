@@ -63,9 +63,9 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
             session_id: decoded.session_id,
             user_id: decoded.user_id,
         };
+        
 
         const tokenSessionData: SessionManageData = await fetchSessionlogin(sessionFetchData);
-
         if (tokenSessionData.status === UserAccountStatus.Blocked) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-bc"]));
         }
@@ -73,8 +73,8 @@ async function authRequest(req: Request, res: Response, next: NextFunction): Pro
         if (tokenSessionData.status === UserAccountStatus.SoftDeleted) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-dl"]));
         }
-
-        if (!tokenSessionData.is_valid) {
+        // tokenSessionData.status === UserAccountStatus.Default this condition is when admin make customer account Inactive
+        if (!tokenSessionData.is_valid||tokenSessionData.status === UserAccountStatus.Default) {
             throw new Error(ServerMessages.errorMsgLocale(language, ServerMessagesEnum["user-ua"]));
         }
 

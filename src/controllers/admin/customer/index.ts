@@ -414,7 +414,7 @@ export default class CustomerController {
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
             
-            const customerId = customer.object_id;
+            const customerId = customer._id;
             const wallets: any = await Wallet.find({
                 customer_id: customerId,
                 type: { $in: [0, 1] },

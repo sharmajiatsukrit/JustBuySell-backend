@@ -497,7 +497,7 @@ export default class OfferController {
             }
 
             if (offer.type == 0) {
-                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 1 });
+                const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

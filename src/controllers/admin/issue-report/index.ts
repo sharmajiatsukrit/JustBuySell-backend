@@ -65,7 +65,7 @@ export default class UnitController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await ReportIssues.findOne({ id: id }).lean();
+            const result: any = await ReportIssues.findOne({ id: id }).lean().populate("created_by");
             
 
             if (result) {
