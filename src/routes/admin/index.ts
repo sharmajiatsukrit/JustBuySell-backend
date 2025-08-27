@@ -23,7 +23,7 @@ import Faq from "./faq";
 import Setting from "./setting";
 import BugReport from "./issue-report";
 import Report from "./report";
-
+import NotificationTemplatesRoutes from "./notification-templates";
 const routes: Router = expres.Router();
 routes.use("/auth", AuthRoutes);
 routes.use("/users", UsersRoutes);
@@ -48,5 +48,5 @@ routes.use("/faq", Faq);
 routes.use("/setting", Setting);
 routes.use("/issue-report", BugReport);
 routes.use("/reports", Report);
-
+routes.use("/notification-template", NotificationTemplatesRoutes);
 export default routes;
