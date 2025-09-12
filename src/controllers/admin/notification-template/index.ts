@@ -10,6 +10,7 @@ import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import NotificationTemplate from "../../../models/notification-template";
 
+
 const fileName = "[admin][permission][index.ts]";
 export default class PermissionController {
     public locale: string = "en";
@@ -23,7 +24,6 @@ export default class PermissionController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
@@ -36,29 +36,23 @@ export default class PermissionController {
             const limitNumber = parseInt(limit as string) || 5;
 
             const skip = (pageNumber - 1) * limitNumber;
-            const filter:any = {};
+            const filter: any = {};
             if (search) {
-                filter.$or = [
-                    { name: { $regex: search, $options: 'i' } }
-                ];
+                filter.$or = [{ name: { $regex: search, $options: "i" } }];
             }
-            const result = await NotificationTemplate.find(filter)
-                .sort({ id: -1 })
-                .skip(skip)
-                .limit(limitNumber)
-                .lean();
+            const result = await NotificationTemplate.find(filter).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
 
             // Get the total number of documents in the Permissions collection
             const totalCount = await NotificationTemplate.countDocuments(filter);
-
+            
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]),
-                    { data: result, totalCount, totalPages, currentPage: pageNumber }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]), {
+                    data: result,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -66,7 +60,6 @@ export default class PermissionController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     // Checked
     public async getById(req: Request, res: Response): Promise<any> {
@@ -98,18 +91,24 @@ export default class PermissionController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, content, type } = req.body;
+            const { name, is_sms, sms_content, is_email, email_content, is_firebase, firebase_content, is_whatsapp, whatsapp_content, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
 
             let result: any;
 
             result = await NotificationTemplate.create({
-                name: name,
-                content: content,
-                type: type,
-                created_by: req.user.object_id
+                name,
+                is_sms,
+                sms_content,
+                is_email,
+                email_content,
+                is_firebase,
+                firebase_content,
+                is_whatsapp,
+                whatsapp_content,
+                status,
+                created_by: req.user.object_id,
             });
-
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "permission-add"), result.doc);
         } catch (err: any) {
@@ -128,16 +127,24 @@ export default class PermissionController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, content, type } = req.body;
+            const { name, is_sms, sms_content, is_email, email_content, is_firebase, firebase_content, is_whatsapp, whatsapp_content, status } = req.body;
 
             let result: any = await NotificationTemplate.findOneAndUpdate(
                 { id: id },
                 {
-                    name: name,
-                    content: content,
-                    type: type,
-                    updated_by: req.user.object_id
-                });
+                    name,
+                    is_sms,
+                    sms_content,
+                    is_email,
+                    email_content,
+                    is_firebase,
+                    firebase_content,
+                    is_whatsapp,
+                    whatsapp_content,
+                    status,
+                    updated_by: req.user.object_id,
+                }
+            );
 
             const updatedData: any = await NotificationTemplate.find({ id: id }).lean();
 
@@ -189,5 +196,4 @@ export default class PermissionController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 }

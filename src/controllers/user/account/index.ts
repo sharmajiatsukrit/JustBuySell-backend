@@ -69,6 +69,7 @@ export default class AccountController {
                 open_time,
                 close_time,
                 parent_id,
+                whatapp_num,
                 status,
             } = req.body;
             // let checkGSt: any = await Customer.countDocuments({gst:gst,_id: { $ne: req.customer.object_id }});
@@ -94,12 +95,17 @@ export default class AccountController {
                     pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
+                    whatapp_num,
                     status: status,
                 }
             );
+            const gstExists = await Customer.find({
+                gst: result?.gst,
+                is_gst_verified: true,
+            });
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
-            if (!checkTransaction) {
-                const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
+            const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
+            if (!checkTransaction && gstExists?.length === 1) {
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
                     type: 1,
@@ -217,7 +223,7 @@ export default class AccountController {
                 );
                 return serverResponseHandler(res, HttpCodeEnum.OK, false, "Transaction Cancelled/Rejected", {});
             } else {
-                const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id, type: 0 }).lean(); //type 0 means real wallet
+                const existing: any = await Wallet.findOne({ customer_id: req.customer.object_id, type: 0 }).lean();
 
                 if (existing) {
                     const result: any = await Wallet.findOneAndUpdate(
@@ -288,7 +294,9 @@ export default class AccountController {
             const wallets: any = await Wallet.find({
                 customer_id: customerId,
                 type: { $in: [0, 1] },
-            }).select('id balance type').lean();
+            })
+                .select("id balance type")
+                .lean();
 
             // Prepare response
             let balance = 0;
@@ -310,34 +318,80 @@ export default class AccountController {
     }
 
     // Checked
+    // public async getTransactions(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getList]";
+    //         // Set locale
+    //         const { locale, page, limit, search } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const pageNumber = parseInt(page as string) || 1;
+    //         const limitNumber = parseInt(limit as string) || 10;
+
+    //         const skip = (pageNumber - 1) * limitNumber;
+    //         const customerId = new mongoose.Types.ObjectId(req.customer.object_id);
+    //         // const results = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+    //         const result = await Transaction.aggregate([
+    //             { $match: { customer_id: customerId } },
+    //             { $sort: { id: -1 } },
+    //             { $skip: skip },
+    //             { $limit: limitNumber },
+    //             {
+    //                 $addFields: {
+    //                     created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+    //                     created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
+    //                 },
+    //             },
+    //         ]);
+
+    //         // Get the total number of documents in the Permissions collection
+    //         const totalCount = await Transaction.countDocuments({});
+
+    //         if (result.length > 0) {
+    //             const totalPages = Math.ceil(totalCount / limitNumber);
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { result, totalPages });
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
     public async getTransactions(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
-            // Set locale
             const { locale, page, limit, search } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
-
             const skip = (pageNumber - 1) * limitNumber;
             const customerId = new mongoose.Types.ObjectId(req.customer.object_id);
-            // const results = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
+
             const result = await Transaction.aggregate([
-                { $match: { customer_id: customerId } },
+                { $match: { customer_id: customerId, status: { $ne: 2 } } },
                 { $sort: { id: -1 } },
                 { $skip: skip },
                 { $limit: limitNumber },
                 {
                     $addFields: {
+                        transaction_id: {
+                            $cond: {
+                                if: {
+                                    $or: [{ $eq: ["$transaction_id", null] }, { $eq: ["$transaction_id", ""] }, { $eq: [{ $type: "$transaction_id" }, "missing"] }],
+                                },
+                                then: { $toString: "$_id" },
+                                else: "$transaction_id",
+                            },
+                        },
                         created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
                         created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
                     },
                 },
             ]);
 
-            // Get the total number of documents in the Permissions collection
-            const totalCount = await Transaction.countDocuments({});
+            const totalCount = await Transaction.countDocuments({ customer_id: customerId });
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
@@ -365,14 +419,17 @@ export default class AccountController {
             const result = await Invoice.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
             const formattedResults = result.map((item: any) => ({
                 ...item,
-                file:`${process.env.RESOURCE_URL}${item.file}`,
+                file: `${process.env.RESOURCE_URL}${item.file}`,
             }));
             // Get the total number of documents in the Permissions collection
             const totalCount = await Invoice.countDocuments({});
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { results:formattedResults, totalPages });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), {
+                    results: formattedResults,
+                    totalPages,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

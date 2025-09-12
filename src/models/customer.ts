@@ -44,6 +44,7 @@ const customerSchema: Schema = new Schema({
     gst: { type: String, default: '' },
     is_gst_verified: { type: Boolean, default: false },
     telephone: { type: String, default: '' },
+    whatapp_num: { type: String, default: '' },
     company_email: { type: String, default: '' },
     address_line_1: { type: String, default: '' },
     landmark: { type: String, default: '' },

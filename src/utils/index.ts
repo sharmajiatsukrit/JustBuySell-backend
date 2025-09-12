@@ -9,6 +9,8 @@ import crypto from "crypto";
 import ServerMessages from "../config/messages";
 import { MessageKey } from "../config/messages/msgkey";
 import Logger from '../utils/logger';
+import { Deviceid, Notifications } from "../models";
+import admin from 'firebase-admin';
 
 function serverResponse(response: Response, code: number, message: string, result: Array<Object> | Object): Response<any> {
     const formattedData = camelcase(result, { deep: true });
@@ -170,6 +172,59 @@ function groupByDate(input: any) {
     return output;
 };
 
+// Ensure Firebase Admin is initialized only once
+if (!admin.apps.length) {
+    const serviceAccount = require("../../serviceAccountKey.json");
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+}
+async function firebaseNotification(title: string,body:string,fcmToken:string) {
+    try {
+        // Define the message payload
+        const message = {
+            notification: {
+            title,
+            body,
+            },
+            token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(message);
+        console.log(response);
+        
+    } catch (err: any) {
+        return Promise.reject(err);
+    }
+}
+
+async function triggerNotifications(title: string,body:string,UserObjectID:string){
+    const Devices:any = await Deviceid.find({employee_id:UserObjectID}).lean();
+    
+    const result:any = await Notifications.create({
+        employee_id: UserObjectID,
+        title: title,
+        message: body
+    });
+    // console.log("lengt",Devices,UserObjectID);
+    if(Devices.length === 0 || Devices.length == undefined){
+        console.log(`No devices found.`);
+        return;
+    }
+    // Retrieve all devices for the given user_id
+    const tokens = Devices.map((device:any) => device.device_id);
+
+    if (tokens.length === 0) {
+      console.log(`No devices found.`);
+    }
+
+    // Send notification to each FCM token
+    for (const token of tokens) {
+        await firebaseNotification(title,body,token);
+    }
+    
+}
+
 async function firebaseUrlShortner(url: string) {
     try {
         const firebaseRequestUrl = `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${process.env.FIREBASE_API_KEY}`;
@@ -234,5 +289,7 @@ export {
     encryptTextInternal,
     decryptTextInternal,
     firebaseUrlShortner,
+    firebaseNotification,
+    triggerNotifications,
     verificationCheck
 };

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 // import moment from "moment";
-import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet } from "../../../models";
+import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet, Customer } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -9,6 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import moment from "moment-timezone";
+import { prepareNotificationData } from "../../../utils/notification-center";
 moment.tz.setDefault("Asia/Kolkata");
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
@@ -440,10 +441,11 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const { offer_id, commission, amount, gst, sgst, cgst, igst, particular, offer_price, discount } = req.body;
-            console.log("******************",req.body,"*******************************")
             let result: any;
             const offer: any = await Offers.findOne({ id: offer_id }).lean();
-
+            const sellerData: any = await Customer.findOne({ _id: offer?.created_by });
+            const buyerData: any = await Customer.findOne({ _id: req.customer.object_id });
+            
             const transaction: any = await Transaction.create({
                 amount, // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
                 gst,
@@ -497,7 +499,11 @@ export default class OfferController {
             }
 
             if (offer.type == 0) {
+                prepareNotificationData({sellerData:sellerData,buyerData:buyerData,tmplt_name:"seller_opened_buyer_offer"})
                 const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
+
+            }if(offer.type == 1){
+                prepareNotificationData({sellerData:buyerData,buyerData:sellerData,tmplt_name:"buyer_opened_seller_offer"})
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

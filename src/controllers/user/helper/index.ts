@@ -2,14 +2,14 @@ import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
 import Bcrypt from "bcryptjs";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating,Setting, Attribute, AttributeItem, Otps } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating, Setting, Attribute, AttributeItem, Otps } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-import { networkRequest } from '../../../utils/request'
+import { networkRequest } from "../../../utils/request";
 import { sendSMS } from "../../../utils/pinnacle";
 import { sendMail } from "../../../utils/mail";
 
@@ -26,7 +26,6 @@ export default class HelperController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getMyProfile(req: Request, res: Response): Promise<any> {
         try {
@@ -37,7 +36,6 @@ export default class HelperController {
 
             const results: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
             if (results.company_logo.length) {
-
             }
             if (results) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-fetched"]), results);
@@ -56,15 +54,23 @@ export default class HelperController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { 
-                name, 
-                selling_unit_id,selling_unit,
-                individual_pack_size_id, individual_pack_size,
-                individual_pack_unit_id, individual_pack_unit,
-                individual_packing_type_id, individual_packing_type, 
-                master_pack_qty,master_pack_type_id, 
-                conversion_unit_id, conversion_unit, conversion_unit_rate,
-                master_pack_type, description 
+            const {
+                name,
+                selling_unit_id,
+                selling_unit,
+                individual_pack_size_id,
+                individual_pack_size,
+                individual_pack_unit_id,
+                individual_pack_unit,
+                individual_packing_type_id,
+                individual_packing_type,
+                master_pack_qty,
+                master_pack_type_id,
+                conversion_unit_id,
+                conversion_unit,
+                conversion_unit_rate,
+                master_pack_type,
+                description,
             } = req.body;
             let product_image: any;
             if (req.file) {
@@ -91,7 +97,7 @@ export default class HelperController {
                 conversion_unit: conversion_unit,
                 conversion_unit_rate: conversion_unit_rate,
                 product_image: product_image,
-                created_by: req.customer.object_id
+                created_by: req.customer.object_id,
             });
 
             if (result) {
@@ -120,7 +126,7 @@ export default class HelperController {
             const result: any = await WatchlistItem.create({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
-                customer_id: req.customer.object_id
+                customer_id: req.customer.object_id,
             });
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["watchlist-item-add"]), {});
@@ -152,7 +158,7 @@ export default class HelperController {
             const result = await WatchlistItem.deleteOne({
                 product_id: product._id,
                 watchlist_id: watchlist._id,
-                customer_id: req.customer.object_id
+                customer_id: req.customer.object_id,
             });
 
             if (result) {
@@ -180,10 +186,7 @@ export default class HelperController {
             if (!category_id) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-            const results: any = await Product.find({ status: true, category_id: category_id._id }).lean()
-                .skip(skip)
-                .limit(limitNumber)
-                .sort({ id: -1 });
+            const results: any = await Product.find({ status: true, category_id: category_id._id }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
@@ -191,9 +194,14 @@ export default class HelperController {
                     id: item.id,
                     name: item.name,
                     description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
                 }));
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: formattedResult, totalPages, totalCount, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                    data: formattedResult,
+                    totalPages,
+                    totalCount,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -202,130 +210,132 @@ export default class HelperController {
         }
     }
 
-
     // Checked
     public async getGSTDetails(req: Request, res: Response): Promise<any> {
-        // try {
+        try {
             const fn = "[getGSTDetails]";
             // Set locale
             const { locale, page, limit } = req.query;
             this.locale = (locale as string) || "en";
             const gst = req.params.gst;
-            const body:any = {
-                                "requestid": `'${moment().unix()}'`,
-                                "gstNumber": gst,
-                                "hsnDetails": false,
-                                "branchDetails": true,
-                                "filingDetails": false,
-                                "filingFrequency": false,
-                                "liabilityPaidDetails": false,
-                                "contact":true
-                            };
-            const headers = {token:process.env.GSTTOKEN,secretkey:process.env.GSTSECRET}
+            const body: any = {
+                requestid: `'${moment().unix()}'`,
+                gstNumber: gst,
+                hsnDetails: false,
+                branchDetails: true,
+                filingDetails: false,
+                filingFrequency: false,
+                liabilityPaidDetails: false,
+                contact: true,
+            };
+            const headers = { token: process.env.GSTTOKEN, secretkey: process.env.GSTSECRET };
             // console.log(process.env.GSTINCHECK_APIKEY);
             // const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`,{},{});
-            const response = await networkRequest("POST", `https://api.rpacpc.com/services/get-gst-details`,body,headers);
+            const response = await networkRequest("POST", `https://api.rpacpc.com/services/get-gst-details`, body, headers);
+            console.log(response?.data, "gstDetals");
             // console.log(response.data.status);
-            if (response.data.status == 'SUCCESS') {
-                const ResultData:any = {
-                    "leagal_name":response.data.data.basicDetails.Legal_Name,
-                    "gstin":response.data.data.basicDetails.gstin,
-                    "registration_date":response.data.data.basicDetails.registrationDate,
-                    "permanent_address":response.data.data.branchDetails.permanentAdd.address,
-                    "addr":response.data.data.branchDetails.permanentAdd.address,
-                    "trade_name":response.data.data.basicDetails.tradeNam,
-                    "phone":response.data.data.basicDetails.mobile,
-                    "email":response.data.data.basicDetails.email,
-                }
-                const phone:any = parseInt(response.data.data.basicDetails.mobile);
+            if (response.data.status == "SUCCESS") {
+                const ResultData: any = {
+                    leagal_name: response.data.data.basicDetails.Legal_Name,
+                    gstin: response.data.data.basicDetails.gstin,
+                    registration_date: response.data.data.basicDetails.registrationDate,
+                    permanent_address: response.data.data.branchDetails.permanentAdd.address,
+                    addr: response.data.data.branchDetails.permanentAdd.address,
+                    trade_name: response.data.data.basicDetails.tradeNam,
+                    phone: response.data.data.basicDetails.mobile,
+                    email: response.data.data.basicDetails.email,
+                };
+                const phone: any = parseInt(response.data.data.basicDetails.mobile);
                 // const phone:any = parseInt('9711150083');
                 // const email = response.data.data.basicDetails.email;
                 const otp = await this.generateOtp(req.customer.user_id);
                 // console.log(response.data.data.basicDetails);
                 console.log(otp);
                 // console.log(response.data.data);
-                const mail = await sendMail(response.data.data.basicDetails.email,'Verify your GST',`${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,[])
-                const mess = await sendSMS(phone,`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
-                const mess3 = await sendSMS('8319116594',`${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,"1107175050790786232");
+                const mail = await sendMail(
+                    response.data.data.basicDetails.email,
+                    "Verify your GST",
+                    `${otp} is OTP for JustBuySell login. Keep this code secure and do not share it with anyone.`,
+                    []
+                );
+                const mess = await sendSMS(
+                    phone,
+                    `${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,
+                    "1107175050790786232"
+                );
+                const mess3 = await sendSMS(
+                    "8319116594",
+                    `${otp} is OTP for GST verification at JustBuySell app. Keep this code secure and do not share it with anyone.`,
+                    "1107175050790786232"
+                );
                 // console.log("ss",mess);
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["gst-fetched"]), ResultData);
             } else {
                 throw new Error(response.data.message);
             }
-        // } catch (err: any) {
-        //     return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        // }
+        } catch (err: any) {
+            console.log(err, "err gst");
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
     }
-   
+
     public async verifyGSTOTP(req: Request, res: Response): Promise<any> {
-    try {
-        const fn = "[verifyOtpForForgetPassword]";
-        // Set locale
-        const { locale } = req.query;
-        this.locale = (locale as string) || "en";
+        try {
+            const fn = "[verifyOtpForForgetPassword]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
 
-        // Req Body
-        const { gst, otp, trade_name, leagal_name, address_line_1, landmark } = req.body;
+            // Req Body
+            const { gst, otp, trade_name, leagal_name, address_line_1, landmark } = req.body;
+            const settingRes: any = await Setting.findOne({ key: "customer_settings" }).select("value").lean();
+            // Check if GST already exists for another verified user
+            const gstExists = await Customer.findOne({
+                gst: gst,
+                is_gst_verified: true,
+            });
 
-        // Check if GST already exists for another verified user
-        const gstExists = await Customer.findOne({
-            gst: gst,
-            is_gst_verified: true,
-        });
-
-        if (gstExists) {
-            return serverResponse(
-                res,
-                HttpCodeEnum.BADREQUEST,
-                "User already exists with this GST",
-                {}
-            );
-        }
-
-        // Verify OTP
-        const verifyOtp = await this.verifyOtp(req.customer.user_id, otp);
-        if (!verifyOtp) {
-            throw new Error(constructResponseMsg(this.locale, "in-otp"));
-        } else {
-            await Customer.findOneAndUpdate(
-                { id: req.customer.user_id },
-                {
-                    gst: gst,
-                    trade_name: trade_name,
-                    leagal_name: leagal_name,
-                    address_line_1: address_line_1,
-                    landmark: landmark,
-                    is_gst_verified: true,
-                    updated_by: req.customer.object_id
+            // Verify OTP
+            const verifyOtp = await this.verifyOtp(req.customer.user_id, otp);
+            if (!verifyOtp) {
+                throw new Error(constructResponseMsg(this.locale, "in-otp"));
+            } else {
+                await Customer.findOneAndUpdate(
+                    { id: req.customer.user_id },
+                    {
+                        gst: gst,
+                        trade_name: trade_name,
+                        leagal_name: leagal_name,
+                        address_line_1: address_line_1,
+                        landmark: landmark,
+                        is_gst_verified: true,
+                        updated_by: req.customer.object_id,
+                    }
+                );
+                if (gstExists) {
+                    return serverResponse(
+                        res,
+                        HttpCodeEnum.OK,
+                        `The free amount of ₹${settingRes?.value?.new_registration_topup} has already been availed under this GST number.`,
+                        {
+                            status: false,
+                        }
+                    );
                 }
-            );
-            return serverResponse(
-                res,
-                HttpCodeEnum.OK,
-                constructResponseMsg(this.locale, "otp-verified"),
-                {}
-            );
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "otp-verified"), {});
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
-    } catch (err: any) {
-        return serverErrorHandler(
-            err,
-            res,
-            err.message,
-            HttpCodeEnum.SERVERERROR,
-            {}
-        );
     }
-}
 
-    
     private async verifyOtp(userId: number, otp: number): Promise<boolean> {
         const otpFromDB = await Otps.findOne({ user_id: userId }).lean();
 
         if (!otpFromDB) {
             return Promise.resolve(false);
         }
-        const isValidOtp = moment(otpFromDB.valid_till).diff(moment(), 'minutes') > 0 && await Bcrypt.compare(otp.toString(), otpFromDB.otp);
-
+        const isValidOtp = moment(otpFromDB.valid_till).diff(moment(), "minutes") > 0 && (await Bcrypt.compare(otp.toString(), otpFromDB.otp));
         if (!isValidOtp) {
             return Promise.resolve(false);
         }
@@ -342,19 +352,22 @@ export default class HelperController {
 
         const isOTPExist = await Otps.where({ user_id: userId }).countDocuments();
 
-        const otpValidDate = moment().add(10, 'minutes');
+        const otpValidDate = moment().add(10, "minutes");
         // networkRequest('POST', url: string, data = {}, headers = {});
         if (!isOTPExist) {
             await Otps.create({
                 user_id: userId,
                 otp: hashedOtp,
-                valid_till: otpValidDate
+                valid_till: otpValidDate,
             });
         } else {
-            await Otps.findOneAndUpdate({ user_id: userId }, {
-                otp: hashedOtp,
-                valid_till: otpValidDate
-            });
+            await Otps.findOneAndUpdate(
+                { user_id: userId },
+                {
+                    otp: hashedOtp,
+                    valid_till: otpValidDate,
+                }
+            );
         }
 
         return Promise.resolve(otp);
@@ -372,13 +385,16 @@ export default class HelperController {
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
             // console.log(customer);
-            const data:any = {};
+            const data: any = {};
             data.customer = customer;
-            const results: any = await Rating.find({ customer_id: customer._id }).lean()
+            const results: any = await Rating.find({ customer_id: customer._id })
+                .lean()
                 .skip(skip)
                 .limit(limitNumber)
-                .sort({ id: -1 }).populate("customer_id").populate("created_by");
-            const totalCount = await Rating.countDocuments({ customer_id: customer._id,status: true });
+                .sort({ id: -1 })
+                .populate("customer_id")
+                .populate("created_by");
+            const totalCount = await Rating.countDocuments({ customer_id: customer._id, status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
                 // const formattedResult = results.map((item: any) => ({
@@ -389,7 +405,12 @@ export default class HelperController {
                 // }));
                 // data.rating_count =totalCount;
                 data.ratings = results;
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), { data: data, totalPages, totalCount, currentPage: pageNumber });
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                    data: data,
+                    totalPages,
+                    totalCount,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -398,38 +419,38 @@ export default class HelperController {
         }
     }
 
-
-
     // Checked
     public async getProfileCompleteness(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getProfileCompleteness]";
             // Set locale
-            const { locale} = req.query;
+            const { locale } = req.query;
             this.locale = (locale as string) || "en";
-           
+
             const customer: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
             // console.log(customer);
             if (customer) {
-                const requiredFields = ['name', 'phone', 'email', 'trade_name', 'leagal_name','gst','is_gst_verified','address_line_1'];
+                const requiredFields = ["name", "phone", "email", "trade_name", "leagal_name", "gst", "is_gst_verified", "address_line_1"];
                 let filledCount = 0;
-                
+
                 // Check how many required fields are filled in the customer's profile
-                requiredFields.forEach(field => {
-                    if (customer[field] && customer[field].toString().trim() !== '') {
+                requiredFields.forEach((field) => {
+                    if (customer[field] && customer[field].toString().trim() !== "") {
                         filledCount++;
                     }
                 });
-                
+
                 // Calculate completeness percentage
                 const completenessPercentage = (filledCount / requiredFields.length) * 100;
                 const isComplete = completenessPercentage === 100;
-                const settings:any = await Setting.findOne({ key: "customer_settings" }).lean();
-                const message:any = isComplete ? `Profile Completed` : `Dear User,
+                const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
+                const message: any = isComplete
+                    ? `Profile Completed`
+                    : `Dear User,
 Complete your profile and receive Rs. ${settings.value.new_registration_topup} in your wallet for FREE! Use this amount to unlock leads on our platform.`;
                 return serverResponse(res, HttpCodeEnum.OK, message, {
-                    percentage: completenessPercentage.toFixed(2) + '%',
-                    isComplete: isComplete // true if 100%, false otherwise
+                    percentage: completenessPercentage.toFixed(2) + "%",
+                    isComplete: isComplete, // true if 100%, false otherwise
                 });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
@@ -444,20 +465,24 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
         try {
             const fn = "[getTaxCommission]";
             // Set locale
-            const { locale} = req.query;
+            const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const id = parseInt(req.params.id);
-            const category:any = await Category.findOne({id:id}).lean(); 
-            const customer:any = await Customer.findOne({_id:req.customer.object_id}).lean(); 
+            const category: any = await Category.findOne({ id: id }).lean();
+            const customer: any = await Customer.findOne({ _id: req.customer.object_id }).lean();
             const sameState = customer?.gst?.substring(0, 2) === "07AAOCS3727K1ZV"?.substring(0, 2);
             const result: any = await Setting.findOne({ key: "customer_settings" }).lean();
 
             const taxCommission = {
-                gst:result.value.gst,
-                igst:!sameState?result.value.igst:0,
-                cgst:sameState?result.value.cgst:0,
-                sgst:sameState?result.value.sgst:0,
-                admin_commission:customer.admin_commission ? Number(customer.admin_commission) : (category.commission ? Number(category.commission):  Number(result.value.admin_commission))
+                gst: result.value.gst,
+                igst: !sameState ? result.value.igst : 0,
+                cgst: sameState ? result.value.cgst : 0,
+                sgst: sameState ? result.value.sgst : 0,
+                admin_commission: customer.admin_commission
+                    ? Number(customer.admin_commission)
+                    : category.commission
+                      ? Number(category.commission)
+                      : Number(result.value.admin_commission),
             };
             if (taxCommission) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), taxCommission);
@@ -469,27 +494,26 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
         }
     }
 
-
     // Checked
     public async getPRDropDown(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getPRDropDown]";
             // Set locale
-            const { locale,search} = req.query;
+            const { locale, search } = req.query;
             this.locale = (locale as string) || "en";
             const type = req.params.type;
-            let attribute_id:number = 0;
-            if(type== 'selling_unit'){
-                 attribute_id = 19;
-            }else if(type== 'ips'){
+            let attribute_id: number = 0;
+            if (type == "selling_unit") {
+                attribute_id = 19;
+            } else if (type == "ips") {
                 attribute_id = 8;
-            }else if(type== 'ipu'){
+            } else if (type == "ipu") {
                 attribute_id = 16;
-            }else if(type== 'ipt'){
+            } else if (type == "ipt") {
                 attribute_id = 17;
-            }else if(type== 'mpt'){
+            } else if (type == "mpt") {
                 attribute_id = 18;
-            }else if(type== 'cu'){
+            } else if (type == "cu") {
                 attribute_id = 20;
             }
 
@@ -498,19 +522,18 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
             let searchQuery = {};
             if (search) {
                 searchQuery = {
-                    attribute_id:attribute._id,
+                    attribute_id: attribute._id,
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { attribute_id:attribute._id,status: true, };
+                searchQuery = { attribute_id: attribute._id, status: true };
             }
-            const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            
+            const result: any = await AttributeItem.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
             if (result.length > 0) {
-                
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), result);
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));

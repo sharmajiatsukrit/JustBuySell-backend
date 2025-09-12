@@ -23,6 +23,7 @@ import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { uploadFile, deleteFile } from "../../../utils/storage";
 import { networkRequest } from "../../../utils/request";
 import { postSoftDelete } from "../../../services/Chat";
+import { handleTriggerNotification, prepareNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[user][index.ts]";
 export default class AuthController {
@@ -55,7 +56,7 @@ export default class AuthController {
             if (!userData) {
                 // User does not exist, register the user
                 const newUser = await Customer.create({ phone: phone,parent_id:null,status:1 });
-                
+                await handleTriggerNotification({isSms:true,phone,content:"Welcome to JBS"})
                 userData = newUser;
             }
             // let otp:any;
