@@ -9,6 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import mongoose from "mongoose";
+import { prepareNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[user][account][index.ts]";
 export default class AccountController {
@@ -111,6 +112,16 @@ export default class AccountController {
                     type: 1,
                     customer_id: req.customer.object_id,
                 });
+
+                const notificationData = {
+                    tmplt_name: "new_user_profile_complete",
+                    to: req.customer.object_id,
+                    dynamicKey: {
+                        promo_amount: settings.value.new_registration_topup,
+                    },
+                };
+
+                prepareNotificationData(notificationData);
 
                 const transaction: any = await Transaction.create({
                     amount: settings.value.new_registration_topup,
@@ -251,6 +262,10 @@ export default class AccountController {
                         customer_id: req.customer.object_id,
                     }
                 );
+
+                const notificationData = { tmplt_name: "wallet_recharge", to: req.customer.object_id, dynamicKey: { amount: amount } };
+
+                prepareNotificationData(notificationData);
 
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["wallet-recharge-success"]), {});
             }

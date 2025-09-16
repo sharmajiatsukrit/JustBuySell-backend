@@ -8,6 +8,7 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import { prepareNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[admin][productrequest][index.ts]";
 export default class ProductRequestController {
@@ -30,16 +31,14 @@ export default class ProductRequestController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery:any = {};
+            let searchQuery: any = {};
             if (search) {
-                searchQuery.$or = [
-                    { name: { $regex: search, $options: 'i' } }
-                ];
+                searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];
             }
             const results = await ProductRequest.find(searchQuery)
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)
-                .populate('created_by', 'id name')
+                .populate("created_by", "id name")
                 .limit(limitNumber)
                 .lean();
 
@@ -61,12 +60,12 @@ export default class ProductRequestController {
                     // Add more fields as necessary
                 }));
 
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-request-fetched"]),
-                    { data: formattedResults, totalCount, totalPages, currentPage: pageNumber }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-request-fetched"]), {
+                    data: formattedResults,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -74,8 +73,6 @@ export default class ProductRequestController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-    
 
     //add
     public async add(req: Request, res: Response): Promise<any> {
@@ -94,9 +91,8 @@ export default class ProductRequestController {
                 pack: pack,
                 masterpack: masterpack,
                 description: description,
-                status: status
+                status: status,
             });
-
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-add"), result.doc);
         } catch (err: any) {
@@ -117,14 +113,16 @@ export default class ProductRequestController {
             const { name, unitid, pack, masterpack, description, status } = req.body;
 
             let result: any = await ProductRequest.findOneAndUpdate(
-                { id: id }, {
-                name: name,
-                unitid: unitid,
-                pack: pack,
-                masterpack: masterpack,
-                description: description,
-                status: status
-            });
+                { id: id },
+                {
+                    name: name,
+                    unitid: unitid,
+                    pack: pack,
+                    masterpack: masterpack,
+                    description: description,
+                    status: status,
+                }
+            );
 
             const updatedData: any = await ProductRequest.find({ id: id }).lean();
 
@@ -155,9 +153,6 @@ export default class ProductRequestController {
         }
     }
 
-
-
-
     //get byid list
     public async getById(req: Request, res: Response): Promise<any> {
         try {
@@ -166,11 +161,9 @@ export default class ProductRequestController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await ProductRequest.findOne({ id: id }).populate('created_by', 'id name').lean();
-
+            const result: any = await ProductRequest.findOne({ id: id }).populate("created_by", "id name").lean();
 
             if (result) {
-
                 const formattedResult = {
                     id: result.id,
                     name: result.name,
@@ -207,15 +200,28 @@ export default class ProductRequestController {
             const { status } = req.body;
 
             let result: any = await ProductRequest.findOneAndUpdate(
-                { id: id }, {
-                status: status
-            });
+                { id: id },
+                {
+                    status: status,
+                }
+            );
 
             const updatedData: any = await ProductRequest.find({ id: id }).lean();
+
+            if (result && status == 1) {
+                const notificationData = {
+                    tmplt_name: "product_add_request_processed",
+                    to: updatedData?.createdBy,
+                    dynamicKey: {
+                        product_name: updatedData?.name,
+                    },
+                };
+                prepareNotificationData(notificationData);
+            }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-statusupdated"), updatedData);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-} 
+}

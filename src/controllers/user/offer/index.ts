@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 // import moment from "moment";
 import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet, Customer } from "../../../models";
-import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
+import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate, triggerNotifications } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
@@ -31,7 +31,8 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } =
+                req.body;
 
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
@@ -69,7 +70,8 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } = req.body;
+            const { target_price, buy_quantity, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state, offer_price, moq } =
+                req.body;
 
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
@@ -330,7 +332,8 @@ export default class OfferController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { offer_price,target_price, buy_quantity, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } = req.body;
+            const { offer_price, target_price, buy_quantity, moq, brand, coo, pin_code, product_location, product_id, individual_pack, master_pack, offer_validity, city, state } =
+                req.body;
             const id = parseInt(req.params.id);
             let result: any;
             const product: any = await Product.findOne({ id: product_id }).lean();
@@ -445,7 +448,7 @@ export default class OfferController {
             const offer: any = await Offers.findOne({ id: offer_id }).lean();
             const sellerData: any = await Customer.findOne({ _id: offer?.created_by });
             const buyerData: any = await Customer.findOne({ _id: req.customer.object_id });
-            
+
             const transaction: any = await Transaction.create({
                 amount, // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
                 gst,
@@ -465,7 +468,7 @@ export default class OfferController {
             result = await UnlockOffers.create({
                 transaction_id: transaction._id,
                 price: amount,
-                commision:commission,
+                commision: commission,
                 offer_id: offer._id,
                 offer_counter: offer.offer_counter,
                 status: 1,
@@ -499,11 +502,33 @@ export default class OfferController {
             }
 
             if (offer.type == 0) {
-                prepareNotificationData({sellerData:sellerData,buyerData:buyerData,tmplt_name:"seller_opened_buyer_offer"})
+                const notificationData = {
+                    tmplt_name: "seller_opened_buyer_offer",
+                    to: sellerData?.email,
+                    dynamicKey: {
+                        customer_name: buyerData?.name,
+                        company_name: buyerData?.trade_name,
+                        contact_no: buyerData?.phone,
+                        address: buyerData?.address_line_1,
+                        email_id: buyerData?.email,
+                    },
+                };
+                prepareNotificationData(notificationData);
                 const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
-
-            }if(offer.type == 1){
-                prepareNotificationData({sellerData:buyerData,buyerData:sellerData,tmplt_name:"buyer_opened_seller_offer"})
+            }
+            if (offer.type == 1) {
+                const notificationData = {
+                    tmplt_name: "buyer_opened_seller_offer",
+                    to: buyerData?.email,
+                    dynamicKey: {
+                        customer_name: sellerData?.name,
+                        company_name: sellerData?.trade_name,
+                        contact_no: sellerData?.phone,
+                        address: sellerData?.address_line_1,
+                        email_id: sellerData?.email,
+                    },
+                };
+                prepareNotificationData(notificationData);
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

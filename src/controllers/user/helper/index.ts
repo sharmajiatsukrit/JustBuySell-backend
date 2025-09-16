@@ -12,6 +12,7 @@ import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { networkRequest } from "../../../utils/request";
 import { sendSMS } from "../../../utils/pinnacle";
 import { sendMail } from "../../../utils/mail";
+import { prepareNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[user][helper][index.ts]";
 export default class HelperController {
@@ -101,6 +102,14 @@ export default class HelperController {
             });
 
             if (result) {
+                const notificationData = {
+                    tmplt_name: "product_add_request",
+                    to: req.customer.object_id,
+                    dynamicKey: {
+                        product_name: name,
+                    },
+                };
+                prepareNotificationData(notificationData);
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-requested"]), {});
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["server-error"]));

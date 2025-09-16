@@ -1,6 +1,9 @@
+import { title } from "process";
+import { triggerNotifications } from "..";
 import NotificationTemplate from "../../models/notification-template";
 import { sendMail } from "../mail";
 import { sendSMS } from "../pinnacle";
+import { body } from "express-validator";
 
 export async function handleTriggerNotification(data: any) {
     if (data?.is_sms) {
@@ -15,6 +18,12 @@ export async function handleTriggerNotification(data: any) {
     if (data?.is_whatsapp) {
     }
     if (data?.is_firebase) {
+        const { title, body, to } = data;
+        try {
+            await triggerNotifications(title, body, to);
+        } catch (error) {
+            console.log(error);
+        }
     }
 }
 // {
@@ -105,19 +114,12 @@ export async function prepareNotificationData(details: any) {
         };
     }
     if (data?.is_email) {
-        const buyerDetails = {
-            customer_name: details?.buyerData?.name,
-            company_name: details?.buyerData?.trade_name,
-            contact_no: details?.buyerData?.phone,
-            address: details?.buyerData?.address_line_1,
-            email_id: details?.buyerData?.email,
-        };
         notificationData = {
             ...notificationData,
             is_email: true,
-            email: details?.sellerData?.email,
-            subject: data?.subject||"Email",
-            emailContent: fillTemplate(data?.email_content,buyerDetails),
+            email: details?.to,
+            subject: data?.subject || "Email",
+            emailContent: fillTemplate(data?.email_content, details?.dynamicKey),
         };
         handleTriggerNotification(notificationData);
     }
@@ -131,10 +133,11 @@ export async function prepareNotificationData(details: any) {
         notificationData = {
             ...notificationData,
             is_firebase: true,
+            title: details?.title||"JustBuySell",
+            body: fillTemplate(data?.firebase_content, details?.dynamicKey),
+            to: details?.to,
         };
     }
     //handleTriggerNotification(notificationData);
     return;
 }
-
-

@@ -173,56 +173,117 @@ function groupByDate(input: any) {
 };
 
 // Ensure Firebase Admin is initialized only once
-if (!admin.apps.length) {
-    const serviceAccount = require("../../serviceAccountKey.json");
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-}
-async function firebaseNotification(title: string,body:string,fcmToken:string) {
-    try {
-        // Define the message payload
-        const message = {
-            notification: {
-            title,
-            body,
-            },
-            token: fcmToken,
-        };
+// if (!admin.apps.length) {
+//     const serviceAccount = require("../../serviceAccountKey.json");
+//     admin.initializeApp({
+//       credential: admin.credential.cert(serviceAccount),
+//     });
+// }
+// async function firebaseNotification(title: string,body:string,fcmToken:string) {
+//     try {
+//         // Define the message payload
+//         const message = {
+//             notification: {
+//             title,
+//             body,
+//             },
+//             token: fcmToken,
+//         };
 
-        const response = await admin.messaging().send(message);
-        console.log(response);
+//         const response = await admin.messaging().send(message);
+//         console.log(response);
         
-    } catch (err: any) {
-        return Promise.reject(err);
-    }
+//     } catch (err: any) {
+//         return Promise.reject(err);
+//     }
+// }
+
+// // const SendTo:any = await User.findOne({_id:req.user.object_id}).lean().populate("reporting_manager","_id id name");
+// //             const body = ${SendTo.name} has requested for Taxi Pass on ${vehicle_req_date};
+// //             await triggerNotifications("New Taxi Request",body,SendTo.reporting_manager._id);
+
+// async function triggerNotifications(title: string,body:string,UserObjectID:string){
+//     const Devices:any = await Deviceid.find({created_by:UserObjectID}).lean();
+    
+//     const result:any = await Notifications.create({
+//         customer_id: UserObjectID,
+//         title: title,
+//         message: body
+//     });
+//     // console.log("lengt",Devices,UserObjectID);
+//     if(Devices.length === 0 || Devices.length == undefined){
+//         console.log(`No devices found.`);
+//         return;
+//     }
+//     // Retrieve all devices for the given user_id
+//     const tokens = Devices.map((device:any) => device.device_id);
+
+//     if (tokens.length === 0) {
+//       console.log(`No devices found.`);
+//     }
+
+//     // Send notification to each FCM token
+//     for (const token of tokens) {
+//         await firebaseNotification(title,body,token);
+//     }
+    
+// }
+
+if (!admin.apps.length) {
+  const serviceAccount = require("../../serviceAccountKey.json");
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
 }
 
-async function triggerNotifications(title: string,body:string,UserObjectID:string){
-    const Devices:any = await Deviceid.find({employee_id:UserObjectID}).lean();
-    
-    const result:any = await Notifications.create({
-        employee_id: UserObjectID,
-        title: title,
-        message: body
-    });
-    // console.log("lengt",Devices,UserObjectID);
-    if(Devices.length === 0 || Devices.length == undefined){
-        console.log(`No devices found.`);
-        return;
-    }
-    // Retrieve all devices for the given user_id
-    const tokens = Devices.map((device:any) => device.device_id);
+async function firebaseNotification(title: string, body: string, fcmToken: string) {
+  const message = {
+    notification: { title, body },
+    token: fcmToken,
+  };
+  try {
+    const response = await admin.messaging().send(message);
+    return { ok: true, response };
+  } catch (err: any) {
+    // Normalize code for handling
+    const code = err?.code || err?.errorCode || err?.errorInfo?.code;
+    return { ok: false, code, err };
+  }
+}
 
-    if (tokens.length === 0) {
-      console.log(`No devices found.`);
-    }
+async function triggerNotifications(title: string, body: string, UserObjectID: string) {
+  const Devices: Array<{ _id: string; device_id: string }> =
+    await Deviceid.find({ created_by: UserObjectID }).lean();
 
-    // Send notification to each FCM token
-    for (const token of tokens) {
-        await firebaseNotification(title,body,token);
+  if (!Devices || Devices.length === 0) {
+    console.log("No devices found.");
+    return;
+  }
+
+  await Notifications.create({
+    customer_id: UserObjectID,
+    title,
+    message: body,
+  });
+
+  // Send to each token and clean up invalid ones
+  for (const d of Devices) {
+    const token = d.device_id;
+    const res = await firebaseNotification(title, body, token);
+
+    if (!res.ok) {
+      const code = res.code;
+      if (
+        code === "messaging/registration-token-not-registered" ||
+        code === "messaging/invalid-argument" 
+      ) {
+        await Deviceid.deleteOne({ _id: d._id });
+        console.warn("Deleted invalid/unregistered FCM token", { token });
+      } else {
+        console.error("FCM send failed", { token, code, err: res.err?.message });
+      }
     }
-    
+  }
 }
 
 async function firebaseUrlShortner(url: string) {
