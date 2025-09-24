@@ -9,6 +9,9 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { generateInvoicePDF } from "../../../utils/generate-pdf/pdf";
+import ExcelJS from "exceljs";
+const path = require("path");
+const fs = require("fs");
 
 const fileName = "[admin][invoice][index.ts]";
 export default class InvoiceController {
@@ -92,6 +95,104 @@ export default class InvoiceController {
         }
     }
 
+    public async exportInvoiceExcel(req: Request, res: Response): Promise<any> {
+        try {
+            const { locale, page, limit, customer_id, start_date, end_date } = req.query as any;
+            this.locale = locale || "en";
+
+            const pageNumber = parseInt(page) || 1;
+            const limitNumber = parseInt(limit) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const filter: any = {};
+
+            if (customer_id) {
+                const customer: any = await Customer.findOne({ id: customer_id }).lean();
+                filter.customer_id = customer ? customer._id : null;
+            }
+
+            // Filter by date range
+            if (start_date && end_date) {
+                filter.start_date = { $gte: new Date(start_date) };
+                filter.end_date = { $lte: new Date(end_date) };
+            }
+
+            const results = await Invoice.find(filter).sort({ _id: -1 }).skip(skip).limit(limitNumber).populate("customer_id").lean();
+
+            // Set up workbook
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Invoices");
+
+            worksheet.columns = [
+                { header: "User Id", key: "userId", width: 12 },
+                { header: "GST Number", key: "gstNumber", width: 20 },
+                { header: "Trade Name", key: "tradeName", width: 30 },
+                { header: "Address", key: "address", width: 40 },
+                { header: "Invoice Date", key: "invoiceDate", width: 15 },
+                { header: "Invoice No.", key: "invoiceNumber", width: 20 },
+                { header: "Discount", key: "discount", width: 12 },
+                { header: "Taxable Value", key: "taxableValue", width: 15 },
+                { header: "CGST", key: "cgst", width: 12 },
+                { header: "SGST", key: "sgst", width: 12 },
+                { header: "IGST", key: "igst", width: 12 },
+                { header: "Invoice Value", key: "invoiceValue", width: 15 },
+                { header: "HSN Number", key: "hsnNumber", width: 15 },
+                { header: "Download Link", key: "file", width: 55 },
+            ];
+
+
+            results.forEach((item: any) => {
+                const invoiceDateFormatted = moment(item.endDate).format("DD/MM/YYYY");
+
+                // Calculate taxable value (total amount minus taxes)
+                const totalAmount = Number(item.total_amount || "0");
+                const cgst = Number(item.cgst || "0");
+                const sgst = Number(item.sgst || "0");
+                const igst = Number(item.igst || "0");
+                const taxableValue = totalAmount - (+cgst + sgst + igst);
+
+            
+                worksheet.addRow({
+                    userId: item?.customer_id?.id ?? "",
+                    gstNumber: item?.customer_id?.gst ?? "",
+                    tradeName: item?.customer_id?.trade_name ?? "",
+                    address: item?.customer_id?.address_line_1 ?? "",
+                    invoiceDate: invoiceDateFormatted,
+                    invoiceNumber: item?.invoiceNumber ?? "",
+                    discount: Number(item?.total_discount ?? "0"),
+                    taxableValue: taxableValue.toFixed(2),
+                    cgst: Number(item?.cgst ?? "0"),
+                    sgst: Number(item?.sgst ?? "0"),
+                    igst: Number(item?.igst ?? "0"),
+                    invoiceValue: Number(totalAmount ?? "0"),
+                    hsnNumber: "99843100",
+                    file: item?.file ? `${process.env.RESOURCE_URL}${item.file}` : "",
+                });
+            });
+
+            worksheet.getRow(1).font = { bold: true };
+
+            // Save to /uploads/reports
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+            const fileName = `invoices_${timestamp}.xlsx`;
+            const reportsDir = path.join(process.env.UPLOAD_PATH as string, "reports");
+            const filePath = path.join(reportsDir, fileName);
+            if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
+
+            await workbook.xlsx.writeFile(filePath);
+
+            const download_report = `${process.env.RESOURCE_URL}reports/${fileName}`;
+
+            if (results.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "report-exported"), { download_report });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
     // Checked
     public async getById(req: Request, res: Response): Promise<any> {
         try {
@@ -117,10 +218,9 @@ export default class InvoiceController {
     public async generateCurrentMonthInvoice(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[updateExpiredOffers]";
-            
+
             const startOfMonth = moment().startOf("month").toDate();
             const endOfMonth = moment().endOf("day").toDate();
-
 
             const customers = await Customer.find({ is_gst_verified: true, status: 1 });
 
@@ -225,11 +325,9 @@ export default class InvoiceController {
 
                 await generateInvoicePDF(dataForPdf, pdfName);
             }
-          return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), {});
-
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), {});
         } catch (err: any) {
-           return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 }

@@ -225,9 +225,29 @@ export default class TransactionController {
                 },
             ]);
 
-            const totalCount = await Transaction.countDocuments({});
+            const countResult = await Transaction.aggregate([
+                { $match: filter },
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
+                {
+                    $count: "total",
+                },
+            ]);
+
+            const totalCount = countResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
-            // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), {
@@ -410,7 +430,27 @@ export default class TransactionController {
                 },
             ]);
 
-            const totalCount = await Transaction.countDocuments({});
+             const countResult = await Transaction.aggregate([
+                { $match: filter },
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
+                {
+                    $count: "total",
+                },
+            ]);
+            const totalCount = countResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
             if (results.length > 0) {
@@ -616,7 +656,29 @@ export default class TransactionController {
                 },
             ]);
 
-            const totalCount = await Transaction.countDocuments({});
+             const countResult = await Transaction.aggregate([
+                { $match: filter },
+
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
+                {
+                    $count: "total",
+                },
+            ]);
+
+            const totalCount = countResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
             // const result = await State.find({}).sort([['id', 'desc']]).lean();
             if (results.length > 0) {

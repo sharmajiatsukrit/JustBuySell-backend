@@ -137,7 +137,8 @@ export async function prepareNotificationData(details: any) {
             body: fillTemplate(data?.firebase_content, details?.dynamicKey),
             to: details?.to,
         };
+          handleTriggerNotification(notificationData);
     }
-    //handleTriggerNotification(notificationData);
+  
     return;
 }
