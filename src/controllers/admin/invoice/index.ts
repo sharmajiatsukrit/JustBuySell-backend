@@ -37,25 +37,9 @@ export default class InvoiceController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            // const invoice_id = `JBSINV_${Date.now()}`;
-            // const result: any = await Invoice.create({
-            //     amount: 200,
-            //     gst: 36,
-            //     invoice_id: invoice_id,
-            //     start_date: '2024-09-01',
-            //     end_date: '2024-09-31',
-            //     month: '09',
-            //     year: '2024',
-            //     file: '2024',
-            //     customer_id: '66c85f3e2008c88d275fa432'
-            // });
+
             const filter: any = {};
-            // const filter:any = {};
-            if (search) {
-                // filter.$or = [
-                //     { name: { $regex: search, $options: 'i' } }
-                // ];
-            }
+
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
                 filter.customer_id = customer ? customer._id : null;
@@ -65,16 +49,69 @@ export default class InvoiceController {
                 filter.start_date = { $gte: new Date(start_date as string) };
                 filter.end_date = { $lte: new Date(end_date as string) };
             }
-            const results = await Invoice.find(filter)
-                .sort({ _id: -1 }) // Sort by _id in descending order
-                .skip(skip)
-                .limit(limitNumber)
-                .populate("customer_id")
-                .lean();
+            const results = await Invoice.aggregate([
+                { $match: filter },
 
-            const totalCount = await Invoice.countDocuments({});
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+            ]);
+           
+
+            const totalCount: any = await Invoice.aggregate([
+                { $match: filter },
+
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                {
+                    $count: "total",
+                },
+            ]);
             const totalPages = Math.ceil(totalCount / limitNumber);
-            // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
             if (results.length > 0) {
                 const formattedResult = results.map((item: any) => ({
@@ -140,7 +177,6 @@ export default class InvoiceController {
                 { header: "Download Link", key: "file", width: 55 },
             ];
 
-
             results.forEach((item: any) => {
                 const invoiceDateFormatted = moment(item.endDate).format("DD/MM/YYYY");
 
@@ -151,7 +187,6 @@ export default class InvoiceController {
                 const igst = Number(item.igst || "0");
                 const taxableValue = totalAmount - (+cgst + sgst + igst);
 
-            
                 worksheet.addRow({
                     userId: item?.customer_id?.id ?? "",
                     gstNumber: item?.customer_id?.gst ?? "",

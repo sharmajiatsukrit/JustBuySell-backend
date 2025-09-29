@@ -38,9 +38,7 @@ export default class TransactionController {
             const filter: any = {};
             // const filter:any = {};
             if (search) {
-                // filter.$or = [
-                //     { name: { $regex: search, $options: 'i' } }
-                // ];
+                filter.$or = [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }];
             }
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
@@ -176,11 +174,9 @@ export default class TransactionController {
             filter.status = 1;
             filter.transaction_type = 0;
             // const filter:any = {};
-            if (search) {
-                // filter.$or = [
-                //     { name: { $regex: search, $options: 'i' } }
-                // ];
-            }
+            // if (search) {
+            //     filter.$or = [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }];
+            // }
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
                 filter.customer_id = customer ? customer._id : null;
@@ -195,9 +191,6 @@ export default class TransactionController {
 
             const results = await Transaction.aggregate([
                 { $match: filter },
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
                 {
                     $addFields: {
                         created_date: {
@@ -220,9 +213,22 @@ export default class TransactionController {
                 {
                     $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
                 },
+
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
             const countResult = await Transaction.aggregate([
@@ -241,6 +247,15 @@ export default class TransactionController {
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
                 {
                     $count: "total",
                 },
@@ -266,7 +281,7 @@ export default class TransactionController {
 
     public async exportPaymentReceiptExcel(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit, customer_id, start_date, end_date } = req.query as any;
+            const { locale, page, limit, search, customer_id, start_date, end_date } = req.query as any;
             this.locale = locale || "en";
 
             const pageNumber = parseInt(page) || 1;
@@ -288,9 +303,6 @@ export default class TransactionController {
 
             const results = await Transaction.aggregate([
                 { $match: filter },
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
                 {
                     $addFields: {
                         created_date: {
@@ -311,6 +323,18 @@ export default class TransactionController {
                 },
                 { $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true } },
                 { $match: { "customer_id.is_gst_verified": true } },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
             // Set up workbook
@@ -381,11 +405,7 @@ export default class TransactionController {
             // filter.status = 1;
             // filter.transaction_type = 1;
             // const filter:any = {};
-            if (search) {
-                // filter.$or = [
-                //     { name: { $regex: search, $options: 'i' } }
-                // ];
-            }
+
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
                 filter.customer_id = customer ? customer._id : null;
@@ -400,9 +420,6 @@ export default class TransactionController {
 
             const results = await Transaction.aggregate([
                 { $match: filter },
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
                 {
                     $addFields: {
                         created_date: {
@@ -428,9 +445,21 @@ export default class TransactionController {
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
-             const countResult = await Transaction.aggregate([
+            const countResult = await Transaction.aggregate([
                 { $match: filter },
                 {
                     $lookup: {
@@ -446,6 +475,16 @@ export default class TransactionController {
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
                 {
                     $count: "total",
                 },
@@ -470,7 +509,7 @@ export default class TransactionController {
 
     public async exportRevenueReceiptExcel(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit, customer_id, start_date, end_date } = req.query as any;
+            const { locale, page, limit, customer_id, search, start_date, end_date } = req.query as any;
             this.locale = locale || "en";
 
             const pageNumber = parseInt(page) || 1;
@@ -491,9 +530,6 @@ export default class TransactionController {
 
             const results = await Transaction.aggregate([
                 { $match: filter },
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
                 {
                     $addFields: {
                         created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
@@ -510,6 +546,18 @@ export default class TransactionController {
                 },
                 { $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true } },
                 { $match: { "customer_id.is_gst_verified": true } },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
             // Prepare workbook
@@ -607,11 +655,7 @@ export default class TransactionController {
 
             const filter: any = {};
             // const filter:any = {};
-            if (search) {
-                // filter.$or = [
-                //     { name: { $regex: search, $options: 'i' } }
-                // ];
-            }
+
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
                 filter.customer_id = customer ? customer._id : null;
@@ -626,9 +670,7 @@ export default class TransactionController {
 
             const results = await Transaction.aggregate([
                 { $match: filter },
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
+
                 {
                     $addFields: {
                         created_date: {
@@ -654,9 +696,21 @@ export default class TransactionController {
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
-             const countResult = await Transaction.aggregate([
+            const countResult = await Transaction.aggregate([
                 { $match: filter },
 
                 {
@@ -673,6 +727,18 @@ export default class TransactionController {
                 {
                     $match: { "customer_id.is_gst_verified": true },
                 },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
                 {
                     $count: "total",
                 },
@@ -698,7 +764,7 @@ export default class TransactionController {
 
     public async exportUserWalletTXNExcel(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit, customer_id, start_date, end_date } = req.query as any;
+            const { locale, page, limit, customer_id, search, start_date, end_date } = req.query as any;
             this.locale = locale || "en";
 
             const pageNumber = parseInt(page) || 1;
@@ -740,6 +806,18 @@ export default class TransactionController {
                 },
                 { $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true } },
                 { $match: { "customer_id.is_gst_verified": true } },
+                ...(search
+                    ? [
+                          {
+                              $match: {
+                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
+                              },
+                          },
+                      ]
+                    : []),
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
             ]);
 
             // Prepare workbook and worksheet

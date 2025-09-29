@@ -4,6 +4,8 @@ import NotificationTemplate from "../../models/notification-template";
 import { sendMail } from "../mail";
 import { sendSMS } from "../pinnacle";
 import { body } from "express-validator";
+import WhatsAppService from "../whatsApp-notification";
+const whatsappService = new WhatsAppService();
 
 export async function handleTriggerNotification(data: any) {
     if (data?.is_sms) {
@@ -16,6 +18,8 @@ export async function handleTriggerNotification(data: any) {
         const mail = await sendMail(email, subject, emailContent, []);
     }
     if (data?.is_whatsapp) {
+        const { destination, userName, campaignName, templateParams } = data;
+        await whatsappService.sendWhatsApp(destination, userName, campaignName, templateParams)
     }
     if (data?.is_firebase) {
         const { title, body, to } = data;
@@ -123,12 +127,7 @@ export async function prepareNotificationData(details: any) {
         };
         handleTriggerNotification(notificationData);
     }
-    if (data?.is_whatsapp) {
-        notificationData = {
-            ...notificationData,
-            is_whatsapp: true,
-        };
-    }
+
     if (data?.is_firebase) {
         notificationData = {
             ...notificationData,
@@ -139,6 +138,13 @@ export async function prepareNotificationData(details: any) {
         };
           handleTriggerNotification(notificationData);
     }
+  
+    return;
+}
+
+export async function prepareWhatsAppNotificationData(details: any) {
+   
+    handleTriggerNotification({...details,is_whatsapp:true});
   
     return;
 }

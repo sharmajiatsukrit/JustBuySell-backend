@@ -9,7 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import moment from "moment-timezone";
-import { prepareNotificationData } from "../../../utils/notification-center";
+import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
 moment.tz.setDefault("Asia/Kolkata");
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
@@ -446,8 +446,8 @@ export default class OfferController {
             const { offer_id, commission, amount, gst, sgst, cgst, igst, particular, offer_price, discount } = req.body;
             let result: any;
             const offer: any = await Offers.findOne({ id: offer_id }).lean();
-            const sellerData: any = await Customer.findOne({ _id: offer?.created_by });
-            const buyerData: any = await Customer.findOne({ _id: req.customer.object_id });
+            const offerCreator: any = await Customer.findOne({ _id: offer?.created_by });
+            const unlockingCustomer: any = await Customer.findOne({ _id: req.customer.object_id });
 
             const transaction: any = await Transaction.create({
                 amount, // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
@@ -504,31 +504,48 @@ export default class OfferController {
             if (offer.type == 0) {
                 const notificationData = {
                     tmplt_name: "seller_opened_buyer_offer",
-                    to: sellerData?.email,
+                    to: offerCreator?.email,
                     dynamicKey: {
-                        customer_name: buyerData?.name,
-                        company_name: buyerData?.trade_name,
-                        contact_no: buyerData?.phone,
-                        address: buyerData?.address_line_1,
-                        email_id: buyerData?.email,
+                        customer_name: unlockingCustomer?.name,
+                        company_name: unlockingCustomer?.trade_name,
+                        contact_no: unlockingCustomer?.phone,
+                        address: unlockingCustomer?.address_line_1,
+                        email_id: unlockingCustomer?.email,
                     },
                 };
+                const whatsAppData = {
+                    campaignName:"Seller Opened Buyer Offer",
+                    userName:offerCreator?.name,
+                    destination:offerCreator?.whatapp_num||offerCreator?.phone,
+                    templateParams:[unlockingCustomer?.name,unlockingCustomer?.trade_name,unlockingCustomer?.phone,unlockingCustomer?.address_line_1,unlockingCustomer?.email]
+
+                }
                 prepareNotificationData(notificationData);
+                prepareWhatsAppNotificationData(whatsAppData);
+
                 const expirebuyoffer: any = await Offers.findOneAndUpdate({ id: offer_id }, { status: 0 });
             }
             if (offer.type == 1) {
                 const notificationData = {
                     tmplt_name: "buyer_opened_seller_offer",
-                    to: buyerData?.email,
+                    to: offerCreator?.email,
                     dynamicKey: {
-                        customer_name: sellerData?.name,
-                        company_name: sellerData?.trade_name,
-                        contact_no: sellerData?.phone,
-                        address: sellerData?.address_line_1,
-                        email_id: sellerData?.email,
+                        customer_name: unlockingCustomer?.name,
+                        company_name: unlockingCustomer?.trade_name,
+                        contact_no: unlockingCustomer?.phone,
+                        address: unlockingCustomer?.address_line_1,
+                        email_id: unlockingCustomer?.email,
                     },
                 };
+                const whatsAppData = {
+                    campaignName:"Buyer Opened Seller Offer",
+                    userName:offerCreator?.name,
+                    destination:offerCreator?.whatapp_num||offerCreator?.phone,
+                    templateParams:[unlockingCustomer?.name,unlockingCustomer?.trade_name,unlockingCustomer?.phone,unlockingCustomer?.address_line_1,unlockingCustomer?.email]
+
+                }
                 prepareNotificationData(notificationData);
+                prepareWhatsAppNotificationData(whatsAppData);
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

@@ -934,7 +934,7 @@ export default class DashboardController {
                 },
             };
 
-            // --- Your other filters ---
+            // filters ---
             if (individual) {
                 if (individual.size) matchFilter["individual_pack.individual.individualSize.id"] = individual.size;
                 if (individual.unit) matchFilter["individual_pack.individual.individualUnit.id"] = individual.unit;
@@ -987,14 +987,13 @@ export default class DashboardController {
 
             // --- SORT ---
             const sortOption: any = {};
-            if (sorting === 0) sortOption["id"] = -1;
-            else if (sorting === 1) sortOption["offer_price"] = 1;
-            else if (sorting === 2) sortOption["moq"] = 1;
-            else if (sorting === 3) sortOption["moq"] = -1;
+            if (sorting === 1) sortOption["id"] = -1;
+            else if (sorting === 2) sortOption["offer_price"] = 1;
+            else if (sorting === 3) sortOption["buy_quantity"] = -1;
+            else if (sorting === 4) sortOption["buy_quantity"] = 1;
             else sortOption["_id"] = -1;
             pipeline.push({ $sort: sortOption });
 
-            // CORRECT: ADD BOTH $skip AND $limit!
             pipeline.push({ $skip: skip });
             pipeline.push({ $limit: limitNumber });
 
@@ -1023,10 +1022,8 @@ export default class DashboardController {
                 },
             });
 
-            // LOG FOR DEBUGGING
             const results = await Offers.aggregate(pipeline);
 
-            // For pages, run same pipeline MINUS $skip/$limit then add $count
             const countPipeline = pipeline.filter((stage) => !("$skip" in stage) && !("$limit" in stage));
             countPipeline.push({ $count: "totalCount" });
             const countResult = await Offers.aggregate(countPipeline);
@@ -1199,14 +1196,13 @@ export default class DashboardController {
 
             // --- SORT ---
             const sortOption: any = {};
-            if (sorting === 0) sortOption["id"] = -1;
-            else if (sorting === 1) sortOption["offer_price"] = 1;
-            else if (sorting === 2) sortOption["moq"] = 1;
+            if (sorting === 1) sortOption["id"] = -1;
+            else if (sorting === 2) sortOption["offer_price"] = 1;
             else if (sorting === 3) sortOption["moq"] = -1;
+            else if (sorting === 4) sortOption["moq"] = 1;
             else sortOption["_id"] = -1;
             pipeline.push({ $sort: sortOption });
 
-            // CORRECT: ADD BOTH $skip AND $limit!
             pipeline.push({ $skip: skip });
             pipeline.push({ $limit: limitNumber });
 
@@ -1233,10 +1229,8 @@ export default class DashboardController {
                 },
             });
 
-            // LOG FOR DEBUGGING
             const results = await Offers.aggregate(pipeline);
 
-            // For pages, run same pipeline MINUS $skip/$limit then add $count
             const countPipeline = pipeline.filter((stage) => !("$skip" in stage) && !("$limit" in stage));
             countPipeline.push({ $count: "totalCount" });
             const countResult = await Offers.aggregate(countPipeline);
@@ -1316,14 +1310,12 @@ export default class DashboardController {
             ];
 
             const uniqueCoo = await Offers.distinct("coo", { product_id: product._id });
-            // Transform to label-value pair
             filters.coo = uniqueCoo.map((coo) => ({
                 label: coo,
                 value: coo,
             }));
             // filters.coo = [];
             const uniqueState = await Offers.distinct("state", { product_id: product._id });
-            // Transform to label-value pair
             filters.state = uniqueState.map((state) => ({
                 label: state,
                 value: state,
@@ -1338,8 +1330,6 @@ export default class DashboardController {
             // filters.city = [];
 
             const uniqueBrands = await Offers.distinct("brand", { product_id: product._id });
-            // console.log(uniqueBrands, product);
-            // Transform to label-value pair
             filters.brand = uniqueBrands.map((brand) => ({
                 label: brand,
                 value: brand,

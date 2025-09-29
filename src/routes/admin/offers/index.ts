@@ -13,3 +13,4 @@ routes.get("/list", validateRequest, authAdmin, offersController.getList.bind(of
 routes.get("/by-id/:id", validateRequest, authAdmin, offersController.getById.bind(offersController));
 
 export default routes;
+

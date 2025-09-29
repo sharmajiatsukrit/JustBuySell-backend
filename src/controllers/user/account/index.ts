@@ -9,7 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import mongoose from "mongoose";
-import { prepareNotificationData } from "../../../utils/notification-center";
+import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[user][account][index.ts]";
 export default class AccountController {
@@ -96,17 +96,17 @@ export default class AccountController {
                     pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
-                    whatapp_num,
+                    whatapp_num:whatapp_num,
                     status: status,
                 }
             );
-            const gstExists = await Customer.find({
+            const customerExistWithGstVerified:any = await Customer.find({
                 gst: result?.gst,
                 is_gst_verified: true,
             });
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
             const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
-            if (!checkTransaction && gstExists?.length === 1) {
+            if (!checkTransaction && customerExistWithGstVerified?.length === 1) {
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
                     type: 1,
@@ -120,8 +120,16 @@ export default class AccountController {
                         promo_amount: settings.value.new_registration_topup,
                     },
                 };
+                const whatsAppData = {
+                    campaignName:"New User Profile Complete",
+                    userName:customerExistWithGstVerified?.name,
+                    destination:customerExistWithGstVerified?.whatapp_num||customerExistWithGstVerified?.phone,
+                    templateParams:[settings.value.new_registration_topup]
+
+                }
 
                 prepareNotificationData(notificationData);
+                prepareWhatsAppNotificationData(whatsAppData);
 
                 const transaction: any = await Transaction.create({
                     amount: settings.value.new_registration_topup,

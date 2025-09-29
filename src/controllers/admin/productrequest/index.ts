@@ -8,7 +8,7 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
-import { prepareNotificationData } from "../../../utils/notification-center";
+import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[admin][productrequest][index.ts]";
 export default class ProductRequestController {
@@ -207,16 +207,25 @@ export default class ProductRequestController {
             );
 
             const updatedData: any = await ProductRequest.find({ id: id }).lean();
+            const customerData: any = await ProductRequest.find({ _id: updatedData?.createdBy }).lean();
 
             if (result && status == 1) {
                 const notificationData = {
                     tmplt_name: "product_add_request_processed",
-                    to: updatedData?.createdBy,
+                    to: customerData?._id,
                     dynamicKey: {
                         product_name: updatedData?.name,
                     },
                 };
+             const whatsAppData = {
+                    campaignName:"Product Add Request Processed",
+                    userName:customerData?.name,
+                    destination:customerData?.whatapp_num||customerData?.phone,
+                    templateParams:[updatedData?.name]
+
+                }
                 prepareNotificationData(notificationData);
+                prepareWhatsAppNotificationData(whatsAppData);
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-statusupdated"), updatedData);
