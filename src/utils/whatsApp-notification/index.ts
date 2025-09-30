@@ -23,6 +23,7 @@ export default class WhatsAppService {
             userName: userName,
             templateParams: templateParams
         };
+        console.log("WhatsApp Payload:", payload);
 
         try {
             const response = await axios.post(`${this.apiUrl}`, payload, {

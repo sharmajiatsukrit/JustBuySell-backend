@@ -1,8 +1,8 @@
-import { Document, Schema, model } from 'mongoose';
+import { Document, Schema, model } from "mongoose";
 import { BillingGatewayEnum } from "../enums";
 import { BillingAdressType } from "../interfaces";
-import { autoIncrement } from 'mongoose-plugin-autoinc';
-import { DateTime } from 'luxon';
+import { autoIncrement } from "mongoose-plugin-autoinc";
+import { DateTime } from "luxon";
 
 interface IOffers extends Document {
     product_id: string;
@@ -14,7 +14,7 @@ interface IOffers extends Document {
     moq: string;
     brand: string;
     coo: string;
-    type:number;
+    type: number;
     individual_pack: string;
     master_pack: string;
     selling_unit: string;
@@ -28,47 +28,57 @@ interface IOffers extends Document {
     updated_by: number;
 }
 
-const offersSchema: Schema = new Schema({
-
-    product_id: { type: Schema.Types.ObjectId, ref: 'products' },
-    target_price: { type: Number, default: '' },
-    buy_quantity: { type: Number, default: '' },
-    pin_code: { type: String, default: '' },
-    product_location: { type: String, default: '' },
-    offer_price: { type: Number, default: 0 },
-    moq: { type: Number, default: 0 },
-    brand: { type: String, default: '' },
-    coo: { type: String, default: '' },
-    individual_pack: { type: Object, default: {} }, // Dynamic attributes
-    master_pack: { type: Object, default: {} }, // Dynamic attributes
-    selling_unit: { type: Object, default: {} }, // Dynamic attributes
-    conversion_unit: { type: Object, default: {} }, // Dynamic attributes
-    conversion_rate: { type: Object, default: {} }, // Dynamic attributes
-    publish_date:{ type: String, default: null },
-    offer_validity: { type: String, default: '' },
-    city: { type: String, default: '' },
-    state: { type: String, default: '' },
-    offer_counter: { type: Number, default: 0 },
-    status: { type: Number, default: 1 },
-    type: { type: String, default: 0 },
-    created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'customers' }
-},
+const offersSchema: Schema = new Schema(
+    {
+        product_id: { type: Schema.Types.ObjectId, ref: "products" },
+        target_price: { type: Number, default: "" },
+        buy_quantity: { type: Number, default: "" },
+        pin_code: { type: String, default: "" },
+        product_location: { type: String, default: "" },
+        offer_price: { type: Number, default: 0 },
+        moq: { type: Number, default: 0 },
+        brand: { type: String, default: "" },
+        coo: { type: String, default: "" },
+        individual_pack: { type: Object, default: {} }, // Dynamic attributes
+        master_pack: { type: Object, default: {} }, // Dynamic attributes
+        selling_unit: { type: Object, default: {} }, // Dynamic attributes
+        conversion_unit: { type: Object, default: {} }, // Dynamic attributes
+        conversion_rate: { type: Object, default: {} }, // Dynamic attributes
+        publish_date: { type: String, default: null },
+        offer_validity: { type: String, default: "" },
+        city: { type: String, default: "" },
+        state: { type: String, default: "" },
+        location: {
+            type: {
+                type: String,
+                enum: ["Point"],
+            },
+            coordinates: {
+                type: [Number], // [longitude, latitude]
+            },
+        },
+        offer_counter: { type: Number, default: 0 },
+        status: { type: Number, default: 1 },
+        type: { type: String, default: 0 },
+        created_by: { type: Schema.Types.ObjectId, ref: "customers" },
+        updated_by: { type: Schema.Types.ObjectId, ref: "customers" },
+    },
     {
         timestamps: true,
-        versionKey: false
-    });
-offersSchema.virtual('ratings', {
-    ref: 'ratings', // Reference to the Rating model
-    localField: '_id', // The offer_id in UnlockOffers corresponds to the _id in Offer
-    foreignField: 'offer_id', // The offer_id in the Rating model
+        versionKey: false,
+    }
+);
+offersSchema.virtual("ratings", {
+    ref: "ratings", // Reference to the Rating model
+    localField: "_id", // The offer_id in UnlockOffers corresponds to the _id in Offer
+    foreignField: "offer_id", // The offer_id in the Rating model
     justOne: true, // Set to false to retrieve an array of ratings
-    });
-      
-offersSchema.set('toObject', { virtuals: true });
-offersSchema.set('toJSON', { virtuals: true });
-offersSchema.plugin(autoIncrement, { model: 'offers', field: 'id', startAt: 1 });
+});
+offersSchema.index({ location: '2dsphere' });
+offersSchema.set("toObject", { virtuals: true });
+offersSchema.set("toJSON", { virtuals: true });
+offersSchema.plugin(autoIncrement, { model: "offers", field: "id", startAt: 1 });
 
-const Offers = model<IOffers>('offers', offersSchema);
+const Offers = model<IOffers>("offers", offersSchema);
 
 export default Offers;

@@ -10,6 +10,8 @@ import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import moment from "moment-timezone";
 import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
+import GeoLoactionService from "../../../utils/get-location";
+const geoLoaction = new GeoLoactionService();
 moment.tz.setDefault("Asia/Kolkata");
 const fileName = "[admin][productrequest][index.ts]";
 export default class OfferController {
@@ -35,7 +37,10 @@ export default class OfferController {
                 req.body;
 
             let result: any;
+            const locationResponse: any = await geoLoaction.getGeoLoaction(pin_code);
+
             const product: any = await Product.findOne({ id: product_id }).lean();
+
             result = await Offers.create({
                 target_price: target_price,
                 buy_quantity: buy_quantity,
@@ -52,12 +57,16 @@ export default class OfferController {
                 product_id: product._id,
                 offer_price: offer_price,
                 moq: moq,
-                type: 0, //buy
+                type: 0,
                 status: 1,
+                location: {
+                    type: "Point",
+                    coordinates: [locationResponse?.geometry?.location?.lng, locationResponse?.geometry?.location?.lat], // [longitude, latitude]
+                },
                 created_by: req.customer.object_id,
             });
 
-            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), result.doc);
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-add"), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -74,6 +83,8 @@ export default class OfferController {
                 req.body;
 
             let result: any;
+            const locationResponse: any = await geoLoaction.getGeoLoaction(pin_code);
+
             const product: any = await Product.findOne({ id: product_id }).lean();
             result = await Offers.create({
                 target_price: target_price,
@@ -91,8 +102,12 @@ export default class OfferController {
                 product_id: product._id,
                 offer_price: offer_price,
                 moq: moq,
-                type: 1, //sell
+                type: 1,
                 status: 1,
+                location: {
+                    type: "Point",
+                    coordinates: [locationResponse?.geometry?.location?.lng, locationResponse?.geometry?.location?.lat], // [longitude, latitude]
+                },
                 created_by: req.customer.object_id,
             });
 
@@ -511,15 +526,23 @@ export default class OfferController {
                         contact_no: unlockingCustomer?.phone,
                         address: unlockingCustomer?.address_line_1,
                         email_id: unlockingCustomer?.email,
+                        product_name: particular,
                     },
                 };
                 const whatsAppData = {
-                    campaignName:"Seller Opened Buyer Offer",
-                    userName:offerCreator?.name,
-                    destination:offerCreator?.whatapp_num||offerCreator?.phone,
-                    templateParams:[unlockingCustomer?.name,unlockingCustomer?.trade_name,unlockingCustomer?.phone,unlockingCustomer?.address_line_1,unlockingCustomer?.email]
-
-                }
+                    campaignName: "Seller Opened Buyer Offer",
+                    userName: offerCreator?.name,
+                    destination: offerCreator?.whatapp_num || offerCreator?.phone,
+                    templateParams: [
+                        particular,
+                        unlockingCustomer?.name,
+                        unlockingCustomer?.trade_name,
+                        unlockingCustomer?.phone,
+                        unlockingCustomer?.address_line_1,
+                        unlockingCustomer?.email,
+                    ],
+                };
+                console.log("WhatsApp Data: in function", whatsAppData);
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
 
@@ -535,15 +558,22 @@ export default class OfferController {
                         contact_no: unlockingCustomer?.phone,
                         address: unlockingCustomer?.address_line_1,
                         email_id: unlockingCustomer?.email,
+                        product_name: particular,
                     },
                 };
                 const whatsAppData = {
-                    campaignName:"Buyer Opened Seller Offer",
-                    userName:offerCreator?.name,
-                    destination:offerCreator?.whatapp_num||offerCreator?.phone,
-                    templateParams:[unlockingCustomer?.name,unlockingCustomer?.trade_name,unlockingCustomer?.phone,unlockingCustomer?.address_line_1,unlockingCustomer?.email]
-
-                }
+                    campaignName: "Buyer Opened Seller Offer",
+                    userName: offerCreator?.name,
+                    destination: offerCreator?.whatapp_num || offerCreator?.phone,
+                    templateParams: [
+                        particular,
+                        unlockingCustomer?.name,
+                        unlockingCustomer?.trade_name,
+                        unlockingCustomer?.phone,
+                        unlockingCustomer?.address_line_1,
+                        unlockingCustomer?.email,
+                    ],
+                };
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
             }

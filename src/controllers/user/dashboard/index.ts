@@ -494,345 +494,166 @@ export default class DashboardController {
         }
     }
 
-    // Checked
-    // public async getBuyOfferByProductID(req: Request, res: Response): Promise<any> {
+    // public async getBuyOfferByProductIDs(req: Request, res: Response): Promise<any> {
     //     try {
     //         const fn = "[getBuyOfferByProductID]";
-    //         // Set locale
     //         const { locale, page, limit } = req.query;
     //         this.locale = (locale as string) || "en";
     //         const pageNumber = parseInt(page as string) || 1;
     //         const limitNumber = parseInt(limit as string) || 10;
     //         const skip = (pageNumber - 1) * limitNumber;
-    //         // Extract the query parameters
-    //         const now = moment().format("YYYY-MM-DDTHH:mm:ss.SSSZ"); // Get current date
-    //         // const now = new Date();
-    //         // console.log(now);
-    //         // const master = req.query.master as string;
-    //         // const sorting = req.query.sorting as string;
-
     //         const id = parseInt(req.params.id);
+
     //         const { individual, master, sorting, filters } = req.body;
+    //         const filtersObj = filters || {};
+
+    //         // Extract location data from the request filters
+    //         const { lat, lng, distance } = filtersObj;
+
+    //         const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
 
     //         const product: any = await Product.findOne({ id: id }).lean();
-    //         const filter: any = {};
-    //         filter.status = 1;
-    //         filter.type = 0;
-    //         filter.product_id = product._id;
-    //         filter.$expr = {
-    //             $gt: [
-    //                 {
-    //                     $add: [
-    //                         { $toDate: "$publish_date" }, // 👈 important fix
-    //                         {
-    //                             $multiply: [
-    //                                 { $toInt: { $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0] } },
-    //                                 60 * 60 * 1000, // hours to milliseconds
-    //                             ],
-    //                         },
-    //                     ],
-    //                 },
-    //                 now, // current time
-    //             ],
-    //         };
-
-    //         // console.log(filter);
-    //         if (individual) {
-    //             // const individual = req.query.individual as string;
-    //             const individualObj = individual;
-
-    //             if (individualObj.size) {
-    //                 filter["individual_pack.individual.individualSize.id"] = individualObj.size;
-    //             }
-    //             if (individualObj.unit) {
-    //                 filter["individual_pack.individual.individualUnit.id"] = individualObj.unit;
-    //             }
-
-    //             if (individualObj.type) {
-    //                 filter["individual_pack.individual.individualType.id"] = individualObj.type;
-    //             }
-    //         }
-
-    //         if (master) {
-    //             // const master = req.query.master as string;
-    //             const masterObj = master;
-    //             if (masterObj.quantity) {
-    //                 filter["master_pack.quantity"] = masterObj.quantity.toString();
-    //             }
-
-    //             if (masterObj.masterType) {
-    //                 filter["master_pack.masterType.id"] = masterObj.masterType;
-    //             }
-    //         }
-
-    //         if (filters) {
-    //             // const filters = req.query.filters as string;
-    //             const filtersObj = filters;
-
-    //             if (filtersObj.rating) {
-    //                 filter.rating = filtersObj.rating;
-    //             }
-    //             if (filtersObj.distance) {
-    //                 filter.distance = filtersObj.distance;
-    //             }
-    //             if (filtersObj.coo) {
-    //                 filter.coo = filtersObj.coo;
-    //             }
-    //             if (filtersObj.brand) {
-    //                 filter.brand = filtersObj.brand;
-    //             }
-    //             if (filtersObj.state) {
-    //                 filter.state = filtersObj.state;
-    //             }
-    //             if (filtersObj.city) {
-    //                 filter.city = filtersObj.city;
-    //             }
-    //             // filter.city = filtersObj.city;
-    //         }
-
-    //         const sortOption: any = {};
-    //         if (sorting && sorting == 0) {
-    //             sortOption["id"] = -1;
-    //         } else if (sorting && sorting == 1) {
-    //             sortOption["id"] = -1;
-    //         } else if (sorting && sorting == 2) {
-    //             sortOption["target_price"] = 1;
-    //         } else if (sorting && sorting == 3) {
-    //             sortOption["buy_quantity"] = 1;
-    //         } else if (sorting && sorting == 1) {
-    //             sortOption["buy_quantity"] = -1;
-    //         } else {
-    //             sortOption["_id"] = -1; // default sort
-    //         }
-    //         if (sorting) {
-    //             // filter.master_pack.quantity = filtersObj.quantity;
-    //             // filter.master_pack.masterType.id = filtersObj.masterType;
-    //         }
-
-    //         const results: any = await Offers.find(filter)
-    //             .select(
-    //                 "_id id target_price brand coo buy_quantity product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt offer_counter "
-    //             )
-    //             .populate("product_id", "id name")
-    //             .populate("created_by")
-    //             .sort(sortOption)
-    //             .lean();
-    //         const totalCount = await Offers.countDocuments(filter);
-    //         const totalPages = Math.ceil(totalCount / limitNumber);
-    //         if (results.length > 0) {
-    //             // Map offers to include rating count
-    //             const formattedResult = await Promise.all(
-    //                 results.map(async (offer: any) => {
-    //                     const customerId = new mongoose.Types.ObjectId(offer.created_by?._id);
-    //                     const ratingResult = await Rating.aggregate([
-    //                         { $match: { customer_id: customerId } },
-    //                         {
-    //                             $group: {
-    //                                 _id: "$offer_id",
-    //                                 averageRating: { $avg: "$rating" },
-    //                                 totalRatings: { $sum: 1 },
-    //                             },
-    //                         },
-    //                     ]);
-    //                     const averageRating = ratingResult[0]?.averageRating || 0;
-    //                     const ratingCount = ratingResult[0]?.totalRatings || 0;
-    //                     const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id, created_by: req.customer.object_id, offer_counter: offer.offer_counter }).lean();
-    //                     // console.log(checkPurchase);
-    //                     return {
-    //                         id: offer.id,
-    //                         product_id: offer.product_id,
-    //                         target_price: offer.target_price,
-    //                         buy_quantity: offer.buy_quantity,
-    //                         product_location: offer.product_location,
-    //                         brand: offer.brand,
-    //                         coo: offer.coo,
-    //                         individual_pack: offer.individual_pack,
-    //                         master_pack: offer.master_pack,
-    //                         selling_unit: offer.selling_unit,
-    //                         conversion_unit: offer.conversion_unit,
-    //                         conversion_rate: offer.conversion_rate,
-    //                         offer_validity: offer.offer_validity,
-    //                         publish_date: offer.publish_date,
-    //                         created_by: offer.created_by,
-    //                         is_purchased: checkPurchase ? true : false,
-    //                         rating_count: ratingCount,
-    //                         average_rating: averageRating,
-    //                         createdAt: offer.createdAt,
-    //                     };
-    //                 })
-    //             );
-    //             // console.log(formattedResult);
-    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
-    //                 data: formattedResult,
-    //                 totalPages,
-    //                 totalCount,
-    //                 currentPage: pageNumber,
-    //             });
-    //         } else {
+    //         if (!product) {
     //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
     //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
 
-    // Checked
-    // public async getSellOfferByProductID(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getSellOfferByProductID]";
-    //         // Set locale
-    //         const { locale, page, limit } = req.query;
-    //         this.locale = (locale as string) || "en";
-    //         const pageNumber = parseInt(page as string) || 1;
-    //         const limitNumber = parseInt(limit as string) || 10;
-    //         const skip = (pageNumber - 1) * limitNumber;
-    //         const id = parseInt(req.params.id);
-    //         const { individual, master, sorting, filters } = req.body;
-    //         const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss"); // Get current date
-    //         const product: any = await Product.findOne({ id: id }).lean();
-    //         const filter: any = {};
-    //         filter.status = 1;
-    //         filter.type = "1";
-    //         filter.product_id = product._id;
-    //         filter.$expr = {
-    //             $gt: [
-    //                 {
-    //                     $add: [
-    //                         {
-    //                             $dateFromString: {
-    //                                 dateString: "$publish_date",
-    //                                 format: "%Y-%m-%d %H:%M:%S",
-    //                                 timezone: "Asia/Kolkata",
-    //                             },
-    //                         },
-    //                         {
-    //                             $add: [
-    //                                 {
-    //                                     $multiply: [
-    //                                         {
-    //                                             $toInt: {
-    //                                                 $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 0],
-    //                                             },
-    //                                         },
-    //                                         60 * 60 * 1000, // hours → ms
-    //                                     ],
-    //                                 },
-    //                                 {
-    //                                     $multiply: [
-    //                                         {
-    //                                             $toInt: {
-    //                                                 $arrayElemAt: [{ $split: ["$offer_validity", ":"] }, 1],
-    //                                             },
-    //                                         },
-    //                                         60 * 1000, // minutes → ms
-    //                                     ],
-    //                                 },
-    //                             ],
-    //                         },
-    //                     ],
-    //                 },
-    //                 now, // current time
-    //             ],
+    //         // This object contains all filters EXCEPT for distance
+    //         const matchFilter: any = {
+    //             status: 1,
+    //             type: "0",
+    //             product_id: product._id,
+    //             $expr: {
+    //                 /* ... your full date validity expression ... */
+    //             },
     //         };
+
+    //         // filters ---
     //         if (individual) {
-    //             // const individual = req.query.individual as string;
-    //             const individualObj = individual;
-
-    //             if (individualObj.size) {
-    //                 filter["individual_pack.individual.individualSize.id"] = individualObj.size;
-    //             }
-    //             if (individualObj.unit) {
-    //                 filter["individual_pack.individual.individualUnit.id"] = individualObj.unit;
-    //             }
-
-    //             if (individualObj.type) {
-    //                 filter["individual_pack.individual.individualType.id"] = individualObj.type;
-    //             }
+    //             if (individual.size) matchFilter["individual_pack.individual.individualSize.id"] = individual.size;
+    //             if (individual.unit) matchFilter["individual_pack.individual.individualUnit.id"] = individual.unit;
+    //             if (individual.type) matchFilter["individual_pack.individual.individualType.id"] = individual.type;
     //         }
-
     //         if (master) {
-    //             // const master = req.query.master as string;
-    //             const masterObj = master;
-    //             if (masterObj.quantity) {
-    //                 filter["master_pack.quantity"] = masterObj.quantity.toString();
-    //             }
-
-    //             if (masterObj.masterType) {
-    //                 filter["master_pack.masterType.id"] = masterObj.masterType;
-    //             }
+    //             if (master.quantity) matchFilter["master_pack.quantity"] = master.quantity.toString();
+    //             if (master.masterType) matchFilter["master_pack.masterType.id"] = master.masterType;
     //         }
+    //         if (filtersObj.coo) matchFilter.coo = filtersObj.coo;
+    //         if (filtersObj.brand) matchFilter.brand = filtersObj.brand;
+    //         if (filtersObj.state) matchFilter.state = filtersObj.state;
+    //         if (filtersObj.city) matchFilter.city = filtersObj.city;
 
-    //         if (filters) {
-    //             // const filters = req.query.filters as string;
-    //             const filtersObj = filters;
+    //         // -- AGGREGATION pipeline --
+    //         const pipeline: any[] = [];
 
-    //             // if (filtersObj.rating) {
-    //             //     filter.rating = filtersObj.rating;
-    //             // }
-    //             if (filtersObj.distance) {
-    //                 filter.distance = filtersObj.distance;
-    //             }
-    //             if (filtersObj.coo) {
-    //                 filter.coo = filtersObj.coo;
-    //             }
-    //             if (filtersObj.brand) {
-    //                 filter.brand = filtersObj.brand;
-    //             }
-    //             if (filtersObj.state) {
-    //                 filter.state = filtersObj.state;
-    //             }
-    //             if (filtersObj.city) {
-    //                 filter.city = filtersObj.city;
-    //             }
-    //             // filter.city = filtersObj.city;
-    //         }
-
-    //         const sortOption: any = {};
-    //         if (sorting && sorting == 0) {
-    //             sortOption["id"] = -1;
-    //         } else if (sorting && sorting == 1) {
-    //             sortOption["offer_price"] = 1;
-    //         } else if (sorting && sorting == 2) {
-    //             sortOption["moq"] = 1;
-    //         } else if (sorting && sorting == 3) {
-    //             sortOption["moq"] = -1;
+    //         // Conditionally add $geoNear as the FIRST stage for optimal performance
+    //         if (lat && lng && distance) {
+    //             pipeline.push({
+    //                 $geoNear: {
+    //                     near: {
+    //                         type: "Point",
+    //                         coordinates: [
+    //                             parseFloat(lng as string), // longitude first
+    //                             parseFloat(lat as string), // latitude second
+    //                         ],
+    //                     },
+    //                     // The new field that will contain the calculated distance in meters
+    //                     distanceField: "distance_from_user",
+    //                     // Max distance must be in meters, so we convert from KM
+    //                     maxDistance: parseInt(distance as string) * 1000,
+    //                     // Apply all other filters for efficiency
+    //                     query: matchFilter,
+    //                     // Use the indexed field
+    //                     key: "location",
+    //                     spherical: true,
+    //                 },
+    //             });
     //         } else {
-    //             sortOption["_id"] = -1; // default sort
+    //             // If no location filters, use the original $match stage
+    //             pipeline.push({ $match: matchFilter });
     //         }
 
-    //         const results: any = await Offers.find(filter)
-    //             .select(
-    //                 "id offer_price moq brand coo product_location individual_pack master_pack selling_unit conversion_unit conversion_rate offer_validity publish_date createdAt offer_counter"
-    //             )
-    //             .populate("product_id", "id name")
-    //             .populate("created_by")
-    //             .sort(sortOption)
-    //             .lean();
+    //         // --- The rest of the pipeline continues as before ---
+    //         pipeline.push({
+    //             $lookup: { from: "ratings", localField: "created_by", foreignField: "customer_id", as: "seller_ratings" },
+    //         });
+    //         pipeline.push({
+    //             $addFields: { averageRating: { $avg: "$seller_ratings.rating" }, totalRatings: { $size: "$seller_ratings" } },
+    //         });
+    //         pipeline.push({
+    //             $lookup: { from: "customers", localField: "created_by", foreignField: "_id", as: "created_by" },
+    //         });
+    //         pipeline.push({
+    //             $unwind: { path: "$created_by", preserveNullAndEmptyArrays: true },
+    //         });
 
-    //         const totalCount = await Offers.countDocuments(filter);
+    //         if (filtersObj.rating) {
+    //             pipeline.push({ $match: { averageRating: { $gte: Number(filtersObj.rating) } } });
+    //         }
+
+    //         // --- SORT ---
+    //         const sortOption: any = {};
+    //         if (sorting === 1) sortOption["id"] = -1;
+    //         else if (sorting === 2) sortOption["offer_price"] = 1;
+    //         else if (sorting === 3) sortOption["buy_quantity"] = -1;
+    //         else if (sorting === 4) sortOption["buy_quantity"] = 1;
+    //         // Add sorting by distance (nearest first)
+    //         else if (sorting === "distance") sortOption["distance_from_user"] = 1;
+    //         else sortOption["_id"] = -1;
+    //         pipeline.push({ $sort: sortOption });
+
+    //         pipeline.push({ $skip: skip });
+    //         pipeline.push({ $limit: limitNumber });
+
+    //         pipeline.push({
+    //             $project: {
+    //                 // Add all fields you want to return
+    //                 id: 1,
+    //                 offer_price: 1,
+    //                 buy_quantity: 1,
+    //                 target_price: 1,
+    //                 moq: 1,
+    //                 brand: 1,
+    //                 coo: 1,
+    //                 product_location: 1,
+    //                 individual_pack: 1,
+    //                 master_pack: 1,
+    //                 selling_unit: 1,
+    //                 conversion_unit: 1,
+    //                 conversion_rate: 1,
+    //                 offer_validity: 1,
+    //                 publish_date: 1,
+    //                 created_by: 1,
+    //                 offer_counter: 1,
+    //                 averageRating: 1,
+    //                 totalRatings: 1,
+    //                 createdAt: 1,
+    //                 // Include the calculated distance in the final output
+    //                 distance_from_user: 1,
+    //             },
+    //         });
+
+    //         const results = await Offers.aggregate(pipeline);
+
+    //         const countPipeline = pipeline.filter((stage) => !("$skip" in stage) && !("$limit" in stage));
+    //         countPipeline.push({ $count: "totalCount" });
+    //         const countResult = await Offers.aggregate(countPipeline);
+    //         const totalCount = countResult[0]?.totalCount || 0;
     //         const totalPages = Math.ceil(totalCount / limitNumber);
+
     //         if (results.length > 0) {
-    //             // Format the results and add the rating count
     //             const formattedResult = await Promise.all(
     //                 results.map(async (offer: any) => {
-    //                     const customerId = new mongoose.Types.ObjectId(offer.created_by?._id);
-    //                     const ratingResult = await Rating.aggregate([
-    //                         { $match: { customer_id: customerId } },
-    //                         {
-    //                             $group: {
-    //                                 _id: "$offer_id",
-    //                                 averageRating: { $avg: "$rating" },
-    //                                 totalRatings: { $sum: 1 },
-    //                             },
-    //                         },
-    //                     ]);
-    //                     const averageRating = ratingResult[0]?.averageRating || 0;
-    //                     const ratingCount = ratingResult[0]?.totalRatings || 0;
-    //                     const checkPurchase = await UnlockOffers.findOne({ offer_id: offer._id, created_by: req.customer.object_id, offer_counter: offer.offer_counter }).lean();
-    //                     // console.log(checkPurchase);
+    //                     const checkPurchase = await UnlockOffers.findOne({
+    //                         offer_id: offer._id,
+    //                         created_by: req.customer.object_id,
+    //                         offer_counter: offer.offer_counter,
+    //                     }).lean();
+
     //                     return {
     //                         id: offer.id,
     //                         offer_price: offer.offer_price,
+    //                         buy_quantity: offer.buy_quantity,
+    //                         target_price: offer.target_price,
     //                         moq: offer.moq,
     //                         brand: offer.brand,
     //                         coo: offer.coo,
@@ -844,16 +665,18 @@ export default class DashboardController {
     //                         conversion_rate: offer.conversion_rate,
     //                         offer_validity: offer.offer_validity,
     //                         publish_date: offer.publish_date,
-    //                         product_id: offer.product_id,
+    //                         product_id: product,
     //                         createdBy: offer.created_by,
-    //                         is_purchased: checkPurchase ? true : false,
-    //                         rating_count: ratingCount,
-    //                         average_rating: averageRating,
+    //                         is_purchased: !!checkPurchase,
+    //                         rating_count: offer.totalRatings || 0,
+    //                         average_rating: offer.averageRating ? Number(offer.averageRating.toFixed(1)) : 0,
     //                         createdAt: offer.createdAt,
+    //                         // Add the distance to the final formatted object (value is in meters)
+    //                         distance: offer.distance_from_user,
     //                     };
     //                 })
     //             );
-    //             // console.log(formattedResult);
+
     //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
     //                 data: formattedResult,
     //                 totalPages,
@@ -880,6 +703,7 @@ export default class DashboardController {
 
             const { individual, master, sorting, filters } = req.body;
             const filtersObj = filters || {};
+            const { lat, lng, distance } = filtersObj;
 
             const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
 
@@ -944,14 +768,38 @@ export default class DashboardController {
                 if (master.quantity) matchFilter["master_pack.quantity"] = master.quantity.toString();
                 if (master.masterType) matchFilter["master_pack.masterType.id"] = master.masterType;
             }
-            if (filtersObj.distance) matchFilter.distance = filtersObj.distance;
             if (filtersObj.coo) matchFilter.coo = filtersObj.coo;
             if (filtersObj.brand) matchFilter.brand = filtersObj.brand;
             if (filtersObj.state) matchFilter.state = filtersObj.state;
             if (filtersObj.city) matchFilter.city = filtersObj.city;
 
             // -- AGGREGATION pipeline --
-            const pipeline: any[] = [{ $match: matchFilter }];
+            const pipeline: any[] = [];
+            if (lat && lng && distance) {
+                pipeline.push({
+                    $geoNear: {
+                        near: {
+                            type: "Point",
+                            coordinates: [
+                                parseFloat(lng as string), // longitude first
+                                parseFloat(lat as string), // latitude second
+                            ],
+                        },
+                        // The new field that will contain the calculated distance in meters
+                        distanceField: "distance_from_user",
+                        // Max distance must be in meters, so we convert from KM
+                        maxDistance: parseInt(distance as string) * 1000,
+                        // Apply all other filters for efficiency
+                        query: matchFilter,
+                        // Use the indexed field
+                        key: "location",
+                        spherical: true,
+                    },
+                });
+            } else {
+                pipeline.push({ $match: matchFilter });
+            }
+
             pipeline.push({
                 $lookup: {
                     from: "ratings",
@@ -967,7 +815,7 @@ export default class DashboardController {
                 },
             });
 
-             pipeline.push({
+            pipeline.push({
                 $lookup: {
                     from: "customers",
                     localField: "created_by",
@@ -991,6 +839,7 @@ export default class DashboardController {
             else if (sorting === 2) sortOption["offer_price"] = 1;
             else if (sorting === 3) sortOption["buy_quantity"] = -1;
             else if (sorting === 4) sortOption["buy_quantity"] = 1;
+            else if (sorting === "distance") sortOption["distance_from_user"] = 1;
             else sortOption["_id"] = -1;
             pipeline.push({ $sort: sortOption });
 
@@ -1075,6 +924,7 @@ export default class DashboardController {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
+            console.log("err", err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
