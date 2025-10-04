@@ -106,9 +106,8 @@ export default class AccountController {
             }).lean();
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
             const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
-            console.log("customerExistWithGstVerified-out",checkTransaction,customerExistWithGstVerified.length);
+            
             if (!checkTransaction && customerExistWithGstVerified.length === 1) {
-            console.log("customerExistWithGstVerified-in",);
 
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
@@ -130,7 +129,7 @@ export default class AccountController {
                     templateParams:[`${settings.value.new_registration_topup}`+'']
 
                 }
-                console.log(whatsAppData,'whatsAppData')
+                
 
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
