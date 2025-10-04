@@ -103,10 +103,13 @@ export default class AccountController {
             const customerExistWithGstVerified:any = await Customer.find({
                 gst: result?.gst,
                 is_gst_verified: true,
-            });
+            }).lean();
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
             const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
-            if (!checkTransaction && customerExistWithGstVerified?.length === 1) {
+            console.log("customerExistWithGstVerified-out",checkTransaction,customerExistWithGstVerified.length);
+            if (!checkTransaction && customerExistWithGstVerified.length === 1) {
+            console.log("customerExistWithGstVerified-in",);
+
                 const reachare: any = await Wallet.create({
                     balance: settings.value.new_registration_topup,
                     type: 1,
@@ -122,11 +125,12 @@ export default class AccountController {
                 };
                 const whatsAppData = {
                     campaignName:"New User Profile Complete",
-                    userName:customerExistWithGstVerified?.name,
-                    destination:customerExistWithGstVerified?.whatapp_num||customerExistWithGstVerified?.phone,
-                    templateParams:[settings.value.new_registration_topup]
+                    userName:customerExistWithGstVerified[0]?.name,
+                    destination:customerExistWithGstVerified[0]?.whatapp_num||customerExistWithGstVerified[0]?.phone,
+                    templateParams:[`${settings.value.new_registration_topup}`+'']
 
                 }
+                console.log(whatsAppData,'whatsAppData')
 
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);

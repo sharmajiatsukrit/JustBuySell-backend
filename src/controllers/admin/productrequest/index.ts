@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { ProductRequest } from "../../../models";
+import { Customer, ProductRequest } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -205,11 +205,9 @@ export default class ProductRequestController {
                     status: status,
                 }
             );
-
-            const updatedData: any = await ProductRequest.find({ id: id }).lean();
-            const customerData: any = await ProductRequest.find({ _id: updatedData?.createdBy }).lean();
-
-            if (result && status == 1) {
+            const updatedData: any = await ProductRequest.findOne({ id: id }).lean();
+            const customerData: any = await Customer.findOne({ _id: updatedData?.created_by }).lean();
+            if ((updatedData && status == 1)) {
                 const notificationData = {
                     tmplt_name: "product_add_request_processed",
                     to: customerData?._id,
@@ -217,19 +215,19 @@ export default class ProductRequestController {
                         product_name: updatedData?.name,
                     },
                 };
-             const whatsAppData = {
-                    campaignName:"Product Add Request Processed",
-                    userName:customerData?.name,
-                    destination:customerData?.whatapp_num||customerData?.phone,
-                    templateParams:[updatedData?.name]
-
-                }
+                const whatsAppData = {
+                    campaignName: "Product Add Request Processed",
+                    userName: customerData?.name,
+                    destination: "6204591216",
+                    templateParams: [updatedData?.name],
+                };
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-statusupdated"), updatedData);
         } catch (err: any) {
+
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }

@@ -57,6 +57,7 @@ const customerSchema: Schema = new Schema({
     latitude: { type: String, default: '' },
     longitude: { type: String, default: '' },
     is_email_verified: { type: Boolean, default: false },
+    is_user_new: { type: Boolean, default: true },
     language_code: { type: String, default: 'en' },
     language: { type: String, default: 'English' },
     device: { type: String, default: 'Android' },

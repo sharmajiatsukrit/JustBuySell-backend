@@ -98,7 +98,7 @@ export default class AuthController {
 
             const formattedUserData = await this.fetchUserDetails(userData.id);
             const session = await this.createSession(userData._id, userData.id, phone, req, userData.status, remember);
-
+            await Customer.findOneAndUpdate({ phone },{ is_user_new: false });
             if (session) {
                 formattedUserData.token = session.token;
             }

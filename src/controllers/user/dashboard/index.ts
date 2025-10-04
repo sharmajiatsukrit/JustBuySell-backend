@@ -941,6 +941,7 @@ export default class DashboardController {
 
             const { individual, master, sorting, filters } = req.body;
             const filtersObj = filters || {};
+            const { lat, lng, distance } = filtersObj;
 
             const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
 
@@ -1005,14 +1006,37 @@ export default class DashboardController {
                 if (master.quantity) matchFilter["master_pack.quantity"] = master.quantity.toString();
                 if (master.masterType) matchFilter["master_pack.masterType.id"] = master.masterType;
             }
-            if (filtersObj.distance) matchFilter.distance = filtersObj.distance;
             if (filtersObj.coo) matchFilter.coo = filtersObj.coo;
             if (filtersObj.brand) matchFilter.brand = filtersObj.brand;
             if (filtersObj.state) matchFilter.state = filtersObj.state;
             if (filtersObj.city) matchFilter.city = filtersObj.city;
 
             // -- AGGREGATION pipeline --
-            const pipeline: any[] = [{ $match: matchFilter }];
+            const pipeline: any[] = [];
+            if (lat && lng && distance) {
+                pipeline.push({
+                    $geoNear: {
+                        near: {
+                            type: "Point",
+                            coordinates: [
+                                parseFloat(lng as string), // longitude first
+                                parseFloat(lat as string), // latitude second
+                            ],
+                        },
+                        // The new field that will contain the calculated distance in meters
+                        distanceField: "distance_from_user",
+                        // Max distance must be in meters, so we convert from KM
+                        maxDistance: parseInt(distance as string) * 1000,
+                        // Apply all other filters for efficiency
+                        query: matchFilter,
+                        // Use the indexed field
+                        key: "location",
+                        spherical: true,
+                    },
+                });
+            } else {
+                pipeline.push({ $match: matchFilter });
+            }
             pipeline.push({
                 $lookup: {
                     from: "ratings",
@@ -1050,6 +1074,7 @@ export default class DashboardController {
             else if (sorting === 2) sortOption["offer_price"] = 1;
             else if (sorting === 3) sortOption["moq"] = -1;
             else if (sorting === 4) sortOption["moq"] = 1;
+            else if (sorting === "distance") sortOption["distance_from_user"] = 1;
             else sortOption["_id"] = -1;
             pipeline.push({ $sort: sortOption });
 
