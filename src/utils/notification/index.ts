@@ -27,7 +27,7 @@ export default class NotificationApi {
     }
 
     static async fetchAllNotification(customer_id: any) {
-        return await Notifications.find({ customer_id: customer_id }).lean().exec();
+        return await Notifications.find({ customer_id: customer_id }).sort({createdAt:-1}).lean().exec();
     }
 
 }

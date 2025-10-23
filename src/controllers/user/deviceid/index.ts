@@ -13,24 +13,25 @@ export default class BannerController {
 
     private async newUserNotification(userId: string): Promise<any> {
         try {
-            const user: any = await Customer.findOne({ _id: userId }).lean();
+            const user: any = await Customer.findOneAndUpdate({ _id: userId },{ is_user_new: false }).lean();
             const notificationData = {
                 tmplt_name: "new_user_loggin",
                 to: userId,
                 dynamicKey: {},
             };
             const whatsAppData = {
-                campaignName: "New User Profile Complete",
-                userName: user?.name||"New User",
+                campaignName: "Welcome New User",
+                userName: user?.name||user?.phone,
                 destination: user?.whatapp_num || user?.phone,
                 templateParams: ['test'],
             };
-
+            
             if (user?.is_user_new) {
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
 
             }
+
         } catch (error) {}
     }
 

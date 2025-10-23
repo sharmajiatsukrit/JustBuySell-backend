@@ -18,6 +18,7 @@ export async function handleTriggerNotification(data: any) {
         const mail = await sendMail(email, subject, emailContent, []);
     }
     if (data?.is_whatsapp) {
+        console.log(data, "whatsapp");
         const { destination, userName, campaignName, templateParams } = data;
         await whatsappService.sendWhatsApp(destination, userName, campaignName, templateParams)
     }

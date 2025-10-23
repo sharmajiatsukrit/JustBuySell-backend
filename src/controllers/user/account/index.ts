@@ -106,11 +106,13 @@ export default class AccountController {
             }).lean();
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
             const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
+            const mainWallet: any = await Wallet.findOne({ customer_id:req.customer.object_id, type: 0 });
+
             
             if (!checkTransaction && customerExistWithGstVerified.length === 1) {
 
                 const reachare: any = await Wallet.create({
-                    balance: settings.value.new_registration_topup,
+                    balance: parseFloat((Number(settings.value.new_registration_topup)).toFixed(2)),
                     type: 1,
                     customer_id: req.customer.object_id,
                 });
@@ -135,13 +137,14 @@ export default class AccountController {
                 prepareWhatsAppNotificationData(whatsAppData);
 
                 const transaction: any = await Transaction.create({
-                    amount: settings.value.new_registration_topup,
+                    amount: parseFloat((Number(settings.value.new_registration_topup)).toFixed(2)),
                     gst: 0,
                     transaction_id: "",
                     transaction_type: 0,
                     razorpay_payment_id: "",
                     status: 1,
                     remarks: "REGISTRATIONTOPUP",
+                    closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
                     customer_id: req.customer.object_id,
                 });
             }
@@ -229,17 +232,21 @@ export default class AccountController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
+            console.log(fn)
 
             const { amount, payment_id, remarks, error_code, transaction_id, status } = req.body;
+            const mainWallet: any = await Wallet.findOne({ customer_id:req.customer.object_id, type: 0 });
+
             if (error_code) {
                 const transaction: any = await Transaction.findOneAndUpdate(
                     { transaction_id: transaction_id },
                     {
-                        amount: amount,
+                        amount: parseFloat((Number(amount)).toFixed(2)),
                         transaction_id: transaction_id,
                         status: 2,
                         remarks: remarks,
                         error_code: error_code,
+                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
                         customer_id: req.customer.object_id,
                     }
                 );
@@ -251,12 +258,12 @@ export default class AccountController {
                     const result: any = await Wallet.findOneAndUpdate(
                         { customer_id: req.customer.object_id, type: 0 },
                         {
-                            balance: existing.balance + amount,
+                            balance: parseFloat((existing.balance + Number(amount)).toFixed(2)),
                         }
                     );
                 } else {
                     const result: any = await Wallet.create({
-                        balance: amount,
+                        balance: parseFloat((Number(amount)).toFixed(2)),
                         type: 0,
                         customer_id: req.customer.object_id,
                     });
@@ -265,10 +272,11 @@ export default class AccountController {
                 const transaction: any = await Transaction.findOneAndUpdate(
                     { transaction_id: transaction_id },
                     {
-                        amount: amount,
+                        amount: parseFloat((Number(amount)).toFixed(2)),
                         transaction_id: transaction_id,
                         razorpay_payment_id: payment_id,
                         remarks: "Amount added successful.",
+                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
                         status: 1,
                         customer_id: req.customer.object_id,
                     }
@@ -343,46 +351,7 @@ export default class AccountController {
         }
     }
 
-    // Checked
-    // public async getTransactions(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getList]";
-    //         // Set locale
-    //         const { locale, page, limit, search } = req.query;
-    //         this.locale = (locale as string) || "en";
-
-    //         const pageNumber = parseInt(page as string) || 1;
-    //         const limitNumber = parseInt(limit as string) || 10;
-
-    //         const skip = (pageNumber - 1) * limitNumber;
-    //         const customerId = new mongoose.Types.ObjectId(req.customer.object_id);
-    //         // const results = await Transaction.find({ customer_id: req.customer.object_id }).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
-    //         const result = await Transaction.aggregate([
-    //             { $match: { customer_id: customerId } },
-    //             { $sort: { id: -1 } },
-    //             { $skip: skip },
-    //             { $limit: limitNumber },
-    //             {
-    //                 $addFields: {
-    //                     created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
-    //                     created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
-    //                 },
-    //             },
-    //         ]);
-
-    //         // Get the total number of documents in the Permissions collection
-    //         const totalCount = await Transaction.countDocuments({});
-
-    //         if (result.length > 0) {
-    //             const totalPages = Math.ceil(totalCount / limitNumber);
-    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), { result, totalPages });
-    //         } else {
-    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-    //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
+   
 
     public async getTransactions(req: Request, res: Response): Promise<any> {
         try {

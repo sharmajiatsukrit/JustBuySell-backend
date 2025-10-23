@@ -118,12 +118,9 @@ export default class CronController {
                     $match: {
                         status: 1,
                         $expr: {
-                            $and: [
-                                { $gt: ["$expiryDt", now] }, 
-                                { $lte: ["$expiryDt", in15] },
-                            ],
+                            $and: [{ $gt: ["$expiryDt", now] }, { $lte: ["$expiryDt", in15] }],
                         },
-                    }, 
+                    },
                 },
                 {
                     $project: {
@@ -287,18 +284,25 @@ export default class CronController {
             );
 
             const bulkWalletOps = [];
-
+            const transactionsToInsert = [];
             for (const promo of expiredPromos) {
                 const { customer_id, amount } = promo;
-                const wallet: any = await Wallet.findOne({ customer_id, type: 1 }); //type 1 means promo wallet
+                const wallet: any = await Wallet.findOne({ customer_id, type: 1 });
+                const mainWallet: any = await Wallet.findOne({ customer_id, type: 0 });
 
                 if (wallet) {
                     const newAmount = Math.max(0, wallet.balance - amount);
                     bulkWalletOps.push({
                         updateOne: {
                             filter: { _id: wallet._id },
-                            update: { $set: { balance: newAmount } },
+                            update: { $set: { balance: parseFloat((Number(newAmount)).toFixed(2))} },
                         },
+                    });
+                    transactionsToInsert.push({
+                        amount,
+                        customer_id,
+                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
+                        remarks: "CREDIT LAPSE",
                     });
                 } else {
                     console.log(`Wallet not found for customer ${customer_id}`);
@@ -306,6 +310,9 @@ export default class CronController {
             }
             if (bulkWalletOps.length) {
                 await Wallet.bulkWrite(bulkWalletOps);
+            }
+            if (transactionsToInsert.length) {
+                await Transaction.insertMany(transactionsToInsert);
             }
         } catch (err: any) {
             console.error("Error in expirePromos:", err.message);

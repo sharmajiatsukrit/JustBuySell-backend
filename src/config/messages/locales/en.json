@@ -46,6 +46,7 @@
     "product-update":"Product Updated successfully",
     "product-delete": "Product Deleted successfully",
     "product-status": "Product Status successfully Updated",
+    "product-exist": "Product with this name already exists",
 
     "country-fetched": "Country Details Fetched",
     "country-add":"New Country added successfully",

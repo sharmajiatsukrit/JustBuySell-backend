@@ -40,6 +40,7 @@ export enum ServerMessagesEnum {
     "product-update" = "product-update",
     "product-delete" = "product-delete",
     "product-status" = "product-status",
+    "product-exist" = "product-exist",
 
     "country-fetched" = "country-fetched",
     "country-add" = "country-add",

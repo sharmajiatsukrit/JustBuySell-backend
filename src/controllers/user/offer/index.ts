@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 // import moment from "moment";
-import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet, Customer } from "../../../models";
+import { Offers, Product, Rating, UnlockOffers, Transaction, Wallet, Customer, Category } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate, triggerNotifications } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -459,13 +459,20 @@ export default class OfferController {
             this.locale = (locale as string) || "en";
 
             const { offer_id, commission, amount, gst, sgst, cgst, igst, particular, offer_price, discount } = req.body;
+            const customerId = req.customer.object_id;
+            const defaultAmountToDeduct = Number(amount);
+            const promoAmountToDeduct = Number(discount);
             let result: any;
             const offer: any = await Offers.findOne({ id: offer_id }).lean();
+            const product: any = await Product.findOne({ _id: offer?.product_id }).lean();
+            const category: any = await Category.findOne({ _id: product?.category_id[0] }).lean();
             const offerCreator: any = await Customer.findOne({ _id: offer?.created_by });
             const unlockingCustomer: any = await Customer.findOne({ _id: req.customer.object_id });
+            const wallet0: any = await Wallet.findOne({ customer_id: customerId, type: 0 }).lean();
+            const wallet1: any = await Wallet.findOne({ customer_id: customerId, type: 1 }).lean();
 
             const transaction: any = await Transaction.create({
-                amount, // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
+                amount:parseFloat((Number(amount)).toFixed(2)), // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
                 gst,
                 sgst,
                 cgst,
@@ -473,8 +480,12 @@ export default class OfferController {
                 commission,
                 transaction_type: 1,
                 particular,
+                category_id:category.id,
+                product_id:product.id,
+                lead_id:offer_id,
                 offer_price,
                 discount,
+                closing_balance: parseFloat((Math.max(0, wallet1.balance - promoAmountToDeduct)).toFixed(2)),
                 transaction_id: null,
                 status: 1,
                 remarks: "PURCHASEOFFER",
@@ -482,7 +493,7 @@ export default class OfferController {
             });
             result = await UnlockOffers.create({
                 transaction_id: transaction._id,
-                price: amount,
+                price: parseFloat((Number(amount)).toFixed(2)),
                 commision: commission,
                 offer_id: offer._id,
                 offer_counter: offer.offer_counter,
@@ -490,28 +501,22 @@ export default class OfferController {
                 created_by: req.customer.object_id,
             });
 
-            const customerId = req.customer.object_id;
-            const defaultAmountToDeduct = Number(amount);
-            const promoAmountToDeduct = Number(discount);
-
             // Update Wallet Type 0 default wallet
-            const wallet0: any = await Wallet.findOne({ customer_id: customerId, type: 0 }).lean();
             if (wallet0) {
                 await Wallet.findOneAndUpdate(
                     { customer_id: customerId, type: 0 },
                     {
-                        balance: Math.max(0, wallet0.balance - defaultAmountToDeduct),
+                        balance: parseFloat((Math.max(0, wallet0.balance - defaultAmountToDeduct)).toFixed(2)),
                     }
                 );
             }
 
             // Update Wallet Type 1 promo wallet
-            const wallet1: any = await Wallet.findOne({ customer_id: customerId, type: 1 }).lean();
             if (wallet1) {
                 await Wallet.findOneAndUpdate(
                     { customer_id: customerId, type: 1 },
                     {
-                        balance: Math.max(0, wallet1.balance - promoAmountToDeduct),
+                        balance: parseFloat((Math.max(0, wallet1.balance - promoAmountToDeduct)).toFixed(2))
                     }
                 );
             }

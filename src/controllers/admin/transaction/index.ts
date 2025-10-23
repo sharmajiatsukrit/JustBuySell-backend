@@ -101,7 +101,6 @@ export default class TransactionController {
 
             const totalCount = await Transaction.countDocuments({});
             const totalPages = Math.ceil(totalCount / limitNumber);
-            // const result = await State.find({}).sort([['id', 'desc']]).lean();
 
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]), {
@@ -118,47 +117,6 @@ export default class TransactionController {
         }
     }
 
-    // Checked
-    // public async getList(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const fn = "[getList]";
-    //         // Set locale
-    //         const { locale, page, limit, search } = req.query;
-    //         this.locale = (locale as string) || "en";
-
-    //         const pageNumber = parseInt(page as string) || 1;
-    //         const limitNumber = parseInt(limit as string) || 10;
-
-    //         const skip = (pageNumber - 1) * limitNumber;
-    //         // const customer_id = parseInt(req.params.customer_id);
-    //         // const customer:any = await Customer.findOne({id:customer_id}).lean();
-    //         const result = await Transaction.find({  })
-    //             .sort({ id: -1 })
-    //             .skip(skip)
-    //             .limit(limitNumber)
-    //             .populate("customer_id")
-    //             .lean();
-
-    //         // Get the total number of documents in the transactions collection
-    //         const totalCount = await Transaction.countDocuments({  });
-
-    //         if (result.length > 0) {
-    //             const totalPages = Math.ceil(totalCount / limitNumber);
-    //             return serverResponse(
-    //                 res,
-    //                 HttpCodeEnum.OK,
-    //                 ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["transactions-fetched"]),
-    //                 { result, totalPages }
-    //             );
-    //         } else {
-    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-    //         }
-    //     } catch (err: any) {
-    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-    //     }
-    // }
-
-    // Checked
     public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getById]";

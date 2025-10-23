@@ -781,8 +781,8 @@ export default class DashboardController {
                         near: {
                             type: "Point",
                             coordinates: [
-                                parseFloat(lng as string), // longitude first
-                                parseFloat(lat as string), // latitude second
+                                parseFloat(lng as string), 
+                                parseFloat(lat as string), 
                             ],
                         },
                         // The new field that will contain the calculated distance in meters
@@ -836,7 +836,7 @@ export default class DashboardController {
             // --- SORT ---
             const sortOption: any = {};
             if (sorting === 1) sortOption["id"] = -1;
-            else if (sorting === 2) sortOption["offer_price"] = 1;
+            else if (sorting === 2) sortOption["target_price"] = 1;
             else if (sorting === 3) sortOption["buy_quantity"] = -1;
             else if (sorting === 4) sortOption["buy_quantity"] = 1;
             else if (sorting === "distance") sortOption["distance_from_user"] = 1;

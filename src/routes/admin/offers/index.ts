@@ -8,6 +8,7 @@ const offersController = new Offers();
 
 routes.post("/add", validateRequest, authAdmin, offersController.add.bind(offersController));
 routes.put("/update/:id", validateRequest, authAdmin, offersController.update.bind(offersController));
+routes.patch("/update-status/:id", validateRequest, authAdmin, offersController.updateStatus.bind(offersController));
 routes.delete("/delete/:id", validateRequest, authAdmin, offersController.delete.bind(offersController));
 routes.get("/list", validateRequest, authAdmin, offersController.getList.bind(offersController));
 routes.get("/by-id/:id", validateRequest, authAdmin, offersController.getById.bind(offersController));

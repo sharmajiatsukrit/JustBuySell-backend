@@ -173,6 +173,8 @@ export default class TransactionController {
             const filter: any = {};
             filter.status = 1;
             filter.transaction_type = 0;
+            filter.razorpay_order_id = { $ne: "" };
+
             // const filter:any = {};
             // if (search) {
             //     filter.$or = [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }];
@@ -402,6 +404,7 @@ export default class TransactionController {
             const skip = (pageNumber - 1) * limitNumber;
 
             const filter: any = {};
+            filter.remarks = "PURCHASEOFFER";
             // filter.status = 1;
             // filter.transaction_type = 1;
             // const filter:any = {};
@@ -736,9 +739,6 @@ export default class TransactionController {
                           },
                       ]
                     : []),
-                { $sort: { _id: -1 } },
-                { $skip: skip },
-                { $limit: limitNumber },
                 {
                     $count: "total",
                 },
@@ -839,18 +839,38 @@ export default class TransactionController {
             ];
 
             results.forEach((doc: any) => {
+                const trnxType = (trnx: any) => {
+                    if (trnx.remarks === "CREDIT LAPSE") {
+                        return "Lapse Credits";
+                    }
+                    if (trnx.errorCode) {
+                        return "Failed";
+                    }
+                    if (trnx.transaction_type === 0 && trnx.status === 1 && trnx.remarks === "REGISTRATIONTOPUP") {
+                        return "Free Credits";
+                    }
+                    if (trnx.transaction_type === 0 && trnx.status === 1 && trnx.remarks !== "REGISTRATIONTOPUP") {
+                        return "Recharge Wallet";
+                    }
+                    if (trnx.transaction_type === 1 && trnx.status === 1) {
+                        return "Lead Buy (credit used)";
+                    }
+                    return "-";
+                };
+
                 const createdDateIST = moment(doc.createdAt).tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
+
                 worksheet.addRow({
                     date: createdDateIST,
                     userId: doc?.customer_id?.id ?? "",
                     tradeName: doc?.customer_id?.trade_name ?? "",
-                    transactionType: doc?.transaction_type ?? "",
+                    transactionType: trnxType(doc),
                     credits: doc?.amount ?? "-",
                     jbsRef: doc?.id ?? "-",
                     amountBasic: doc?.amount ?? "-",
                     amountGst: doc?.gst ?? "-",
                     amountTotal: doc?.amount ?? "-",
-                    closingCredit: doc?.closingCredit ?? "0",
+                    closingCredit: doc?.closing_balance ?? "0",
                 });
             });
 

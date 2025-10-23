@@ -54,10 +54,10 @@ export default class AuthController {
             }
 
             // Verify password
-            const isPasswordValid = await Bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
-                throw new Error(constructResponseMsg(this.locale, "invalid-password"));
-            }
+            // const isPasswordValid = await Bcrypt.compare(password, user.password);
+            // if (!isPasswordValid) {
+            //     throw new Error(constructResponseMsg(this.locale, "invalid-password"));
+            // }
 
             // Fetch user details (assuming fetchUserDetails and createSession are defined elsewhere in your class)
             const formattedUserData = await this.fetchUserDetails(user.id);

@@ -83,6 +83,11 @@ export default class ProductRequestController {
 
             const { name, unitid, pack, masterpack, description, status } = req.body;
 
+            const existingProduct = await ProductRequest.findOne({ name: name });
+            if (existingProduct) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-exist"]));
+            }
+
             let result: any;
 
             result = await ProductRequest.create({
@@ -207,7 +212,7 @@ export default class ProductRequestController {
             );
             const updatedData: any = await ProductRequest.findOne({ id: id }).lean();
             const customerData: any = await Customer.findOne({ _id: updatedData?.created_by }).lean();
-            if ((updatedData && status == 1)) {
+            if (updatedData && status == 1) {
                 const notificationData = {
                     tmplt_name: "product_add_request_processed",
                     to: customerData?._id,
@@ -227,7 +232,6 @@ export default class ProductRequestController {
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-requested-statusupdated"), updatedData);
         } catch (err: any) {
-
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }

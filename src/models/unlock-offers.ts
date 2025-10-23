@@ -22,6 +22,7 @@ const unlockoffersSchema: Schema = new Schema({
     gst: { type: Number, default: '' },
     commision: { type: Number, default: '' },
     offer_counter: { type: Number, default: 0 },
+    feedback: { type: Boolean, default: false },
     status: { type: Number, default: 1 },
     created_by: { type: Schema.Types.ObjectId, ref: 'customers' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'customers' }

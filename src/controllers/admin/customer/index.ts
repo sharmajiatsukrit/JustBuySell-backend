@@ -380,21 +380,23 @@ export default class CustomerController {
             const promoTransaction = await PromoTransaction.create({ customer_id: customer._id, amount, remarks, expiry_date });
 
             const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean();
+            const mainWallet: any = await Wallet.findOne({ customer_id: customer._id, type: 0 }).lean();
             if (existing) {
                 await Wallet.findOneAndUpdate(
-                    { customer_id: customer._id, type: 1 }, // type 1 means promo wallet
+                    { customer_id: customer._id, type: 1 }, 
                     {
-                        balance: existing.balance + amount,
+                        balance: parseFloat((existing.balance + Number(amount)).toFixed(2)),
                     }
                 );
             } else {
-                await Wallet.create({ customer_id: customer._id, balance: amount, type: 1 }); // type 1 means promo wallet
+                await Wallet.create({ customer_id: customer._id, balance: parseFloat((Number(amount)).toFixed(2)), type: 1 }); // type 1 means promo wallet
             }
             const transaction: any = await Transaction.create({
-                amount,
+                amount:parseFloat((Number(amount)).toFixed(2)),
                 remarks: remarks,
                 transaction_type: 0,
                 status:1,
+                closing_balance:mainWallet.balance,
                 customer_id: customer._id,
             });
 

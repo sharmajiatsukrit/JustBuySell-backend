@@ -66,7 +66,7 @@ export default class UserController {
                 .populate("role_id","id name");
 
             // Get the total number of documents in the User collection that match the filter
-            const totalCount = await User.countDocuments();
+            const totalCount = await User.countDocuments(searchQuery);
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
