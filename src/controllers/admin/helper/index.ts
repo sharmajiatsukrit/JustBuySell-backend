@@ -387,6 +387,26 @@ export default class HelperController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+        public async getPendingProductRequestCount(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getCustomers]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const products = await ProductRequest.countDocuments({status:0});
+            const totals = {
+                total_pending_products_request:products,
+            }
+            if (totals) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
     public async getDashboardTotals(req: Request, res: Response): Promise<any> {
         try {
@@ -416,26 +436,7 @@ export default class HelperController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    public async getPendingProductRequestCount(req: Request, res: Response): Promise<any> {
-        try {
-            const fn = "[getCustomers]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
 
-            const products = await ProductRequest.countDocuments({status:0});
-            const totals = {
-                total_pending_products_request:products,
-            }
-            if (totals) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
-            } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
-            }
-        } catch (err: any) {
-            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
-        }
-    }
 
         public async getTestPDf(req: Request, res: Response): Promise<any> {
         try {
