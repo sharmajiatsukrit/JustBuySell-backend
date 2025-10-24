@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer,Category, Unit, Country, State, City, Roles, Attribute, AttributeItem, Product } from "../../../models";
+import { Customer,Category, Unit, Country, State, City, Roles, Attribute, AttributeItem, Product, ProductRequest } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -406,6 +406,26 @@ export default class HelperController {
                 total_buying_offers:products,
                 total_selling_offers:products,
                 total_earnings:products,
+            }
+            if (totals) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+    public async getPendingProductRequestCount(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getCustomers]";
+            // Set locale
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const products = await ProductRequest.countDocuments({status:0});
+            const totals = {
+                total_pending_products_request:products,
             }
             if (totals) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
