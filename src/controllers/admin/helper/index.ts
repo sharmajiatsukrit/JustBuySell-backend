@@ -392,6 +392,7 @@ export default class HelperController {
             const fn = "[getCustomers]";
             // Set locale
             const { locale } = req.query;
+            
             this.locale = (locale as string) || "en";
 
             const products = await ProductRequest.countDocuments({status:0});
