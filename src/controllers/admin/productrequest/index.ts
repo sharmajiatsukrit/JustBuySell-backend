@@ -31,32 +31,72 @@ export default class ProductRequestController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery: any = {};
-            if (search) {
-                searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];
+            const orConditions: any = [{ name: { $regex: search, $options: "i" } }, { "created_by.name": { $regex: search, $options: "i" } }];
+
+            const searchAsNumber = Number(search);
+
+            if (!isNaN(searchAsNumber)) {
+                orConditions.push({ id: +searchAsNumber });
             }
-            const results = await ProductRequest.find(searchQuery)
-                .sort({ _id: -1 }) // Sort by _id in descending order
-                .skip(skip)
-                .populate("created_by", "id name")
-                .limit(limitNumber)
-                .lean();
+            let matchQuery: any = {};
 
-            // Get the total number of documents in the Category collection
-            const totalCount = await ProductRequest.countDocuments(searchQuery);
+            if (search) {
+                matchQuery.$or = orConditions;
+            }
+            const pipeline: any[] = [
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "created_by",
+                        foreignField: "_id",
+                        as: "created_by",
+                    },
+                },
+                { $unwind: { path: "$created_by", preserveNullAndEmptyArrays: true } },
+                { $match: matchQuery },
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                {
+                    $project: {
+                        id: 1,
+                        name: 1,
+                        description: 1,
+                        product_image: 1,
+                        status: 1,
+                        "created_by.id": 1,
+                        "created_by.name": 1,
+                    },
+                },
+            ];
 
-            // Calculate total pages
+            const results = await ProductRequest.aggregate(pipeline);
+            // const results = await ProductRequest.find(searchQuery)
+            //     .sort({ _id: -1 }) // Sort by _id in descending order
+            //     .skip(skip)
+            //     .populate("created_by", "id name")
+            //     .limit(limitNumber)
+            //     .lean();
+
+            const totalCountResult = await ProductRequest.aggregate([
+                { $lookup: { from: "customers", localField: "created_by", foreignField: "_id", as: "created_by" } },
+                { $unwind: { path: "$created_by", preserveNullAndEmptyArrays: true } },
+                { $match: matchQuery },
+                { $count: "total" },
+            ]);
+
+            const totalCount = totalCountResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
                 // Format each item in the result array
                 const formattedResults = results.map((item, index) => ({
-                    id: item.id, // Generate a simple sequential ID starting from 1
+                    id: item.id, 
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
                     status: item.status,
-                    created_by: item.created_by,
+                    created_by: item?.created_by ? { id: item.created_by.id, name: item.created_by.name } : {},
                     // Add more fields as necessary
                 }));
 
@@ -170,18 +210,8 @@ export default class ProductRequestController {
 
             if (result) {
                 const formattedResult = {
-                    id: result.id,
-                    name: result.name,
-                    selling_unit: result.selling_unit,
-                    individual_pack_size: result.individual_pack_size,
-                    individual_pack_unit: result.individual_pack_unit,
-                    Individual_packing_type: result.Individual_packing_type,
-                    master_pack_qty: result.master_pack_qty,
-                    master_pack_type: result.master_pack_type,
-                    description: result.description,
+                    ...result,
                     product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    created_by: result.created_by,
-                    status: result.status,
                 };
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fetched"), formattedResult);
             } else {

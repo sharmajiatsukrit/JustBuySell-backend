@@ -23,7 +23,7 @@ export default class BannerController {
             const skip = (pageNumber - 1) * limitNumber;
 
             // Constructing the search query
-            let searchQuery = {};
+            let searchQuery:any = {is_deleted : false};
             if (search) {
                 searchQuery = {
                     // isDeleted: false,
@@ -31,9 +31,7 @@ export default class BannerController {
                         { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
                     ]
                 };
-            } else {
-                searchQuery = {};
-            }
+            } 
 
             const result = await Banner.find(searchQuery)
                 .lean()
@@ -173,7 +171,7 @@ export default class BannerController {
 
             const { id } = req.params;
 
-            const banner = await Banner.findOne({ id: id });
+            const banner = await Banner.findOneAndUpdate({ id: id },{is_deleted:true})
 
             if (banner) {
                 await banner.deleteOne();

@@ -17,6 +17,7 @@ const rolesSchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     permissions: { type: Array, default: [] },
+    is_deleted: { type: Boolean, default: false },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

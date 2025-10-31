@@ -61,7 +61,8 @@ const customerSchema: Schema = new Schema({
     language_code: { type: String, default: 'en' },
     language: { type: String, default: 'English' },
     device: { type: String, default: 'Android' },
-    status: { type: Number, default: 0 }
+    status: { type: Number, default: 0 },
+    lastRatingPopupShownAt: { type: Date, default: null }
 },
     {
         timestamps: true,

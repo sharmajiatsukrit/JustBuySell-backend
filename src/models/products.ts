@@ -19,7 +19,6 @@ interface IProducts extends Document {
 }
 
 const productsSchema: Schema = new Schema({
-
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     search_tags: { type: String, default: '' },
@@ -29,6 +28,7 @@ const productsSchema: Schema = new Schema({
     product_image: { type: String, default: '' },
     individual_label: { type: String, default: '' },
     master_label: { type: String, default: '' },
+    is_deleted: { type: Boolean, default: false },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

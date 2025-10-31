@@ -39,6 +39,7 @@ const userSchema: Schema = new Schema({
     ip_address: { type: String, default: '' },
     device: { type: String, default: 'Android' },
     role_id: { type: Schema.Types.ObjectId, ref: 'roles' },
+    is_deleted: { type: Boolean, default: false },
     status: { type: Number, default: 1 },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

@@ -11,6 +11,7 @@ interface IAttribute extends Document {
 const attributeSchema: Schema = new Schema({
 
     name: { type: String, default: '' },
+    is_deleted: { type: Boolean, default: false },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

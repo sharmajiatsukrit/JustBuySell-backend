@@ -20,6 +20,7 @@ const BannerSchema: Schema = new Schema({
     start_date: { type: String, default: '' },
     end_date: { type: String, default: '' },
     external_url: { type: String, default: '' },
+    is_deleted: { type: Boolean, default: false },
     status: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }

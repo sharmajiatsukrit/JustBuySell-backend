@@ -38,10 +38,11 @@ export default class UserController {
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
+            // await User.updateMany({ is_deleted: false });
 
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery = {};
+            let searchQuery:any = {};
             if (search) {
                 searchQuery = {
 
@@ -50,10 +51,11 @@ export default class UserController {
                         { phone: { $regex: search, $options: 'i' } },
                         { date_of_birth: { $regex: search, $options: 'i' } },
                         { email: { $regex: search, $options: 'i' } }, // Case-insensitive search for name
-                    ]
+                    ],
+                    is_deleted : false
                 };
             } else {
-                searchQuery = {};
+                searchQuery = {is_deleted : false};
             }
             const result = await User.find(searchQuery)
                 .sort({ id: -1 })
@@ -259,7 +261,7 @@ export default class UserController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await User.deleteOne({ id: id });
+            const result = await User.findOneAndUpdate({ id: id },{is_deleted:true});
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["user-delete"]), result);

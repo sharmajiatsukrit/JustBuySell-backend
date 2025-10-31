@@ -155,7 +155,7 @@ export default class PermissionController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Permissions.deleteOne({ id: id });
+            const result = await Permissions.findOneAndUpdate({ id: id },{is_deleted:true})
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-delete"]), result);

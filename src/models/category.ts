@@ -18,6 +18,7 @@ const categorySchema: Schema = new Schema({
     name: { type: String, default: '' },
     description: { type: String, default: '' },
     parent_id: { type: Schema.Types.ObjectId, ref: 'categories',default: null },
+    is_deleted: { type: Boolean, default: true },
     status: { type: Boolean, default: true },
     cat_img: { type: String, default: '' },
     commission: { type: Number, default: null },

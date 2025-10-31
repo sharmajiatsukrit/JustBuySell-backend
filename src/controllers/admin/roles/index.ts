@@ -32,7 +32,8 @@ export default class RolesController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            const filter:any = {};
+
+            const filter:any = {is_deleted : false};
             if (search) {
                 filter.$or = [
                     { name: { $regex: search, $options: 'i' } }
@@ -123,7 +124,7 @@ export default class RolesController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Roles.deleteOne({ id: id });
+            const result = await Roles.findOneAndUpdate({ id: id },{is_deleted:true});
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-delete"]), result);

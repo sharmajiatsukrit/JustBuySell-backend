@@ -32,7 +32,7 @@ export default class CustomerController {
         try {
             const fn = "[getList]";
             // Set locale
-            const { locale, page, limit, search } = req.query;
+            const { locale, page, limit, search, start_date, end_date, status } = req.query;
             this.locale = (locale as string) || "en";
 
             // Parse page and limit from query params, set defaults if not provided
@@ -42,23 +42,53 @@ export default class CustomerController {
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-            let searchQuery = {};
-            if (search) {
-                searchQuery = {
-                    $or: [
-                        { name: { $regex: search, $options: "i" } },
-                        { phone: { $regex: search, $options: "i" } },
-                        { date_of_birth: { $regex: search, $options: "i" } },
-                        { gst: { $regex: search, $options: "i" } },
-                        { email: { $regex: search, $options: "i" } }, // Case-insensitive search for name
-                    ],
-                };
-            } else {
-                searchQuery = {};
+            const orConditions:any = [
+                { name: { $regex: search, $options: "i" } },
+                { phone: { $regex: search, $options: "i" } },
+                { date_of_birth: { $regex: search, $options: "i" } },
+                { gst: { $regex: search, $options: "i" } },
+                { leagal_name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { company_email: { $regex: search, $options: "i" } },
+                { trade_name: { $regex: search, $options: "i" } },
+            ];
+
+            const searchAsNumber = Number(search);
+
+            if (!isNaN(searchAsNumber)) {
+            orConditions.push({ id: +searchAsNumber }); 
             }
+            const searchQuery:any = { };
+
+            if (search) {
+                searchQuery.$or = [...orConditions];
+            }
+
+            // Handle date range filtering
+            if (start_date || end_date) {
+                searchQuery.createdAt = {};
+
+                if (start_date) {
+                    searchQuery.createdAt.$gte = new Date(start_date as string);
+                }
+
+                if (end_date) {
+                    // Set to end of day for inclusive end date
+                    const endDateObj = new Date(end_date as string);
+                    endDateObj.setHours(23, 59, 59, 999);
+                    searchQuery.createdAt.$lte = endDateObj;
+                }
+            }
+
+            // Handle status filter
+            if (status !== undefined && status !== null && status !== "") {
+                searchQuery.status = parseInt(status as string);
+            }
+
             const result = await Customer.find(searchQuery).sort({ id: -1 }).skip(skip).limit(limitNumber).lean();
 
-            const totalCount = await Customer.countDocuments({});
+            // Count with same filters
+            const totalCount = await Customer.countDocuments(searchQuery);
 
             if (result.length > 0) {
                 const totalPages = Math.ceil(totalCount / limitNumber);
@@ -383,20 +413,20 @@ export default class CustomerController {
             const mainWallet: any = await Wallet.findOne({ customer_id: customer._id, type: 0 }).lean();
             if (existing) {
                 await Wallet.findOneAndUpdate(
-                    { customer_id: customer._id, type: 1 }, 
+                    { customer_id: customer._id, type: 1 },
                     {
                         balance: parseFloat((existing.balance + Number(amount)).toFixed(2)),
                     }
                 );
             } else {
-                await Wallet.create({ customer_id: customer._id, balance: parseFloat((Number(amount)).toFixed(2)), type: 1 }); // type 1 means promo wallet
+                await Wallet.create({ customer_id: customer._id, balance: parseFloat(Number(amount).toFixed(2)), type: 1 }); // type 1 means promo wallet
             }
             const transaction: any = await Transaction.create({
-                amount:parseFloat((Number(amount)).toFixed(2)),
+                amount: parseFloat(Number(amount).toFixed(2)),
                 remarks: remarks,
                 transaction_type: 0,
-                status:1,
-                closing_balance:mainWallet.balance,
+                status: 1,
+                closing_balance: mainWallet.balance,
                 customer_id: customer._id,
             });
 
@@ -416,7 +446,7 @@ export default class CustomerController {
             this.locale = (locale as string) || "en";
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
-            
+
             const customerId = customer._id;
             const wallets: any = await Wallet.find({
                 customer_id: customerId,
@@ -445,7 +475,7 @@ export default class CustomerController {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            console.log(err)
+            console.log(err);
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
@@ -463,7 +493,7 @@ export default class CustomerController {
             const skip = (pageNumber - 1) * limitNumber;
             const customer_id = parseInt(req.params.customer_id);
             const customer: any = await Customer.findOne({ id: customer_id }).lean();
-            
+
             const results = await Watchlist.find({ created_by: customer._id })
                 .sort({ _id: -1 }) // Sort by _id in descending order
                 .skip(skip)

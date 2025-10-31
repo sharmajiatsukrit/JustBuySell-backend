@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Attribute } from "../../../models";
+import { Attribute, AttributeItem } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -34,7 +34,7 @@ export default class AttributeController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery:any = {};
+            let searchQuery:any = {is_deleted: false};
             if (search) {
                 searchQuery.$or = [
                     { name: { $regex: search, $options: 'i' } }
@@ -146,13 +146,20 @@ export default class AttributeController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Attribute.deleteOne({ id: id });
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["attribute-delete"]), result);
-            } else {
+            const result:any = await Attribute.findOne({ id: id });
+            if (!result) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+            const attributeItemExistWithAttribute = await AttributeItem.find({ attribute_id: result._id });
+            
+            if (attributeItemExistWithAttribute.length > 0) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["cannot-delete-attribute"]));
+
+            }
+
+            await Attribute.findOneAndUpdate({ id }, { is_deleted: true });
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["attribute-delete"]), result);
+         
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

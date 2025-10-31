@@ -40,6 +40,7 @@
     "category-update":"Category Updated successfully",
     "category-delete": "Category Deleted successfully",
     "category-status": "Category Status successfully Updated",
+    "cannot-delete-category": "Cannot delete - product exists related to this category",
 
     "product-fetched": "Products Fetched",
     "product-add":"New Product added successfully",
@@ -47,6 +48,8 @@
     "product-delete": "Product Deleted successfully",
     "product-status": "Product Status successfully Updated",
     "product-exist": "Product with this name already exists",
+    "cannot-delete-product": "Cannot delete - an offer exists related to this product",
+    
 
     "country-fetched": "Country Details Fetched",
     "country-add":"New Country added successfully",
@@ -86,6 +89,7 @@
     "attribute-update":"Attribute Updated successfully",
     "attribute-delete": "Attribute Deleted successfully",
     "attribute-status": "Attribute Status successfully Updated",
+    "cannot-delete-attribute": "Cannot delete - attribute item exists related to this attribute",
 
     "product-requested": "Product Request Successfully submitted.",
     "product-request-fetched": "Product Request Fetched",
@@ -169,6 +173,7 @@
     "attribute-item-add":"New {attribute_name} added successfully",
     "attribute-item-update":"{attribute_name} Updated successfully",
     "attribute-item-delete": "{attribute_name} Deleted successfully",
-    "attribute-item-status": "{attribute_name} Status successfully Updated"
+    "attribute-item-status": "{attribute_name} Status successfully Updated",
+    "cannot-delete-attribute_item" : "Action cannot be performed"
     
 }

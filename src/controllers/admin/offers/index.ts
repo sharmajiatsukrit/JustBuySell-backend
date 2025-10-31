@@ -23,42 +23,157 @@ export default class OfferController {
     }
 
     // Checked
-    public async getList(req: Request, res: Response): Promise<any> {
+    // public async getList(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getList]";
+    //         // Set locale
+    //         const { locale, page, limit, search, customer_id, start_date, end_date } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const pageNumber = parseInt(page as string) || 1;
+    //         const limitNumber = parseInt(limit as string) || 5;
+
+    //         const skip = (pageNumber - 1) * limitNumber;
+    //         const filter: any = {};
+    //         if (search) {
+    //             filter.$or = [{ "product_id.name": { $regex: search, $options: "i" } }];
+    //         }
+    //         if (customer_id) {
+    //             const customer: any = await Customer.findOne({ id: customer_id }).lean();
+    //             filter.customer_id = customer ? customer._id : null;
+    //         }
+    //         // Filter by date range
+    //         if (start_date && end_date) {
+    //             filter.createdAt = {
+    //                 $gte: new Date(start_date as string),
+    //                 $lte: new Date(end_date as string),
+    //             };
+    //         }
+
+    //         const result = await Offers.find(filter).sort({ id: -1 }).skip(skip).limit(limitNumber).populate("created_by").populate("product_id").lean();
+
+    //         const totalCount = await Offers.countDocuments(filter);
+
+    //         if (result.length > 0) {
+    //             const totalPages = Math.ceil(totalCount / limitNumber);
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]), { result, totalCount, totalPages });
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
+      public async getList(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getList]";
-            // Set locale
             const { locale, page, limit, search, customer_id, start_date, end_date } = req.query;
             this.locale = (locale as string) || "en";
 
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-
             const skip = (pageNumber - 1) * limitNumber;
-            const filter: any = {};
+
+            let matchQuery: any = {};
+
             if (search) {
-                filter.$or = [{ "product_id.name": { $regex: search, $options: "i" } }];
+                matchQuery.$or = [
+                    { "product.name": { $regex: search, $options: "i" } },
+                    { "created_by.name": { $regex: search, $options: "i" } },
+                ];
             }
+
             if (customer_id) {
-                const customer: any = await Customer.findOne({ id: customer_id }).lean();
-                filter.customer_id = customer ? customer._id : null;
+                 matchQuery = {...matchQuery,"created_by.id": Number(customer_id)};
             }
-            // Filter by date range
+
             if (start_date && end_date) {
-                filter.createdAt = {
+                matchQuery.createdAt = {
                     $gte: new Date(start_date as string),
                     $lte: new Date(end_date as string),
                 };
             }
 
-            const result = await Offers.find(filter).sort({ id: -1 }).skip(skip).limit(limitNumber).populate("created_by").populate("product_id").lean();
+            console.log(matchQuery)
 
-            const totalCount = await Offers.countDocuments(filter);
+            const pipeline: any[] = [
+                {
+                    $lookup: {
+                    from: "products",
+                    localField: "product_id",
+                    foreignField: "_id",
+                    as: "product_id",
+                    },
+                },
+                { $unwind: { path: "$product_id", preserveNullAndEmptyArrays: true } },
+
+                {
+                    $lookup: {
+                    from: "customers", 
+                    localField: "created_by",
+                    foreignField: "_id",
+                    as: "created_by",
+                    },
+                },
+                { $unwind: { path: "$created_by", preserveNullAndEmptyArrays: true } },
+
+                { $match: matchQuery },
+
+                { $sort: { id: -1 } },
+
+                { $skip: skip },
+                { $limit: limitNumber },
+            ];
+
+            console.log(pipeline)
+
+
+            const result = await Offers.aggregate(pipeline);
+
+            const totalCountPipeline = [
+                {
+                    $lookup: {
+                    from: "products",
+                    localField: "product_id",
+                    foreignField: "_id",
+                    as: "product_id",
+                    },
+                },
+                { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+                {
+                    $lookup: {
+                    from: "customers",
+                    localField: "created_by",
+                    foreignField: "_id",
+                    as: "created_by",
+                    },
+                },
+                { $unwind: { path: "$created_by", preserveNullAndEmptyArrays: true } },
+                { $match: matchQuery },
+                { $count: "total" },
+            ];
+
+            const totalCountResult = await Offers.aggregate(totalCountPipeline);
+            const totalCount = totalCountResult[0]?.total || 0;
+            const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (result.length > 0) {
-                const totalPages = Math.ceil(totalCount / limitNumber);
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]), { result, totalCount, totalPages });
+                return serverResponse(
+                    res,
+                    HttpCodeEnum.OK,
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["offer-fetched"]),
+                    {
+                    result,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                    }
+                );
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                throw new Error(
+                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"])
+                );
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});

@@ -376,7 +376,7 @@ export default class HelperController {
             this.locale = (locale as string) || "en";
 
 
-            const result = await Customer.find({}).where('status').equals(1).sort([['id', 'desc']]).select('id name').lean();
+            const result = await Customer.find({is_gst_verified:true,status:1}).sort([['id', 'desc']]).select('id name').lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);

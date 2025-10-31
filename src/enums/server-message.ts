@@ -34,6 +34,7 @@ export enum ServerMessagesEnum {
     "category-update" = "category-update",
     "category-delete" = "category-delete",
     "category-status" = "category-status",
+    "cannot-delete-category" = "cannot-delete-category",
 
     "product-fetched" = "product-fetched",
     "product-add" = "product-add",
@@ -41,6 +42,7 @@ export enum ServerMessagesEnum {
     "product-delete" = "product-delete",
     "product-status" = "product-status",
     "product-exist" = "product-exist",
+    "cannot-delete-product" = "cannot-delete-product",
 
     "country-fetched" = "country-fetched",
     "country-add" = "country-add",
@@ -140,12 +142,15 @@ export enum ServerMessagesEnum {
     "attribute-update" = "attribute-update",
     "attribute-delete" = "attribute-delete",
     "attribute-status" = "attribute-status",
+    "cannot-delete-attribute" = "cannot-delete-attribute",
 
     "attribute-item-fetched" = "attribute-item-fetched",
     "attribute-item-add" = "attribute-item-add",
     "attribute-item-update" = "attribute-item-update",
     "attribute-item-delete" = "attribute-item-delete",
     "attribute-item-status" = "attribute-item-status",
+    "cannot-delete-attribute_item" = "cannot-delete-attribute_item",
+    
 
     "settings-saved" = "settings-saved",
     "settings-fetched" = "settings-fetched",

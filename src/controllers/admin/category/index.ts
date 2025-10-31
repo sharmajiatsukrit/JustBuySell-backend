@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Category } from "../../../models";
+import { Category, Product } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -33,50 +33,100 @@ export default class CategoryController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery:any = {};
-            if (search) {
-                searchQuery.$or = [
-                    { name: { $regex: search, $options: 'i' } }
-                ];
+
+            const orConditions: any = [
+            { name: { $regex: search, $options: "i" } },
+            { "parent_category.name": { $regex: search, $options: "i" } },
+            ];
+
+            let matchQuery: any = { is_deleted: false };
+            const searchAsNumber = Number(search);
+            if (!isNaN(searchAsNumber)) {
+            orConditions.push({ id: +searchAsNumber });
             }
-            const results = await Category.find(searchQuery)
-                .sort({ _id: -1 }) // Sort by _id in descending order
-                .skip(skip)
-                .limit(limitNumber)
-                .lean().populate("parent_id","id name");
+            if (search) {
+            matchQuery.$or = orConditions;
+            }
 
-            // Get the total number of documents in the Category collection
-            const totalCount = await Category.countDocuments(searchQuery);
+            const pipeline: any[] = [
+            {
+                $lookup: {
+                from: "categories", // collection name
+                localField: "parent_id",
+                foreignField: "_id",
+                as: "parent_category",
+                },
+            },
+            { $unwind: { path: "$parent_category", preserveNullAndEmptyArrays: true } }, 
+            { $match: matchQuery },
+            { $sort: { _id: -1 } },
+            { $skip: skip },
+            { $limit: limitNumber },
+            {
+                $project: {
+                id: 1,
+                name: 1,
+                description: 1,
+                commission: 1,
+                cat_img: 1,
+                status: 1,
+                "parent_category.id": 1,
+                "parent_category.name": 1,
+                },
+            },
+            ];
 
-            // Calculate total pages
+            const results = await Category.aggregate(pipeline);
+
+            const totalCountResult = await Category.aggregate([
+            {
+                $lookup: {
+                from: "categories",
+                localField: "parent_id",
+                foreignField: "_id",
+                as: "parent_category",
+                },
+            },
+            { $unwind: { path: "$parent_category", preserveNullAndEmptyArrays: true } },
+            { $match: matchQuery },
+            { $count: "total" },
+            ]);
+
+            const totalCount = totalCountResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-                // Format each item in the result array
-                const formattedResults = results.map((item, index) => ({
-                    id: item.id, // Generate a simple sequential ID starting from 1
-                    name: item.name,
-                    description: item.description,
-                    parent_id: item.parent_id,
-                    commission: item.commission,
-                    catImg: `${process.env.RESOURCE_URL}${item.cat_img}`, // Full URL of category image
-                    status: item.status,
-                    // Add more fields as necessary
-                }));
+            const formattedResults = results.map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description,
+                commission: item.commission,
+                catImg: `${process.env.RESOURCE_URL}${item.cat_img}`,
+                status: item.status,
+                parent_id: item.parent_category
+                ? { id: item.parent_category.id, name: item.parent_category.name }
+                : null,
+            }));
 
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
-                    { data: formattedResults, totalCount, totalPages, currentPage: pageNumber }
-                );
+            return serverResponse(
+                res,
+                HttpCodeEnum.OK,
+                ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-fetched"]),
+                {
+                data: formattedResults,
+                totalCount,
+                totalPages,
+                currentPage: pageNumber,
+                }
+            );
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
+
     
     public async getById(req: Request, res: Response): Promise<any> {
         try {
@@ -189,6 +239,7 @@ export default class CategoryController {
     }
 
     // Delete
+
     public async delete(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[delete]";
@@ -197,13 +248,19 @@ export default class CategoryController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Category.deleteOne({ id: id });
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), result);
-            } else {
+            const result = await Category.findOne({ id: id });
+            if (!result) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+            const productExistWithCategory = await Product.find({ category_id: result._id });
+
+
+            if (productExistWithCategory.length > 0) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["cannot-delete-category"]));
+
+            }
+            await Category.findOneAndUpdate({ id }, { is_deleted: true });
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["category-delete"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
 import Bcrypt from "bcryptjs";
-import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating, Setting, Attribute, AttributeItem, Otps } from "../../../models";
+import { Customer, ProductRequest, Watchlist, WatchlistItem, Product, Category, Rating, Setting, Attribute, AttributeItem, Otps, UnlockOffers } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -48,6 +48,78 @@ export default class HelperController {
         }
     }
 
+    // public async requestNewProduct(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[requestNewProduct]";
+
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+    //         const {
+    //             name,
+    //             selling_unit_id,
+    //             selling_unit,
+    //             individual_pack_size_id,
+    //             individual_pack_size,
+    //             individual_pack_unit_id,
+    //             individual_pack_unit,
+    //             individual_packing_type_id,
+    //             individual_packing_type,
+    //             master_pack_qty,
+    //             master_pack_type_id,
+    //             conversion_unit_id,
+    //             conversion_unit,
+    //             conversion_unit_rate,
+    //             master_pack_type,
+    //             description,
+    //         } = req.body;
+    //         console.log(req.body, "req.body");
+    //         let product_image: any;
+    //         if (req.file) {
+    //             product_image = req?.file?.filename;
+    //         } else {
+    //             return serverResponse(res, HttpCodeEnum.OK, "No Product Image Attached", {});
+    //         }
+
+    //         const result: any = await ProductRequest.create({
+    //             name: name,
+    //             selling_unit_id: selling_unit_id,
+    //             selling_unit: selling_unit,
+    //             individual_pack_size_id: individual_pack_size_id,
+    //             individual_pack_size: individual_pack_size,
+    //             individual_pack_unit_id: individual_pack_unit_id,
+    //             individual_pack_unit: individual_pack_unit,
+    //             individual_packing_type_id: individual_packing_type_id,
+    //             individual_packing_type: individual_packing_type,
+    //             master_pack_qty: master_pack_qty,
+    //             master_pack_type_id: master_pack_type_id,
+    //             master_pack_type: master_pack_type,
+    //             description: description,
+    //             conversion_unit_id: conversion_unit_id,
+    //             conversion_unit: conversion_unit,
+    //             conversion_unit_rate: conversion_unit_rate,
+    //             product_image: product_image,
+    //             created_by: req.customer.object_id,
+    //         });
+
+    //         if (result) {
+    //             const notificationData = {
+    //                 tmplt_name: "product_add_request",
+    //                 to: req.customer.object_id,
+    //                 dynamicKey: {
+    //                     product_name: name,
+    //                 },
+    //             };
+    //             prepareNotificationData(notificationData);
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-requested"]), {});
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["server-error"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
     public async requestNewProduct(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[requestNewProduct]";
@@ -55,6 +127,7 @@ export default class HelperController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
+
             const {
                 name,
                 selling_unit_id,
@@ -73,6 +146,22 @@ export default class HelperController {
                 master_pack_type,
                 description,
             } = req.body;
+
+            console.log(req.body, "req.body");
+
+            // Helper function to safely parse JSON strings
+            const safeJSONParse = (str: string) => {
+                if (!str || str.trim() === "" || str === "{}") {
+                    return null;
+                }
+                try {
+                    return JSON.parse(str);
+                } catch (error) {
+                    console.error("JSON parse error:", error);
+                    return null;
+                }
+            };
+
             let product_image: any;
             if (req.file) {
                 product_image = req?.file?.filename;
@@ -82,21 +171,21 @@ export default class HelperController {
 
             const result: any = await ProductRequest.create({
                 name: name,
-                selling_unit_id: selling_unit_id,
+                selling_unit_id: safeJSONParse(selling_unit_id),
                 selling_unit: selling_unit,
-                individual_pack_size_id: individual_pack_size_id,
+                individual_pack_size_id: safeJSONParse(individual_pack_size_id),
                 individual_pack_size: individual_pack_size,
-                individual_pack_unit_id: individual_pack_unit_id,
+                individual_pack_unit_id: safeJSONParse(individual_pack_unit_id),
                 individual_pack_unit: individual_pack_unit,
-                individual_packing_type_id: individual_packing_type_id,
+                individual_packing_type_id: safeJSONParse(individual_packing_type_id),
                 individual_packing_type: individual_packing_type,
-                master_pack_qty: master_pack_qty,
-                master_pack_type_id: master_pack_type_id,
+                master_pack_qty: Number(master_pack_qty) || 0,
+                master_pack_type_id: safeJSONParse(master_pack_type_id),
                 master_pack_type: master_pack_type,
                 description: description,
-                conversion_unit_id: conversion_unit_id,
+                conversion_unit_id: conversion_unit_id ? safeJSONParse(conversion_unit_id) : null,
                 conversion_unit: conversion_unit,
-                conversion_unit_rate: conversion_unit_rate,
+                conversion_unit_rate: conversion_unit_rate ? Number(conversion_unit_rate) : null,
                 product_image: product_image,
                 created_by: req.customer.object_id,
             });
@@ -547,6 +636,88 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async shouldShowRatingPopup(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[shouldShowRatingPopup]";
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const customerId = req.customer.object_id;
+
+            // 1. Get the customer
+            const customer: any = await Customer.findOne({ _id: customerId }).lean();
+            if (!customer) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+
+            // 2. Check "send true only one time in one day"
+            if (customer.lastRatingPopupShownAt) {
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+                // Get time difference in milliseconds
+                const timeSinceLastShow = Date.now() - new Date(customer.lastRatingPopupShownAt).getTime();
+                
+                if (timeSinceLastShow < twentyFourHours) {
+                    // It's been less than 24 hours, so DO NOT SHOW.
+                    return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
+                        shouldShow: false 
+                    });
+                }
+            }
+
+            // 3. Get all unlocked offers and ratings for this customer
+            const [unlockedOffers, ratings] = await Promise.all([
+                UnlockOffers.find({ created_by: customerId }).lean(),
+                Rating.find({ customer_id: customerId }).lean()
+            ]);
+
+            // 4. Find unrated offers
+            const ratedOfferIds = new Set(ratings.map(rating => rating.offer_id.toString()));
+            const unratedOffers = unlockedOffers.filter(offer => 
+                !ratedOfferIds.has(offer.offer_id.toString())
+            );
+
+            // 5. Check if there are any unrated offers at all
+            if (unratedOffers.length === 0) {
+                // All unlocked offers are rated, DO NOT SHOW.
+                return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
+                    shouldShow: false 
+                });
+            }
+
+            // 6. Check "if any one offer is purchased 24hrs before"
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            
+            // Check if any of the unrated offers were created more than 24h ago
+            const hasOldUnratedOffer = unratedOffers.some((offer: any) => 
+                new Date(offer.createdAt) < twentyFourHoursAgo
+            );
+
+            if (hasOldUnratedOffer) {
+                // ALL CONDITIONS MET. SHOW POPUP.
+                
+                // 7. Update the customer's `lastRatingPopupShownAt` timestamp
+                await Customer.updateOne(
+                    { _id: customerId }, 
+                    { $set: { lastRatingPopupShownAt: new Date() } }
+                );
+
+                // 8. Return true
+                return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
+                    shouldShow: true 
+                });
+
+            } else {
+                // No unrated offer is old enough, DO NOT SHOW.
+                return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
+                    shouldShow: false 
+                });
+            }
+
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

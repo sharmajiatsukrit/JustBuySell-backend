@@ -24,6 +24,61 @@ export default class ProductController {
         return validate(endPoint);
     }
 
+    // public async getList(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const { locale, page, limit, search } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const pageNumber = parseInt(page as string) || 1;
+    //         const limitNumber = parseInt(limit as string) || 10;
+    //         const skip = (pageNumber - 1) * limitNumber;
+    //         let searchQuery: any = {is_deleted : false};
+    //         if (search) {
+    //             searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];
+    //         }
+
+    //         const results = await Product.find(searchQuery)
+    //             .sort({ _id: -1 }) // Sort by _id in descending order
+    //             .skip(skip)
+    //             .limit(limitNumber)
+    //             .lean()
+    //             .populate("category_id", "id name");
+
+    //         // Get the total number of documents in the Category collection
+    //         const totalCount = await Product.countDocuments(searchQuery);
+
+    //         // Calculate total pages
+    //         const totalPages = Math.ceil(totalCount / limitNumber);
+
+    //         if (results.length > 0) {
+    //             // Format each item in the result array
+    //             const formattedResults = results.map((item, index) => ({
+    //                 id: item.id, // Generate a simple sequential ID starting from 1
+    //                 name: item.name,
+    //                 description: item.description,
+    //                 product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
+    //                 category_id: item.category_id,
+    //                 status: item.status,
+    //                 // Add more fields as necessary
+    //             }));
+
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+    //                 data: formattedResults,
+    //                 totalCount,
+    //                 totalPages,
+    //                 currentPage: pageNumber,
+    //             });
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
+    // Checked
+    
+
     public async getList(req: Request, res: Response): Promise<any> {
         try {
             const { locale, page, limit, search } = req.query;
@@ -32,52 +87,96 @@ export default class ProductController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            let searchQuery: any = {};
+
+            const orConditions:any = [
+                { name: { $regex: search, $options: "i" } },
+                { "category.name": { $regex: search, $options: "i" } },
+            ];
+
+            const searchAsNumber = Number(search);
+
+            if (!isNaN(searchAsNumber)) {
+                orConditions.push({ id: +searchAsNumber }); 
+            }
+            let matchQuery: any = { is_deleted: false };
+
             if (search) {
-                searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];
+                matchQuery.$or = orConditions;
             }
 
-            const results = await Product.find(searchQuery)
-                .sort({ _id: -1 }) // Sort by _id in descending order
-                .skip(skip)
-                .limit(limitNumber)
-                .lean()
-                .populate("category_id", "id name");
+            // Aggregation pipeline
+            const pipeline: any[] = [
+                {
+                    $lookup: {
+                    from: "categories", 
+                    localField: "category_id",
+                    foreignField: "_id",
+                    as: "category",
+                    },
+                },
+                { $match: matchQuery },
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                {
+                    $project: {
+                    id: 1,
+                    name: 1,
+                    description: 1,
+                    product_image: 1,
+                    status: 1,
+                    "category.id": 1,
+                    "category.name": 1,
+                    },
+                },
+            ];
 
-            // Get the total number of documents in the Category collection
-            const totalCount = await Product.countDocuments({});
+            const results = await Product.aggregate(pipeline);
+            const totalCountResult = await Product.aggregate([
+            { $lookup: { from: "categories", localField: "category_id", foreignField: "_id", as: "category" } },
+            { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+            { $match: matchQuery },
+            { $count: "total" },
+            ]);
 
-            // Calculate total pages
+            const totalCount = totalCountResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-                // Format each item in the result array
-                const formattedResults = results.map((item, index) => ({
-                    id: item.id, // Generate a simple sequential ID starting from 1
-                    name: item.name,
-                    description: item.description,
-                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
-                    category_id: item.category_id,
-                    status: item.status,
-                    // Add more fields as necessary
-                }));
+            const formattedResults = results.map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                description: item.description,
+                product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                category_id: item.category?.map((cat: any) => ({
+                id: cat._id,
+                name: cat.name,
+                })) || [],
+                status: item.status,
+            }));
 
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
-                    data: formattedResults,
-                    totalCount,
-                    totalPages,
-                    currentPage: pageNumber,
-                });
+            return serverResponse(
+                res,
+                HttpCodeEnum.OK,
+                ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
+                {
+                data: formattedResults,
+                totalCount,
+                totalPages,
+                currentPage: pageNumber,
+                }
+            );
             } else {
-                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    // Checked
 
-    // Checked
+    
+    
+    
     public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getById]";
@@ -255,18 +354,23 @@ export default class ProductController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Product.deleteOne({ id: id });
-
-            if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-delete"]), result);
-            } else {
+            const result: any = await Product.findOne({ id: id });
+            if (!result) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+
+            const offersExistWithProduct = await Offers.find({ product_id: result._id });
+
+            if (offersExistWithProduct.length > 0) {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["cannot-delete-product"]));
+
+            }
+            await Product.findOneAndUpdate({ id }, { is_deleted: true });
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-delete"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
     // Status
     public async status(req: Request, res: Response): Promise<any> {
         try {

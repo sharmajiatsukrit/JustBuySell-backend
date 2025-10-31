@@ -39,19 +39,24 @@ export default class AttributeItemController {
             if (!attribute) {
                 return serverResponse(res, HttpCodeEnum.SERVERERROR, "Attribute Not Available to use.", {});
             }
+
+            let searchQuery: any = { attribute_id: attribute._id };
+
+            if (search) {
+                searchQuery.name = { $regex: search, $options: "i" };
+            }
             
-            const results = await AttributeItem.find({ attribute_id: attribute._id })
-                .sort({ _id: -1 }) // Sort by _id in descending order
+            const results = await AttributeItem.find(searchQuery)
+                .sort({ _id: -1 }) 
                 .skip(skip)
                 .populate('attribute_id', 'id name')
                 .populate('created_by', 'id name')
                 .limit(limitNumber)
                 .lean();
 
-            const totalCount = await AttributeItem.countDocuments({});
+            const totalCount = await AttributeItem.countDocuments(searchQuery);
             const totalPages = Math.ceil(totalCount / limitNumber);
-            // const result = await State.find({}).sort([['id', 'desc']]).lean();
-
+            
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["attribute-item-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {
@@ -152,10 +157,10 @@ export default class AttributeItemController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await AttributeItem.deleteOne({ id: id });
+            const result = await AttributeItem.findOne({ id: id });
 
             if (result) {
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["attribute-item-delete"]), result);
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["cannot-delete-attribute_item"]));
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
