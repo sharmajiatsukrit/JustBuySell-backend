@@ -485,7 +485,7 @@ export default class OfferController {
                 lead_id:offer_id,
                 offer_price,
                 discount,
-                closing_balance: parseFloat((Math.max(0, wallet1.balance - promoAmountToDeduct)).toFixed(2)),
+                closing_balance: parseFloat((Math.max(0, wallet0.balance - defaultAmountToDeduct)).toFixed(2)),
                 transaction_id: null,
                 status: 1,
                 remarks: "PURCHASEOFFER",

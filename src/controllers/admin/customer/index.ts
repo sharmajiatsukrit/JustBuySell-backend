@@ -409,7 +409,7 @@ export default class CustomerController {
             const customer: any = await Customer.findOne({ id: id }).lean();
             const promoTransaction = await PromoTransaction.create({ customer_id: customer._id, amount, remarks, expiry_date });
 
-            const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean();
+            const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean();//promo wallet
             const mainWallet: any = await Wallet.findOne({ customer_id: customer._id, type: 0 }).lean();
             if (existing) {
                 await Wallet.findOneAndUpdate(

@@ -280,7 +280,7 @@ export default class HelperController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             const cat_id = parseInt(req.params.cat_id);
-            const category_id: any = await Category.findOne({ id: cat_id }).lean();
+            const category_id: any = await Category.findOne({ id: cat_id,is_deleted:false }).lean();
             if (!category_id) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }

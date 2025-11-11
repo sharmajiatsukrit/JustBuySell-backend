@@ -115,7 +115,7 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            let searchQuery: any = { status: true, $or: [{ parent_id: { $exists: false } }, { parent_id: null }] };
+            let searchQuery: any = { status: true, is_deleted:false, $or: [{ parent_id: { $exists: false } }, { parent_id: null }] };
 
             if (search) {
                 searchQuery.$and = [{ $or: [{ name: { $regex: search, $options: "i" } }] }];
@@ -178,13 +178,13 @@ export default class DashboardController {
             }
 
             // Fetch parent category
-            const parentCategory: any = await Category.findOne({ id: id }).lean();
+            const parentCategory: any = await Category.findOne({ id: id,is_deleted:false }).lean();
             if (!parentCategory) {
                 return serverResponse(res, HttpCodeEnum.NOTFOUND, "Parent category not found", {});
             }
 
             // Build search query
-            let searchQuery: any = { status: true, parent_id: parentCategory._id };
+            let searchQuery: any = { status: true, is_deleted:false, parent_id: parentCategory._id };
 
             if (search) {
                 searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];

@@ -276,7 +276,7 @@ export default class AccountController {
                         transaction_id: transaction_id,
                         razorpay_payment_id: payment_id,
                         remarks: "Amount added successful.",
-                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
+                        closing_balance:parseFloat(((Number(mainWallet?.balance)+ Number(amount))||0).toFixed(2)),
                         status: 1,
                         customer_id: req.customer.object_id,
                     }

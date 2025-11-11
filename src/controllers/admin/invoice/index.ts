@@ -38,20 +38,27 @@ export default class InvoiceController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const filter: any = {};
+            let filter: any = {};
+            const orConditions:any = [
+                { name: { $regex: search, $options: "i" } },
+                { invoice_number: { $regex: search, $options: "i" } },
+                { "customer_id.trade_name": { $regex: search, $options: "i" } },
+            ];
 
-            if (customer_id) {
-                const customer: any = await Customer.findOne({ id: customer_id }).lean();
-                filter.customer_id = customer ? customer._id : null;
+            if(search){
+                filter.$or = orConditions;
             }
+            if (customer_id) {
+                 filter = {...filter,"customer_id.id": Number(customer_id)};
+            }
+
             // Filter by date range
             if (start_date && end_date) {
                 filter.start_date = { $gte: new Date(start_date as string) };
+                
                 filter.end_date = { $lte: new Date(end_date as string) };
             }
-            const results = await Invoice.aggregate([
-                { $match: filter },
-
+            const pipeline:any[] = [
                 {
                     $lookup: {
                         from: "customers",
@@ -63,27 +70,20 @@ export default class InvoiceController {
                 {
                     $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
                 },
+                
                 {
-                    $match: { "customer_id.is_gst_verified": true },
+                    $match: { ...filter,"customer_id.is_gst_verified": true,}
                 },
-                ...(search
-                    ? [
-                          {
-                              $match: {
-                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
-                              },
-                          },
-                      ]
-                    : []),
+               
                 { $sort: { _id: -1 } },
                 { $skip: skip },
                 { $limit: limitNumber },
-            ]);
+            ]
+            console.log(filter,"filter")
+            const results = await Invoice.aggregate(pipeline);
            
 
-            const totalCount: any = await Invoice.aggregate([
-                { $match: filter },
-
+            const totalCountResult: any = await Invoice.aggregate([
                 {
                     $lookup: {
                         from: "customers",
@@ -96,21 +96,14 @@ export default class InvoiceController {
                     $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
                 },
                 {
-                    $match: { "customer_id.is_gst_verified": true },
+                    $match: { ...filter,"customer_id.is_gst_verified": true, },
                 },
-                ...(search
-                    ? [
-                          {
-                              $match: {
-                                  $or: [{ "customer_id.trade_name": { $regex: search, $options: "i" } }, { "customer_id.gst": { $regex: search, $options: "i" } }],
-                              },
-                          },
-                      ]
-                    : []),
+                
                 {
                     $count: "total",
                 },
             ]);
+            const totalCount = totalCountResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
