@@ -129,7 +129,7 @@ export default class OfferController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             // Create filter object for status and offerType
-            let filter: any = { created_by: req.customer.object_id };
+            let filter: any = { created_by: req.customer.object_id, is_deleted:false };
 
             if (status) {
                 filter.status = parseInt(status as string); // Ensure status is numeric

@@ -38,8 +38,7 @@ export default class UserController {
             // Parse page and limit from query params, set defaults if not provided
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
-            // await User.updateMany({ is_deleted: false });
-
+            
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
             let searchQuery:any = {};

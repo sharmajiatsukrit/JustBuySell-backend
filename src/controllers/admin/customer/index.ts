@@ -4,7 +4,7 @@ import validator from "validator";
 import Bcrypt from "bcryptjs";
 import { DateTime } from "luxon";
 import moment from "moment";
-import { Roles, Permissions, User, Customer, Watchlist, WatchlistItem, Transaction, Invoice, Wallet } from "../../../models";
+import { Roles, Permissions, User, Customer, Watchlist, WatchlistItem, Transaction, Invoice, Wallet, Offers } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -54,11 +54,11 @@ export default class CustomerController {
             ];
 
             const searchAsNumber = Number(search);
-
+           
             if (!isNaN(searchAsNumber)) {
             orConditions.push({ id: +searchAsNumber }); 
             }
-            const searchQuery:any = { };
+            const searchQuery:any = {is_deleted:false};
 
             if (search) {
                 searchQuery.$or = [...orConditions];
@@ -318,8 +318,9 @@ export default class CustomerController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
+            const result:any = await Customer.findOneAndUpdate({ id: id },{is_deleted:true});
+            const offers = await Offers.updateMany({created_by:result._id},{is_deleted:true})
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-deleted"]), {});
-            // //const result = await Customer.deleteOne({ id: id });
 
             // if (result) {
             //     return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-deleted"]), result);

@@ -60,6 +60,7 @@ const offersSchema: Schema = new Schema(
         offer_counter: { type: Number, default: 0 },
         status: { type: Number, default: 1 },
         type: { type: String, default: 0 },
+        is_deleted: { type: Boolean, default: false },
         created_by: { type: Schema.Types.ObjectId, ref: "customers" },
         updated_by: { type: Schema.Types.ObjectId, ref: "customers" },
     },

@@ -74,8 +74,8 @@ export default class OfferController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 5;
             const skip = (pageNumber - 1) * limitNumber;
-
-            let matchQuery: any = {};
+           
+            let matchQuery: any = {is_deleted:false};
 
             if (search) {
                 matchQuery.$or = [
@@ -95,7 +95,6 @@ export default class OfferController {
                 };
             }
 
-            console.log(matchQuery)
 
             const pipeline: any[] = [
                 {
@@ -126,9 +125,7 @@ export default class OfferController {
                 { $limit: limitNumber },
             ];
 
-            console.log(pipeline)
-
-
+           
             const result = await Offers.aggregate(pipeline);
 
             const totalCountPipeline = [

@@ -714,6 +714,7 @@ export default class DashboardController {
 
             const matchFilter: any = {
                 status: 1,
+                is_deleted:false,
                 type: "0",
                 product_id: product._id,
                 $expr: {
@@ -952,6 +953,7 @@ export default class DashboardController {
 
             const matchFilter: any = {
                 status: 1,
+                is_deleted:false,
                 type: "1",
                 product_id: product._id,
                 $expr: {

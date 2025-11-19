@@ -157,7 +157,7 @@ export default class CronController {
             const startOfMonth = moment().subtract(1, "month").startOf("month").toDate();
             const endOfMonth = moment().subtract(1, "month").endOf("month").toDate();
 
-            const customers = await Customer.find({ is_gst_verified: true, status: 1 });
+            const customers = await Customer.find({ is_gst_verified: true, is_deleted: true, status: 1 });
 
             for (const customer of customers) {
                 const transactions = await Transaction.find({
