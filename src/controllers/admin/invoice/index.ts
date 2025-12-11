@@ -39,26 +39,26 @@ export default class InvoiceController {
             const skip = (pageNumber - 1) * limitNumber;
 
             let filter: any = {};
-            const orConditions:any = [
+            const orConditions: any = [
                 { name: { $regex: search, $options: "i" } },
                 { invoice_number: { $regex: search, $options: "i" } },
                 { "customer_id.trade_name": { $regex: search, $options: "i" } },
             ];
 
-            if(search){
+            if (search) {
                 filter.$or = orConditions;
             }
             if (customer_id) {
-                 filter = {...filter,"customer_id.id": Number(customer_id)};
+                filter = { ...filter, "customer_id.id": Number(customer_id) };
             }
 
             // Filter by date range
             if (start_date && end_date) {
                 filter.start_date = { $gte: new Date(start_date as string) };
-                
+
                 filter.end_date = { $lte: new Date(end_date as string) };
             }
-            const pipeline:any[] = [
+            const pipeline: any[] = [
                 {
                     $lookup: {
                         from: "customers",
@@ -70,18 +70,16 @@ export default class InvoiceController {
                 {
                     $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
                 },
-                
+
                 {
-                    $match: { ...filter,"customer_id.is_gst_verified": true,}
+                    $match: { ...filter, "customer_id.is_gst_verified": true },
                 },
-               
+
                 { $sort: { _id: -1 } },
                 { $skip: skip },
                 { $limit: limitNumber },
-            ]
-            console.log(filter,"filter")
+            ];
             const results = await Invoice.aggregate(pipeline);
-           
 
             const totalCountResult: any = await Invoice.aggregate([
                 {
@@ -96,9 +94,9 @@ export default class InvoiceController {
                     $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
                 },
                 {
-                    $match: { ...filter,"customer_id.is_gst_verified": true, },
+                    $match: { ...filter, "customer_id.is_gst_verified": true },
                 },
-                
+
                 {
                     $count: "total",
                 },
@@ -127,28 +125,55 @@ export default class InvoiceController {
 
     public async exportInvoiceExcel(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit, customer_id, start_date, end_date } = req.query as any;
-            this.locale = locale || "en";
+            const { locale, page, limit, search, customer_id, start_date, end_date } = req.query;
+            this.locale = (locale as string) || "en";
 
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const filter: any = {};
+            let filter: any = {};
+            const orConditions: any = [
+                { name: { $regex: search, $options: "i" } },
+                { invoice_number: { $regex: search, $options: "i" } },
+                { "customer_id.trade_name": { $regex: search, $options: "i" } },
+            ];
 
+            if (search) {
+                filter.$or = orConditions;
+            }
             if (customer_id) {
-                const customer: any = await Customer.findOne({ id: customer_id }).lean();
-                filter.customer_id = customer ? customer._id : null;
+                filter = { ...filter, "customer_id.id": Number(customer_id) };
             }
 
             // Filter by date range
             if (start_date && end_date) {
-                filter.start_date = { $gte: new Date(start_date) };
-                filter.end_date = { $lte: new Date(end_date) };
+                filter.start_date = { $gte: new Date(start_date as string) };
+
+                filter.end_date = { $lte: new Date(end_date as string) };
             }
+            const pipeline: any[] = [
+                {
+                    $lookup: {
+                        from: "customers",
+                        localField: "customer_id",
+                        foreignField: "_id",
+                        as: "customer_id",
+                    },
+                },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
 
-            const results = await Invoice.find(filter).sort({ _id: -1 }).skip(skip).limit(limitNumber).populate("customer_id").lean();
+                {
+                    $match: { ...filter, "customer_id.is_gst_verified": true },
+                },
 
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+            ];
+            const results = await Invoice.aggregate(pipeline);
             // Set up workbook
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet("Invoices");
@@ -186,7 +211,7 @@ export default class InvoiceController {
                     tradeName: item?.customer_id?.trade_name ?? "",
                     address: item?.customer_id?.address_line_1 ?? "",
                     invoiceDate: invoiceDateFormatted,
-                    invoiceNumber: item?.invoiceNumber ?? "",
+                    invoiceNumber: item?.invoice_number ?? "",
                     discount: Number(item?.total_discount ?? "0"),
                     taxableValue: taxableValue.toFixed(2),
                     cgst: Number(item?.cgst ?? "0"),

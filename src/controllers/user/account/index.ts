@@ -96,23 +96,21 @@ export default class AccountController {
                     pincode: pincode,
                     open_time: open_time,
                     close_time: close_time,
-                    whatapp_num:whatapp_num,
+                    whatapp_num: whatapp_num,
                     status: status,
                 }
             );
-            const customerExistWithGstVerified:any = await Customer.find({
+            const customerExistWithGstVerified: any = await Customer.find({
                 gst: result?.gst,
                 is_gst_verified: true,
             }).lean();
             const checkTransaction: any = await Transaction.findOne({ remarks: "REGISTRATIONTOPUP", customer_id: req.customer.object_id }).lean();
             const settings: any = await Setting.findOne({ key: "customer_settings" }).lean();
-            const mainWallet: any = await Wallet.findOne({ customer_id:req.customer.object_id, type: 0 });
+            const mainWallet: any = await Wallet.findOne({ customer_id: req.customer.object_id, type: 0 });
 
-            
             if (!checkTransaction && customerExistWithGstVerified.length === 1) {
-
                 const reachare: any = await Wallet.create({
-                    balance: parseFloat((Number(settings.value.new_registration_topup)).toFixed(2)),
+                    balance: parseFloat(Number(settings.value.new_registration_topup).toFixed(2)),
                     type: 1,
                     customer_id: req.customer.object_id,
                 });
@@ -125,26 +123,31 @@ export default class AccountController {
                     },
                 };
                 const whatsAppData = {
-                    campaignName:"New User Profile Complete",
-                    userName:customerExistWithGstVerified[0]?.name,
-                    destination:customerExistWithGstVerified[0]?.whatapp_num||customerExistWithGstVerified[0]?.phone,
-                    templateParams:[`${settings.value.new_registration_topup}`+'']
-
-                }
-                
+                    campaignName: "New User Profile Complete",
+                    userName: customerExistWithGstVerified[0]?.name,
+                    destination: customerExistWithGstVerified[0]?.whatapp_num || customerExistWithGstVerified[0]?.phone,
+                    templateParams: [`${settings.value.new_registration_topup}` + ""],
+                };
 
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
 
                 const transaction: any = await Transaction.create({
-                    amount: parseFloat((Number(settings.value.new_registration_topup)).toFixed(2)),
+                    amount: parseFloat(Number(settings.value.new_registration_topup).toFixed(2)),
                     gst: 0,
                     transaction_id: "",
                     transaction_type: 0,
                     razorpay_payment_id: "",
                     status: 1,
                     remarks: "REGISTRATIONTOPUP",
-                    closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
+                    closing_balance: parseFloat((Number(mainWallet?.balance) || 0).toFixed(2)),
+                    customer_id: req.customer.object_id,
+                });
+            }
+            if (!mainWallet) {
+                const result: any = await Wallet.create({
+                    balance: 0,
+                    type: 0,
                     customer_id: req.customer.object_id,
                 });
             }
@@ -232,21 +235,20 @@ export default class AccountController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            console.log(fn)
 
             const { amount, payment_id, remarks, error_code, transaction_id, status } = req.body;
-            const mainWallet: any = await Wallet.findOne({ customer_id:req.customer.object_id, type: 0 });
+            const mainWallet: any = await Wallet.findOne({ customer_id: req.customer.object_id, type: 0 });
 
             if (error_code) {
                 const transaction: any = await Transaction.findOneAndUpdate(
                     { transaction_id: transaction_id },
                     {
-                        amount: parseFloat((Number(amount)).toFixed(2)),
+                        amount: parseFloat(Number(amount).toFixed(2)),
                         transaction_id: transaction_id,
                         status: 2,
                         remarks: remarks,
                         error_code: error_code,
-                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
+                        closing_balance: parseFloat((Number(mainWallet?.balance) || 0).toFixed(2)),
                         customer_id: req.customer.object_id,
                     }
                 );
@@ -263,7 +265,7 @@ export default class AccountController {
                     );
                 } else {
                     const result: any = await Wallet.create({
-                        balance: parseFloat((Number(amount)).toFixed(2)),
+                        balance: parseFloat(Number(amount).toFixed(2)),
                         type: 0,
                         customer_id: req.customer.object_id,
                     });
@@ -272,11 +274,11 @@ export default class AccountController {
                 const transaction: any = await Transaction.findOneAndUpdate(
                     { transaction_id: transaction_id },
                     {
-                        amount: parseFloat((Number(amount)).toFixed(2)),
+                        amount: parseFloat(Number(amount).toFixed(2)),
                         transaction_id: transaction_id,
                         razorpay_payment_id: payment_id,
                         remarks: "Amount added successful.",
-                        closing_balance:parseFloat(((Number(mainWallet?.balance)+ Number(amount))||0).toFixed(2)),
+                        closing_balance: parseFloat((Number(mainWallet?.balance) + Number(amount) || 0).toFixed(2)),
                         status: 1,
                         customer_id: req.customer.object_id,
                     }
@@ -350,8 +352,6 @@ export default class AccountController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-   
 
     public async getTransactions(req: Request, res: Response): Promise<any> {
         try {

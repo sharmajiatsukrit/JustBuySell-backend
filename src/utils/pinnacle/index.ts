@@ -16,7 +16,6 @@ async function sendSMS(to: string, message: string, dlttempid: string = "1107173
         apikey: apiKey,
         "Content-Type": "application/json",
     };
-    console.log(messageObj)
 
     return axios({
         url,

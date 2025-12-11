@@ -547,7 +547,6 @@ export default class OfferController {
                         unlockingCustomer?.email,
                     ],
                 };
-                console.log("WhatsApp Data: in function", whatsAppData);
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
 

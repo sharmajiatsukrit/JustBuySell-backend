@@ -47,7 +47,6 @@ export default class CountryController {
 
             const totalCount = await Country.countDocuments(searchQuery);
             const totalPages = Math.ceil(totalCount / limitNumber);
-            console.log(req.user);
             if (results.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-fetched"]), { data: results, totalCount, totalPages, currentPage: pageNumber });
             } else {

@@ -136,13 +136,10 @@ export default class CronController {
             const expiringSoon = await Offers.aggregate(pipeline);
 
             if (!expiringSoon.length) {
-                console.log("No offers expiring in the next 15 minutes.");
                 return;
             }
 
-            expiringSoon.forEach((o: any) => {
-                console.log(`Offer ${o._id} (${o.title}) expires at ${moment(o.expiryDt).tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss")}`);
-            });
+            expiringSoon.forEach((o: any) => {});
         } catch (err) {
             console.error("Error finding expiring offers:", err);
         }
@@ -152,7 +149,6 @@ export default class CronController {
         try {
             const fn = "[updateExpiredOffers]";
             const now = moment().toDate();
-            console.log(now, "invoice cron");
 
             const startOfMonth = moment().subtract(1, "month").startOf("month").toDate();
             const endOfMonth = moment().subtract(1, "month").endOf("month").toDate();
@@ -304,8 +300,8 @@ export default class CronController {
                         closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
                         remarks: "CREDIT LAPSE",
                     });
-                } else {
-                    console.log(`Wallet not found for customer ${customer_id}`);
+                // } else {
+                //     console.log(`Wallet not found for customer ${customer_id}`);
                 }
             }
             if (bulkWalletOps.length) {

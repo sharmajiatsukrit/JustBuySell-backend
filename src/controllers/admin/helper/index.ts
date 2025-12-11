@@ -417,9 +417,9 @@ export default class HelperController {
             this.locale = (locale as string) || "en";
 
 
-            const customers = await Customer.countDocuments({});
-            const categories = await Category.countDocuments({});
-            const products = await Product.countDocuments({});
+            const customers = await Customer.countDocuments({is_deleted:false});
+            const categories = await Category.countDocuments({is_deleted:false});
+            const products = await Product.countDocuments({is_deleted:false});
             const totals = {
                 total_customer:customers,
                 total_categories:categories,

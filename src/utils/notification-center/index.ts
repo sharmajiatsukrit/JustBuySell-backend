@@ -10,7 +10,6 @@ const whatsappService = new WhatsAppService();
 export async function handleTriggerNotification(data: any) {
     if (data?.is_sms) {
         const { phone, smsContent, dlttempid = "1107175050790786232" } = data;
-        console.log(data, "yes", phone, smsContent, dlttempid);
         const mess = await sendSMS(phone, smsContent, dlttempid);
     }
     if (data?.is_email) {
@@ -18,7 +17,6 @@ export async function handleTriggerNotification(data: any) {
         const mail = await sendMail(email, subject, emailContent, []);
     }
     if (data?.is_whatsapp) {
-        console.log(data, "whatsapp");
         const { destination, userName, campaignName, templateParams } = data;
         await whatsappService.sendWhatsApp(destination, userName, campaignName, templateParams)
     }

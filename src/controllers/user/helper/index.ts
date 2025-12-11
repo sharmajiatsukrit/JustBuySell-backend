@@ -147,7 +147,7 @@ export default class HelperController {
                 description,
             } = req.body;
 
-            console.log(req.body, "req.body");
+
 
             // Helper function to safely parse JSON strings
             const safeJSONParse = (str: string) => {
@@ -330,7 +330,6 @@ export default class HelperController {
             // console.log(process.env.GSTINCHECK_APIKEY);
             // const response = await networkRequest("GET", `http://sheet.gstincheck.co.in/check/${process.env.GSTINCHECK_APIKEY}/${gst}`,{},{});
             const response = await networkRequest("POST", `https://api.rpacpc.com/services/get-gst-details`, body, headers);
-            console.log(response?.data, "gstDetals");
             // console.log(response.data.status);
             if (response.data.status == "SUCCESS") {
                 const ResultData: any = {
@@ -372,7 +371,6 @@ export default class HelperController {
                 throw new Error(response.data.message);
             }
         } catch (err: any) {
-            console.log(err, "err gst");
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }

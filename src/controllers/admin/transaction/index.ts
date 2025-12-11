@@ -56,19 +56,17 @@ export default class TransactionController {
                 const typeNumber = Number(type);
                 
                 if (typeNumber === 1) {// Debit
-                    console.log(typeNumber,"Debit")
+                    
                     filter.status = 1;
                     filter.transaction_type = 1;
                 } else if (typeNumber === 2) {// Credit
-                    console.log(typeNumber,"Cebit")
+                    
                     filter.status = 1;
                     filter.transaction_type = 0;
                 }
             }
             if(status){
-
             }
-            console.log(filter)
 
             const results = await Transaction.aggregate([
                 { $match: filter },
