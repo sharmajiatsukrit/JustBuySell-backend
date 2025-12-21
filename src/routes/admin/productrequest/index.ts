@@ -11,6 +11,7 @@ routes.put("/update/:id", validateRequest, authAdmin, productrequestController.u
 routes.delete("/delete/:id", validateRequest, authAdmin, productrequestController.delete.bind(productrequestController));
 routes.get("/get-list", validateRequest, authAdmin, productrequestController.getList.bind(productrequestController));
 routes.get("/by-id/:id", authAdmin, validateRequest, productrequestController.getById.bind(productrequestController));
+routes.get("/downloadimage/:id", authAdmin, validateRequest, productrequestController.downloadProductImage.bind(productrequestController));
 routes.patch("/update-status/:id", authAdmin, validateRequest, productrequestController.statusUpdate.bind(productrequestController));
 
 export default routes;

@@ -187,7 +187,7 @@ export default class TransactionController {
             if (start_date && end_date) {
                 filter.createdAt = {
                     $gte: new Date(start_date as string),
-                    $lte: new Date(end_date as string),
+                    $lt: new Date(new Date(end_date as string).setDate(new Date(end_date as string).getDate() + 1)),
                 };
             }
 
@@ -417,7 +417,7 @@ export default class TransactionController {
             if (start_date && end_date) {
                 filter.createdAt = {
                     $gte: new Date(start_date as string),
-                    $lte: new Date(end_date as string),
+                    $lt: new Date(new Date(end_date as string).setDate(new Date(end_date as string).getDate() + 1)),
                 };
             }
 
@@ -512,22 +512,28 @@ export default class TransactionController {
 
     public async exportRevenueReceiptExcel(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, page, limit, customer_id, search, start_date, end_date } = req.query as any;
-            this.locale = locale || "en";
+            const { locale, page, limit, search, customer_id, start_date, end_date } = req.query;
+            this.locale = (locale as string) || "en";
 
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
+
             const filter: any = {};
+            filter.remarks = "PURCHASEOFFER";
+            // filter.status = 1;
+            // filter.transaction_type = 1;
+            // const filter:any = {};
 
             if (customer_id) {
                 const customer: any = await Customer.findOne({ id: customer_id }).lean();
                 filter.customer_id = customer ? customer._id : null;
             }
+            // Filter by date range
             if (start_date && end_date) {
                 filter.createdAt = {
-                    $gte: new Date(start_date),
-                    $lte: new Date(end_date),
+                    $gte: new Date(start_date as string),
+                    $lte: new Date(end_date as string),
                 };
             }
 
@@ -535,10 +541,15 @@ export default class TransactionController {
                 { $match: filter },
                 {
                     $addFields: {
-                        created_date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
-                        created_time: { $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" } },
+                        created_date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" },
+                        },
+                        created_time: {
+                            $dateToString: { format: "%H:%M", date: "$createdAt", timezone: "Asia/Kolkata" },
+                        },
                     },
                 },
+
                 {
                     $lookup: {
                         from: "customers",
@@ -547,8 +558,12 @@ export default class TransactionController {
                         as: "customer_id",
                     },
                 },
-                { $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true } },
-                { $match: { "customer_id.is_gst_verified": true } },
+                {
+                    $unwind: { path: "$customer_id", preserveNullAndEmptyArrays: true },
+                },
+                {
+                    $match: { "customer_id.is_gst_verified": true },
+                },
                 ...(search
                     ? [
                           {
@@ -667,7 +682,7 @@ export default class TransactionController {
             if (start_date && end_date) {
                 filter.createdAt = {
                     $gte: new Date(start_date as string),
-                    $lte: new Date(end_date as string),
+                    $lt: new Date(new Date(end_date as string).setDate(new Date(end_date as string).getDate() + 1)),
                 };
             }
 
@@ -743,6 +758,8 @@ export default class TransactionController {
                     $count: "total",
                 },
             ]);
+
+            console.log(filter);
 
             const totalCount = countResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);

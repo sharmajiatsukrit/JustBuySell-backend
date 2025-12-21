@@ -54,9 +54,9 @@ export default class InvoiceController {
 
             // Filter by date range
             if (start_date && end_date) {
-                filter.start_date = { $gte: new Date(start_date as string) };
+                filter.start_date = { $gte: start_date };
 
-                filter.end_date = { $lte: new Date(end_date as string) };
+                filter.end_date = { $lte: end_date };
             }
             const pipeline: any[] = [
                 {
@@ -79,6 +79,7 @@ export default class InvoiceController {
                 { $skip: skip },
                 { $limit: limitNumber },
             ];
+
             const results = await Invoice.aggregate(pipeline);
 
             const totalCountResult: any = await Invoice.aggregate([

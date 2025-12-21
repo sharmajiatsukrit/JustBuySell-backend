@@ -27,52 +27,115 @@ export default class DashboardController {
     }
 
     // Checked
+    // public async getSearch(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getById]";
+    //         // Set locale
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const { search, categoryid } = req.query;
+
+    //         let query: any = {};
+
+    //         if (categoryid) {
+    //             query.category_id = categoryid;
+    //         }
+
+    //         // if (search) {
+    //         //     const searchRegex = new RegExp(search, 'i');
+    //         //     query.$or = [
+    //         //         { name: { $regex: search, $options: 'i' } },
+    //         //         { description: { $regex: search, $options: 'i' } },
+    //         //         { search_tags: { $regex: searchRegex } },
+
+    //         //     ];
+    //         // }
+    //         if (search && typeof search === "string") {
+    //             const searchRegex = new RegExp(search, "i");
+    //             query.$or = [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }, { search_tags: { $regex: searchRegex } }];
+    //         }
+
+    //         let searchResults = await Product.find(query).select("-createBy -updatedBy -createdAt -updatedAt").lean().populate("category_id").limit(10);
+
+    //         if (searchResults.length > 0) {
+    //             // Format the response data if needed
+    //             const formattedResults = searchResults.map((result: any) => ({
+    //                 id: result.id,
+    //                 name: result.name,
+    //                 description: result.description,
+    //                 category_id: result.category_id,
+    //                 product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
+    //                 // Add other fields you want to include
+    //             }));
+
+    //             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), formattedResults);
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
     public async getSearch(req: Request, res: Response): Promise<any> {
         try {
-            const fn = "[getById]";
-            // Set locale
-            const { locale } = req.query;
-            this.locale = (locale as string) || "en";
+            const { locale = "en", search, categoryid } = req.query;
+            this.locale = locale as string;
 
-            const { search, categoryid } = req.query;
+            if (!search || typeof search !== "string") {
+                throw new Error("Search query is required");
+            }
 
-            let query: any = {};
+            const searchRegex = new RegExp(search, "i");
+
+            const productQuery: any = {
+                is_deleted: false,
+                status: true,
+                $or: [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }, { search_tags: { $regex: searchRegex } }],
+            };
 
             if (categoryid) {
-                query.category_id = categoryid;
+                productQuery.category_id = categoryid;
             }
 
-            // if (search) {
-            //     const searchRegex = new RegExp(search, 'i');
-            //     query.$or = [
-            //         { name: { $regex: search, $options: 'i' } },
-            //         { description: { $regex: search, $options: 'i' } },
-            //         { search_tags: { $regex: searchRegex } },
+            const products = await Product.find(productQuery).select("-createBy -updatedBy -createdAt -updatedAt").populate("category_id").limit(10).lean();
 
-            //     ];
-            // }
-            if (search && typeof search === "string") {
-                const searchRegex = new RegExp(search, "i");
-                query.$or = [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }, { search_tags: { $regex: searchRegex } }];
-            }
+            const formattedProducts = products.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                category_id: p.category_id,
+                product_image: `${process.env.RESOURCE_URL}${p.product_image}`,
+                route: "product",
+            }));
 
-            let searchResults = await Product.find(query).select("-createBy -updatedBy -createdAt -updatedAt").lean().populate("category_id").limit(10);
+            const categories = await Category.find({
+                is_deleted: false,
+                status: true,
+                $or: [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }],
+            })
+                .select("-createBy -updatedBy -createdAt -updatedAt")
+                .limit(10)
+                .lean();
 
-            if (searchResults.length > 0) {
-                // Format the response data if needed
-                const formattedResults = searchResults.map((result: any) => ({
-                    id: result.id,
-                    name: result.name,
-                    description: result.description,
-                    category_id: result.category_id,
-                    product_image: `${process.env.RESOURCE_URL}${result.product_image}`,
-                    // Add other fields you want to include
-                }));
+            const formattedCategories = categories.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                description: c.description,
+                category_id: c.parent_id, 
+                product_image: c.cat_img ? `${process.env.RESOURCE_URL}${c.cat_img}` : "",
+                route: "category",
+            }));
 
-                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), formattedResults);
-            } else {
+          
+            const finalResults = [...formattedProducts, ...formattedCategories];
+
+            if (!finalResults.length) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
+
+            return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["search-fetched"]), finalResults);
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
@@ -115,7 +178,7 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            let searchQuery: any = { status: true, is_deleted:false, $or: [{ parent_id: { $exists: false } }, { parent_id: null }] };
+            let searchQuery: any = { status: true, is_deleted: false, $or: [{ parent_id: { $exists: false } }, { parent_id: null }] };
 
             if (search) {
                 searchQuery.$and = [{ $or: [{ name: { $regex: search, $options: "i" } }] }];
@@ -178,13 +241,13 @@ export default class DashboardController {
             }
 
             // Fetch parent category
-            const parentCategory: any = await Category.findOne({ id: id,is_deleted:false }).lean();
+            const parentCategory: any = await Category.findOne({ id: id, is_deleted: false }).lean();
             if (!parentCategory) {
                 return serverResponse(res, HttpCodeEnum.NOTFOUND, "Parent category not found", {});
             }
 
             // Build search query
-            let searchQuery: any = { status: true, is_deleted:false, parent_id: parentCategory._id };
+            let searchQuery: any = { status: true, is_deleted: false, parent_id: parentCategory._id };
 
             if (search) {
                 searchQuery.$or = [{ name: { $regex: search, $options: "i" } }];
@@ -714,7 +777,7 @@ export default class DashboardController {
 
             const matchFilter: any = {
                 status: 1,
-                is_deleted:false,
+                is_deleted: false,
                 type: "0",
                 product_id: product._id,
                 $expr: {
@@ -781,10 +844,7 @@ export default class DashboardController {
                     $geoNear: {
                         near: {
                             type: "Point",
-                            coordinates: [
-                                parseFloat(lng as string), 
-                                parseFloat(lat as string), 
-                            ],
+                            coordinates: [parseFloat(lng as string), parseFloat(lat as string)],
                         },
                         // The new field that will contain the calculated distance in meters
                         distanceField: "distance_from_user",
@@ -953,7 +1013,7 @@ export default class DashboardController {
 
             const matchFilter: any = {
                 status: 1,
-                is_deleted:false,
+                is_deleted: false,
                 type: "1",
                 product_id: product._id,
                 $expr: {

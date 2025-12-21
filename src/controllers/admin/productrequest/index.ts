@@ -9,7 +9,8 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
-
+import path from "path";
+import fs from "fs";
 const fileName = "[admin][productrequest][index.ts]";
 export default class ProductRequestController {
     public locale: string = "en";
@@ -91,7 +92,7 @@ export default class ProductRequestController {
             if (results.length > 0) {
                 // Format each item in the result array
                 const formattedResults = results.map((item, index) => ({
-                    id: item.id, 
+                    id: item.id,
                     name: item.name,
                     description: item.description,
                     product_image: `${process.env.RESOURCE_URL}${item.product_image}`, // Full URL of category image
@@ -222,6 +223,82 @@ export default class ProductRequestController {
         }
     }
 
+    //get byid list
+    // public async downloadProductImage(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const fn = "[getDetailsById]";
+    //         const { locale } = req.query;
+    //         this.locale = (locale as string) || "en";
+
+    //         const id = parseInt(req.params.id);
+    //         const result: any = await ProductRequest.findOne({ id: id });
+    //         const download_report = `${process.env.RESOURCE_URL}${result.product_image}`;
+    //         if (result) {
+    //             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-request-fetched"), { download_report });
+    //         } else {
+    //             throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+    //         }
+    //     } catch (err: any) {
+    //         return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+    //     }
+    // }
+
+    public async downloadProductImage(req: Request, res: Response) {
+        try {
+            const id = parseInt(req.params.id);
+            const result: any = await ProductRequest.findOne({ id });
+
+            if (!result || !result.product_image) {
+                throw new Error("Image not found");
+            }
+
+            const uploadDir = process.env.UPLOAD_PATH;
+            if (!uploadDir) {
+                throw new Error("UPLOAD_PATH not defined");
+            }
+
+            // 🔥 Correct absolute file path
+            const filePath = path.join(uploadDir, result.product_image);
+
+            console.log("DOWNLOAD FILE:", filePath);
+
+            if (!fs.existsSync(filePath)) {
+                throw new Error("File not found on disk");
+            }
+
+            // 🔥 FORCE DOWNLOAD
+            return res.download(filePath, result.product_image);
+        } catch (err: any) {
+            console.error("DOWNLOAD ERROR:", err);
+            return res.status(500).json({
+                status: false,
+                message: err.message || "Download failed",
+            });
+        }
+    }
+
+    // public async downloadProductImage(req: Request, res: Response): Promise<any> {
+    //     try {
+    //         const id = parseInt(req.params.id);
+    //         const result: any = await ProductRequest.findOne({ id });
+
+    //         if (!result || !result.product_image) {
+    //             throw new Error("Image not found");
+    //         }
+
+    //         const res_path: string = process.env.RESOURCE_PATH;
+
+    //         const filePath = path.join(res_path, result.product_image);
+
+    //         res.setHeader("Content-Disposition", `attachment; filename="${path.basename(filePath)}"`);
+    //         res.setHeader("Content-Type", "application/octet-stream");
+
+    //         return res.sendFile(filePath);
+    //     } catch (err: any) {
+    //         console.log(err);
+    //         return serverErrorHandler(err, res, err.message, 500, {});
+    //     }
+    // }
     // status update
     public async statusUpdate(req: Request, res: Response): Promise<any> {
         try {
