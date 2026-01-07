@@ -11,6 +11,7 @@ import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import moment from "moment-timezone";
 import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
 import GeoLoactionService from "../../../utils/get-location";
+import PromoTransaction from "../../../models/promo-transaction";
 const geoLoaction = new GeoLoactionService();
 moment.tz.setDefault("Asia/Kolkata");
 const fileName = "[admin][productrequest][index.ts]";
@@ -129,7 +130,7 @@ export default class OfferController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             // Create filter object for status and offerType
-            let filter: any = { created_by: req.customer.object_id, is_deleted:false };
+            let filter: any = { created_by: req.customer.object_id, is_deleted: false };
 
             if (status) {
                 filter.status = parseInt(status as string); // Ensure status is numeric
@@ -472,20 +473,20 @@ export default class OfferController {
             const wallet1: any = await Wallet.findOne({ customer_id: customerId, type: 1 }).lean();
 
             const transaction: any = await Transaction.create({
-                amount:parseFloat((Number(amount)).toFixed(2)), // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
+                amount: parseFloat(Number(amount).toFixed(2)), // => total money charged (gst+commission eg. in simple term total credit/debit from wallet)
                 gst,
                 sgst,
                 cgst,
                 igst,
-                commission,
+                commission:parseFloat(Number(commission).toFixed(2)),
                 transaction_type: 1,
                 particular,
-                category_id:category.id,
-                product_id:product.id,
-                lead_id:offer_id,
+                category_id: category.id,
+                product_id: product.id,
+                lead_id: offer_id,
                 offer_price,
                 discount,
-                closing_balance: parseFloat((Math.max(0, wallet0.balance - defaultAmountToDeduct)).toFixed(2)),
+                closing_balance: parseFloat(Math.max(0, wallet0.balance - defaultAmountToDeduct).toFixed(2)),
                 transaction_id: null,
                 status: 1,
                 remarks: "PURCHASEOFFER",
@@ -493,7 +494,7 @@ export default class OfferController {
             });
             result = await UnlockOffers.create({
                 transaction_id: transaction._id,
-                price: parseFloat((Number(amount)).toFixed(2)),
+                price: parseFloat(Number(amount).toFixed(2)),
                 commision: commission,
                 offer_id: offer._id,
                 offer_counter: offer.offer_counter,
@@ -506,7 +507,7 @@ export default class OfferController {
                 await Wallet.findOneAndUpdate(
                     { customer_id: customerId, type: 0 },
                     {
-                        balance: parseFloat((Math.max(0, wallet0.balance - defaultAmountToDeduct)).toFixed(2)),
+                        balance: parseFloat(Math.max(0, wallet0.balance - defaultAmountToDeduct).toFixed(2)),
                     }
                 );
             }
@@ -516,7 +517,7 @@ export default class OfferController {
                 await Wallet.findOneAndUpdate(
                     { customer_id: customerId, type: 1 },
                     {
-                        balance: parseFloat((Math.max(0, wallet1.balance - promoAmountToDeduct)).toFixed(2))
+                        balance: parseFloat(Math.max(0, wallet1.balance - promoAmountToDeduct).toFixed(2)),
                     }
                 );
             }
@@ -580,6 +581,38 @@ export default class OfferController {
                 };
                 prepareNotificationData(notificationData);
                 prepareWhatsAppNotificationData(whatsAppData);
+            }
+            console.log(promoAmountToDeduct > 0,"promoAmountToDeduct > 0")
+            if (promoAmountToDeduct > 0) {
+                const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD");
+                const promoTransactions:any = await PromoTransaction.find({
+                    customer_id: customerId,
+                    status: true,
+                    expiry_date: { $gte: now },
+                    remaining_balance: { $gt: 0 },
+                }).sort({ createdAt: 1 });
+
+                let remainingDiscount = promoAmountToDeduct;
+
+                for (const promo of promoTransactions) {
+                    if (remainingDiscount <= 0) break;
+
+                    if (promo.remaining_balance <= remainingDiscount) {
+                        remainingDiscount -= promo.remaining_balance;
+
+                        await PromoTransaction.updateOne({ _id: promo._id }, { remaining_balance: 0 });
+                    } else {
+                        // partial consume
+                        await PromoTransaction.updateOne(
+                            { _id: promo._id },
+                            {
+                                remaining_balance: parseFloat((promo.remaining_balance - remainingDiscount).toFixed(2)),
+                            }
+                        );
+
+                        remainingDiscount = 0;
+                    }
+                }
             }
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "offer-unlocked"), {});

@@ -8,6 +8,7 @@ import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import Modules from "../../../models/modules";
 
 const fileName = "[admin][permission][index.ts]";
 export default class PermissionController {
@@ -45,6 +46,7 @@ export default class PermissionController {
                 .sort({ id: -1 })
                 .skip(skip)
                 .limit(limitNumber)
+                .populate("module_id id name")
                 .lean();
 
             // Get the total number of documents in the Permissions collection
@@ -76,7 +78,7 @@ export default class PermissionController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result: any = await Permissions.findOne({ id: id }).lean();
+            const result: any = await Permissions.findOne({ id: id }).populate("module_id id name").lean();
             // console.log(result);
 
             if (result) {
@@ -97,8 +99,9 @@ export default class PermissionController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, status } = req.body;
+            const { name, description,module_id, status } = req.body;
             // Logger.info(`${fileName + fn} req.body: ${JSON.stringify(req.body)}`);
+            const module:any = await Modules.find({id:module_id})
 
             let result: any;
 
@@ -106,6 +109,7 @@ export default class PermissionController {
                 name: name,
                 description: description,
                 status: status,
+                module_id:module._id,
                 created_by: req.user.object_id
             });
 
@@ -127,13 +131,18 @@ export default class PermissionController {
             // Set locale
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
-            const { name, description, status } = req.body;
+            const { name, description, module_id, status } = req.body;
+
+            const module:any = await Modules.findOne({id:module_id})
+            console.log(module)
+
 
             let result: any = await Permissions.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description: description,
+                    module_id:module._id,
                     status: status,
                     updated_by: req.user.object_id
                 });

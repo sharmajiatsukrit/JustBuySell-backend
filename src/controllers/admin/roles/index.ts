@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Roles, Permissions ,User} from "../../../models";
+import { Roles, Permissions, User } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
 import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
+import Modules from "../../../models/modules";
 
 const fileName = "[admin][roles][index.ts]";
 export default class RolesController {
@@ -22,7 +23,6 @@ export default class RolesController {
         return validate(endPoint);
     }
 
-
     // Checked
     public async getList(req: Request, res: Response): Promise<any> {
         try {
@@ -33,11 +33,9 @@ export default class RolesController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const filter:any = {is_deleted : false};
+            const filter: any = { is_deleted: false };
             if (search) {
-                filter.$or = [
-                    { name: { $regex: search, $options: 'i' } }
-                ];
+                filter.$or = [{ name: { $regex: search, $options: "i" } }];
             }
             const results = await Roles.find(filter)
                 .sort({ _id: -1 }) // Sort by _id in descending order
@@ -52,14 +50,12 @@ export default class RolesController {
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-
-
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]),
-                    { data: results, totalCount, totalPages, currentPage: pageNumber }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), {
+                    data: results,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -70,19 +66,19 @@ export default class RolesController {
 
     public async getPermissions(req: Request, res: Response): Promise<any> {
         try {
-            const { locale, } = req.query;
+            const { locale, module_id } = req.query;
             this.locale = (locale as string) || "en";
 
-            const results = await Permissions.find({status:true})
-                .sort({ _id: -1 }) 
-                .lean();
+            const filter: any = { status: true };
+
+            if (module_id) {
+                const module: any = await Modules.findOne({ id: module_id });
+                filter.module_id = module._id;
+            }
+
+            const results = await Permissions.find(filter).sort({ _id: -1 }).lean();
             if (results.length > 0) {
-                return serverResponse(
-                    res,
-                    HttpCodeEnum.OK,
-                    ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]),
-                    { data: results }
-                );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["permission-fetched"]), { data: results });
             } else {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
@@ -101,8 +97,6 @@ export default class RolesController {
             const id = parseInt(req.params.id);
             const result: any = await Roles.findOne({ id: id }).lean();
 
-
-
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
             } else {
@@ -113,8 +107,6 @@ export default class RolesController {
         }
     }
 
-
-
     // Delete
     public async delete(req: Request, res: Response): Promise<any> {
         try {
@@ -124,7 +116,7 @@ export default class RolesController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result = await Roles.findOneAndUpdate({ id: id },{is_deleted:true});
+            const result = await Roles.findOneAndUpdate({ id: id }, { is_deleted: true });
 
             if (result) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-delete"]), result);
@@ -135,7 +127,6 @@ export default class RolesController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 
     //add
     public async add(req: Request, res: Response): Promise<any> {
@@ -148,13 +139,13 @@ export default class RolesController {
             const { name, description, permissions, status } = req.body;
 
             let result: any;
-            const permission = await Permissions.find({ id: permissions }).select('id name description').lean();
-            
+            const permission = await Permissions.find({ id: permissions }).select("id name description").lean();
+
             result = await Roles.create({
                 name: name,
                 description: description,
                 permissions: permission,
-                status: status
+                status: status,
             });
 
             return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "role-add"), {});
@@ -162,7 +153,7 @@ export default class RolesController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
     //Update
     public async update(req: Request, res: Response): Promise<any> {
         try {
@@ -175,15 +166,16 @@ export default class RolesController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
             const { name, description, permissions, status } = req.body;
-            const permission = await Permissions.find({ id: permissions }).select('id name description').lean();
+            const permission = await Permissions.find({ id: permissions }).select("id name description").lean();
             let result: any = await Roles.findOneAndUpdate(
                 { id: id },
                 {
                     name: name,
                     description: description,
                     permissions: permission,
-                    status: status
-                });
+                    status: status,
+                }
+            );
 
             const updatedData: any = await Roles.find({ id: id }).lean();
 
@@ -192,7 +184,7 @@ export default class RolesController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-    
+
     // Delete
     // public async delete(req: Request, res: Response): Promise<any> {
     //     try {
@@ -237,5 +229,4 @@ export default class RolesController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
 }

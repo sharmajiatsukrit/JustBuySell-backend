@@ -35,6 +35,8 @@ const TransactionSchema: Schema = new Schema({
     razorpay_order_amount: { type: String, default: '' },
     razorpay_payment_id:{ type: String, default: '' },
     razorpay_signature:{ type: String, default: '' },
+    remaining_balance:{ type: Number, default: 0 },//for promo use tracking
+
     type: { type: Number, default: 0 },
     status: { type: Number, default: 0 },
     error_code: { type: Number, default: null },

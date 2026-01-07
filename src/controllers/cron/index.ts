@@ -8,6 +8,7 @@ import { generateInvoicePDF } from "../../utils/generate-pdf/pdf";
 import { serverResponse } from "../../utils";
 import ServerMessages, { ServerMessagesEnum } from "../../config/messages";
 import PromoTransaction from "../../models/promo-transaction";
+import { prepareNotificationData } from "../../utils/notification-center";
 
 const fileName = "[admin][cron][index.ts]";
 export default class CronController {
@@ -264,9 +265,10 @@ export default class CronController {
     public async expirePromoAmount(): Promise<void> {
         const now = moment().tz("Asia/Kolkata").format("YYYY-MM-DD");
         try {
+
             const expiredPromos = await PromoTransaction.find({
                 status: true,
-                expiry_date: { $lt: now }, //lte for test on same date
+                expiry_date: { $lt: now }, //lte
             });
             if (expiredPromos.length === 0) return;
 
@@ -278,11 +280,12 @@ export default class CronController {
                     $set: { status: false },
                 }
             );
+            
 
             const bulkWalletOps = [];
             const transactionsToInsert = [];
             for (const promo of expiredPromos) {
-                const { customer_id, amount } = promo;
+                const { customer_id, amount, remaining_balance } = promo;
                 const wallet: any = await Wallet.findOne({ customer_id, type: 1 });
                 const mainWallet: any = await Wallet.findOne({ customer_id, type: 0 });
 
@@ -291,17 +294,20 @@ export default class CronController {
                     bulkWalletOps.push({
                         updateOne: {
                             filter: { _id: wallet._id },
-                            update: { $set: { balance: parseFloat((Number(newAmount)).toFixed(2))} },
+                            update: { $set: { balance: parseFloat(Number(newAmount).toFixed(2)) } },
                         },
                     });
-                    transactionsToInsert.push({
-                        amount,
-                        customer_id,
-                        closing_balance:parseFloat((Number(mainWallet?.balance)||0).toFixed(2)),
-                        remarks: "CREDIT LAPSE",
-                    });
-                // } else {
-                //     console.log(`Wallet not found for customer ${customer_id}`);
+                    if (remaining_balance > 0) {
+                        transactionsToInsert.push({
+                            amount,
+                            customer_id,
+                            closing_balance: parseFloat((Number(mainWallet?.balance) || 0).toFixed(2)),
+                            remaining_balance,
+                            remarks: "CREDIT LAPSE",
+                        });
+                    }
+                    // } else {
+                    //     console.log(`Wallet not found for customer ${customer_id}`);
                 }
             }
             if (bulkWalletOps.length) {
@@ -312,6 +318,89 @@ export default class CronController {
             }
         } catch (err: any) {
             console.error("Error in expirePromos:", err.message);
+        }
+    }
+
+    public async notifyPromoBeforeExpiry(): Promise<void> {
+        try {
+            const notifyDate = moment().tz("Asia/Kolkata").add(2, "days").format("YYYY-MM-DD");
+
+            const promos = await PromoTransaction.aggregate([
+                {
+                    $match: {
+                        status: true,
+                        remaining_balance: { $gt: 0 },
+                        expiry_date: notifyDate,
+                        notify_before_expiry: false,
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$customer_id",
+                        totalAmount: { $sum: "$remaining_balance" },
+                        promoIds: { $push: "$_id" },
+                    },
+                },
+            ]);
+
+            for (const promo of promos) {
+                const customer: any = await Customer.findOne({ _id: promo._id });
+
+                if (!customer) continue;
+                prepareNotificationData({
+                    tmplt_name: "promo_expiring_soon",
+                    to: customer?._id,
+                    dynamicKey: {
+                        amount: promo.totalAmount,
+                        expiry_date: notifyDate,
+                    },
+                });
+                await PromoTransaction.updateMany({ _id: { $in: promo.promoIds } }, { $set: { notify_before_expiry: true } });
+            }
+        } catch (err: any) {
+            console.error("Promo before expiry notify error:", err.message);
+        }
+    }
+
+    public async notifyPromoOnExpiry(): Promise<void> {
+        try {
+            const today = moment().tz("Asia/Kolkata").format("YYYY-MM-DD");
+            const promos = await PromoTransaction.aggregate([
+                {
+                    $match: {
+                        status: true,
+                        remaining_balance: { $gt: 0 },
+                        expiry_date: today,
+                        notify_on_expiry: false,
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$customer_id",
+                        totalAmount: { $sum: "$remaining_balance" },
+                        promoIds: { $push: "$_id" },
+                    },
+                },
+            ]);
+
+            for (const promo of promos) {
+                const customer: any = await Customer.findOne({ _id: promo._id });
+
+                if (!customer) continue;
+
+                prepareNotificationData({
+                    tmplt_name: "promo_expired_today",
+                    to: customer?._id,
+                    dynamicKey: {
+                        amount: promo.totalAmount,
+                        expiry_date: today,
+                    },
+                });
+
+                await PromoTransaction.updateMany({ _id: { $in: promo.promoIds } }, { $set: { notify_on_expiry: true } });
+            }
+        } catch (err: any) {
+            console.error("Promo expiry notify error:", err.message);
         }
     }
 }

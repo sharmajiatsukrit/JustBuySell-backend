@@ -42,7 +42,7 @@ export default class CustomerController {
             // Calculate the number of documents to skip
             const skip = (pageNumber - 1) * limitNumber;
 
-            const orConditions:any = [
+            const orConditions: any = [
                 { name: { $regex: search, $options: "i" } },
                 { phone: { $regex: search, $options: "i" } },
                 { date_of_birth: { $regex: search, $options: "i" } },
@@ -54,11 +54,11 @@ export default class CustomerController {
             ];
 
             const searchAsNumber = Number(search);
-           
+
             if (!isNaN(searchAsNumber)) {
-            orConditions.push({ id: +searchAsNumber }); 
+                orConditions.push({ id: +searchAsNumber });
             }
-            const searchQuery:any = {is_deleted:false};
+            const searchQuery: any = { is_deleted: false };
 
             if (search) {
                 searchQuery.$or = [...orConditions];
@@ -318,8 +318,8 @@ export default class CustomerController {
             this.locale = (locale as string) || "en";
 
             const id = parseInt(req.params.id);
-            const result:any = await Customer.findOneAndUpdate({ id: id },{is_deleted:true});
-            const offers = await Offers.updateMany({created_by:result._id},{is_deleted:true})
+            const result: any = await Customer.findOneAndUpdate({ id: id }, { is_deleted: true });
+            const offers = await Offers.updateMany({ created_by: result._id }, { is_deleted: true });
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["customer-deleted"]), {});
 
             // if (result) {
@@ -408,9 +408,9 @@ export default class CustomerController {
             const { amount, remarks, expiry_date } = req.body;
             const id = parseInt(req.params.id);
             const customer: any = await Customer.findOne({ id: id }).lean();
-            const promoTransaction = await PromoTransaction.create({ customer_id: customer._id, amount, remarks, expiry_date });
+            const promoTransaction = await PromoTransaction.create({ customer_id: customer._id, amount, remarks, remaining_balance: amount, expiry_date });
 
-            const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean();//promo wallet
+            const existing: any = await Wallet.findOne({ customer_id: customer._id, type: 1 }).lean(); //promo wallet
             const mainWallet: any = await Wallet.findOne({ customer_id: customer._id, type: 0 }).lean();
             if (existing) {
                 await Wallet.findOneAndUpdate(

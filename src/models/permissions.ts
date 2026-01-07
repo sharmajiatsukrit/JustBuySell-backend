@@ -16,6 +16,8 @@ const permissionSchema: Schema = new Schema({
     description: { type: String, default: '' },
     is_deleted: { type: Boolean, default: false },
     status: { type: Boolean, default: true },
+    module_id: { type: Schema.Types.ObjectId, ref: 'modules' },
+
     created_by: { type: Schema.Types.ObjectId, ref: 'users' },
     updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
 },

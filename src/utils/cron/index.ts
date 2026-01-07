@@ -11,5 +11,11 @@ cron.schedule('*/5 * * * * *', cronController.updateExpiredOffers);
 // cron.schedule('* * * * *', cronController.generateInvoice); // for running every min(for local testing)
 cron.schedule('0 0 1 * *', cronController.generateInvoice); // for running every month's 1st.
 
-//  cron.schedule('* * * * *', cronController.expirePromoAmount); // for running every min(for local testing)
-cron.schedule('0 0 * * *', cronController.expirePromoAmount);
+ cron.schedule('* * * * *', cronController.expirePromoAmount); // for running every min(for local testing)
+// cron.schedule('0 0 * * *', cronController.expirePromoAmount);
+cron.schedule('0 0 * * *', cronController.notifyPromoBeforeExpiry);
+//  cron.schedule('* * * * *', cronController.notifyPromoBeforeExpiry); // for running every min(for local testing)
+
+cron.schedule('0 0 * * *', cronController.notifyPromoOnExpiry);
+//  cron.schedule('* * * * *', cronController.notifyPromoOnExpiry); // for running every min(for local testing)
+

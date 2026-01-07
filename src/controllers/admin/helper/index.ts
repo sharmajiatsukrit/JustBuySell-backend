@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { Customer,Category, Unit, Country, State, City, Roles, Attribute, AttributeItem, Product, ProductRequest } from "../../../models";
+import { Customer, Category, Unit, Country, State, City, Roles, Attribute, AttributeItem, Product, ProductRequest, Offers, Transaction } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -9,7 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import { generateInvoicePDF } from "../../../utils/generate-pdf/pdf";
-
+import Modules from "../../../models/modules";
 
 const fileName = "[admin][helper][index.ts]";
 export default class HelperController {
@@ -24,8 +24,6 @@ export default class HelperController {
         return validate(endPoint);
     }
 
-
-
     // Checked
     public async getCategories(req: Request, res: Response): Promise<any> {
         try {
@@ -38,57 +36,46 @@ export default class HelperController {
                 searchQuery = {
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { status: true, };
+                searchQuery = { status: true };
             }
             // const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
             const result: any = await Category.aggregate([
                 {
-                  $lookup: {
-                    from: "categories",
-                    localField: "_id",
-                    foreignField: "parent_id",
-                    as: "children",
-                  },
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "parent_id",
+                        as: "children",
+                    },
                 },
                 {
-                  $match: { children: { $size: 0 }, ...searchQuery }, // Get only last child categories
+                    $match: { children: { $size: 0 }, ...searchQuery }, // Get only last child categories
                 },
                 {
-                  $project: {
-                    id: 1,
-                    name: 1,
-                  },
+                    $project: {
+                        id: 1,
+                        name: 1,
+                    },
                 },
                 {
-                  $sort: { id: -1 }, // Sorting based on ID
+                    $sort: { id: -1 }, // Sorting based on ID
                 },
                 {
-                  $limit: 10,
+                    $limit: 10,
                 },
-              ]);
-           
+            ]);
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
             } else {
-                throw new Error(
-                    ServerMessages.errorMsgLocale(
-                        this.locale,
-                        ServerMessagesEnum["not-found"]
-                    )
-                );
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            return serverErrorHandler(
-                err,
-                res,
-                err.message,
-                HttpCodeEnum.SERVERERROR,
-                []
-            );
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
 
@@ -104,37 +91,23 @@ export default class HelperController {
                 searchQuery = {
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { status: true, };
+                searchQuery = { status: true };
             }
-            const result: any = await Category.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            
+            const result: any = await Category.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "category-fetched"), result);
             } else {
-                throw new Error(
-                    ServerMessages.errorMsgLocale(
-                        this.locale,
-                        ServerMessagesEnum["not-found"]
-                    )
-                );
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            return serverErrorHandler(
-                err,
-                res,
-                err.message,
-                HttpCodeEnum.SERVERERROR,
-                []
-            );
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
-
-    
-
 
     public async getUnits(req: Request, res: Response): Promise<any> {
         try {
@@ -143,8 +116,10 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Unit.find({ status: true }).sort([['id', 'desc']]).select('id name').lean();
+            const result = await Unit.find({ status: true })
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["unit-fetched"]), result);
@@ -155,8 +130,6 @@ export default class HelperController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-
-
 
     // Checked
     public async getAttributes(req: Request, res: Response): Promise<any> {
@@ -170,32 +143,21 @@ export default class HelperController {
                 searchQuery = {
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { status: true, };
+                searchQuery = { status: true };
             }
-            const result: any = await Attribute.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            
+            const result: any = await Attribute.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-fetched"), result);
             } else {
-                throw new Error(
-                    ServerMessages.errorMsgLocale(
-                        this.locale,
-                        ServerMessagesEnum["not-found"]
-                    )
-                );
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            return serverErrorHandler(
-                err,
-                res,
-                err.message,
-                HttpCodeEnum.SERVERERROR,
-                []
-            );
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
 
@@ -211,35 +173,24 @@ export default class HelperController {
             let searchQuery = {};
             if (search) {
                 searchQuery = {
-                    attribute_id:attribute._id,
+                    attribute_id: attribute._id,
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { attribute_id:attribute._id,status: true, };
+                searchQuery = { attribute_id: attribute._id, status: true };
             }
-            const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            
+            const result: any = await AttributeItem.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-item-fetched"), result);
             } else {
-                throw new Error(
-                    ServerMessages.errorMsgLocale(
-                        this.locale,
-                        ServerMessagesEnum["not-found"]
-                    )
-                );
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            return serverErrorHandler(
-                err,
-                res,
-                err.message,
-                HttpCodeEnum.SERVERERROR,
-                []
-            );
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
 
@@ -255,35 +206,24 @@ export default class HelperController {
             let searchQuery = {};
             if (search) {
                 searchQuery = {
-                    attribute_id:attribute._id,
+                    attribute_id: attribute._id,
                     status: true,
                     $or: [
-                        { name: { $regex: search, $options: 'i' } } // Case-insensitive search for name
-                    ]
+                        { name: { $regex: search, $options: "i" } }, // Case-insensitive search for name
+                    ],
                 };
             } else {
-                searchQuery = { attribute_id:attribute._id,status: true, };
+                searchQuery = { attribute_id: attribute._id, status: true };
             }
-            const result: any = await AttributeItem.find(searchQuery).select('id name').limit(10).sort({ id: -1 }).lean();
-            
+            const result: any = await AttributeItem.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "attribute-item-fetched"), result);
             } else {
-                throw new Error(
-                    ServerMessages.errorMsgLocale(
-                        this.locale,
-                        ServerMessagesEnum["not-found"]
-                    )
-                );
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
-            return serverErrorHandler(
-                err,
-                res,
-                err.message,
-                HttpCodeEnum.SERVERERROR,
-                []
-            );
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
 
@@ -294,8 +234,12 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Country.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+            const result = await Country.find({})
+                .where("status")
+                .equals(true)
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["country-fetched"]), result);
@@ -314,8 +258,12 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await State.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+            const result = await State.find({})
+                .where("status")
+                .equals(true)
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["state-fetched"]), result);
@@ -334,8 +282,12 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await City.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+            const result = await City.find({})
+                .where("status")
+                .equals(true)
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["city-fetched"]), result);
@@ -347,7 +299,6 @@ export default class HelperController {
         }
     }
 
-
     public async getRoles(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getRoles]";
@@ -355,8 +306,12 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Roles.find({}).where('status').equals(true).sort([['id', 'desc']]).select('id name').lean();
+            const result = await Roles.find({})
+                .where("status")
+                .equals(true)
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
@@ -375,8 +330,10 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-
-            const result = await Customer.find({is_gst_verified:true,status:1}).sort([['id', 'desc']]).select('id name').lean();
+            const result = await Customer.find({ is_gst_verified: true, status: 1 })
+                .sort([["id", "desc"]])
+                .select("id name")
+                .lean();
 
             if (result.length > 0) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), result);
@@ -387,18 +344,18 @@ export default class HelperController {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
-        public async getPendingProductRequestCount(req: Request, res: Response): Promise<any> {
+    public async getPendingProductRequestCount(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getCustomers]";
             // Set locale
             const { locale } = req.query;
-            
+
             this.locale = (locale as string) || "en";
 
-            const products = await ProductRequest.countDocuments({status:0});
+            const products = await ProductRequest.countDocuments({ status: 0 });
             const totals = {
-                total_pending_products_request:products,
-            }
+                total_pending_products_request: products,
+            };
             if (totals) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
             } else {
@@ -416,18 +373,35 @@ export default class HelperController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
+            const customers = await Customer.countDocuments({ is_deleted: false });
+            const categories = await Category.countDocuments({ is_deleted: false });
+            const products = await Product.countDocuments({ is_deleted: false });
+            const buyingOffers = await Offers.countDocuments({ type: "1", is_deleted: false });
+            const selleingOffers = await Offers.countDocuments({ type: "0", is_deleted: false });
+            const result = await Transaction.aggregate([
+                {
+                    $match: {
+                        remarks: "PURCHASEOFFER",
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalCommission: { $sum: "$commission" },
+                    },
+                },
+            ]);
 
-            const customers = await Customer.countDocuments({is_deleted:false});
-            const categories = await Category.countDocuments({is_deleted:false});
-            const products = await Product.countDocuments({is_deleted:false});
+            const totalCommission = result[0]?.totalCommission || 0;
+
             const totals = {
-                total_customer:customers,
-                total_categories:categories,
-                total_products:products,
-                total_buying_offers:products,
-                total_selling_offers:products,
-                total_earnings:products,
-            }
+                total_customer: customers,
+                total_categories: categories,
+                total_products: products,
+                total_buying_offers: buyingOffers,
+                total_selling_offers: selleingOffers,
+                total_earnings: totalCommission,
+            };
             if (totals) {
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), totals);
             } else {
@@ -438,13 +412,59 @@ export default class HelperController {
         }
     }
 
-
-        public async getTestPDf(req: Request, res: Response): Promise<any> {
+    public async getTestPDf(req: Request, res: Response): Promise<any> {
         try {
-           
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), {});
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async handleAddModule(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getCustomers]";
+            // Set locale
+            const { locale } = req.query;
+            const { name } = req.body;
+
+            this.locale = (locale as string) || "en";
+
+            const module = await Modules.create({ name });
+
+            if (module) {
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["role-fetched"]), {});
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async getModuleList(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[getAttributes]";
+            const { locale, search } = req.query;
+            this.locale = (locale as string) || "en";
+            // Constructing the search query
+            let searchQuery = {};
+            if (search) {
+                searchQuery = {
+                    status: true,
+                    $or: [{ name: { $regex: search, $options: "i" } }],
+                };
+            } else {
+                searchQuery = { status: true };
+            }
+            const result: any = await Modules.find(searchQuery).select("id name").limit(10).sort({ id: -1 }).lean();
+
+            if (result.length > 0) {
+                return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "role-fetched"), result);
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, []);
         }
     }
 }

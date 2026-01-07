@@ -24,6 +24,8 @@ routes.get("/get-customers", validateRequest, authAdmin, helperController.getCus
 
 routes.get("/dashboard/get-totals", validateRequest, authAdmin, helperController.getDashboardTotals.bind(helperController));
 routes.get("/product-request/pending-count", validateRequest, authAdmin, helperController.getPendingProductRequestCount.bind(helperController));
+routes.post("/add-module-name", validateRequest, authAdmin, helperController.handleAddModule.bind(helperController));
+routes.get("/get-module-list", validateRequest, authAdmin, helperController.getModuleList.bind(helperController));
 routes.get("/test-pdf", testController.generateInvoice.bind(testController));
 
 export default routes;
