@@ -260,8 +260,6 @@ export default class ProductRequestController {
             // 🔥 Correct absolute file path
             const filePath = path.join(uploadDir, result.product_image);
 
-            console.log("DOWNLOAD FILE:", filePath);
-
             if (!fs.existsSync(filePath)) {
                 throw new Error("File not found on disk");
             }
@@ -277,29 +275,8 @@ export default class ProductRequestController {
         }
     }
 
-    // public async downloadProductImage(req: Request, res: Response): Promise<any> {
-    //     try {
-    //         const id = parseInt(req.params.id);
-    //         const result: any = await ProductRequest.findOne({ id });
 
-    //         if (!result || !result.product_image) {
-    //             throw new Error("Image not found");
-    //         }
-
-    //         const res_path: string = process.env.RESOURCE_PATH;
-
-    //         const filePath = path.join(res_path, result.product_image);
-
-    //         res.setHeader("Content-Disposition", `attachment; filename="${path.basename(filePath)}"`);
-    //         res.setHeader("Content-Type", "application/octet-stream");
-
-    //         return res.sendFile(filePath);
-    //     } catch (err: any) {
-    //         console.log(err);
-    //         return serverErrorHandler(err, res, err.message, 500, {});
-    //     }
-    // }
-    // status update
+    
     public async statusUpdate(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[statusUpdate]";

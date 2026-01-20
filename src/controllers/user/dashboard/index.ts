@@ -92,6 +92,7 @@ export default class DashboardController {
             const productQuery: any = {
                 is_deleted: false,
                 status: true,
+                admin_approval_status: 1,
                 $or: [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }, { search_tags: { $regex: searchRegex } }],
             };
 
@@ -123,12 +124,11 @@ export default class DashboardController {
                 id: c.id,
                 name: c.name,
                 description: c.description,
-                category_id: c.parent_id, 
+                category_id: c.parent_id,
                 product_image: c.cat_img ? `${process.env.RESOURCE_URL}${c.cat_img}` : "",
                 route: "category",
             }));
 
-          
             const finalResults = [...formattedProducts, ...formattedCategories];
 
             if (!finalResults.length) {
@@ -307,9 +307,8 @@ export default class DashboardController {
             const id = parseInt(req.params.id);
             let results: any;
             let totalCount: any;
-            let searchQuery: any = {};
+            let searchQuery: any = { status: true, admin_approval_status: 1, is_deleted: false };
 
-            searchQuery.status = true;
             if (id == 0) {
                 if (search && typeof search === "string") {
                     const searchRegex = new RegExp(search, "i");
@@ -377,8 +376,8 @@ export default class DashboardController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const results: any = await Product.find({ status: true }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
-            const totalCount = await Product.countDocuments({ status: true });
+            const results: any = await Product.find({ status: true, admin_approval_status: 1, is_deleted: false }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
+            const totalCount = await Product.countDocuments({ status: true, admin_approval_status: 1, is_deleted: false });
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
@@ -430,8 +429,8 @@ export default class DashboardController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            const results: any = await Product.find({ status: true }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
-            const totalCount = await Product.countDocuments({ status: true });
+            const results: any = await Product.find({ status: true, admin_approval_status: 1, is_deleted: false }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
+            const totalCount = await Product.countDocuments({ status: true, admin_approval_status: 1, is_deleted: false });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
                 // Fetch wishlist items for the customer
@@ -476,8 +475,8 @@ export default class DashboardController {
             const pageNumber = parseInt(page as string) || 1;
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
-            const results: any = await Product.find({ status: true }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
-            const totalCount = await Product.countDocuments({ status: true });
+            const results: any = await Product.find({ status: true, admin_approval_status: 1, is_deleted: false }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
+            const totalCount = await Product.countDocuments({ status: true, admin_approval_status: 1, is_deleted: false });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
                 // Fetch wishlist items for the customer

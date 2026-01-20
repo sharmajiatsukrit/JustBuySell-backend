@@ -147,8 +147,6 @@ export default class HelperController {
                 description,
             } = req.body;
 
-
-
             // Helper function to safely parse JSON strings
             const safeJSONParse = (str: string) => {
                 if (!str || str.trim() === "" || str === "{}") {
@@ -280,11 +278,15 @@ export default class HelperController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
             const cat_id = parseInt(req.params.cat_id);
-            const category_id: any = await Category.findOne({ id: cat_id,is_deleted:false }).lean();
+            const category_id: any = await Category.findOne({ id: cat_id, is_deleted: false }).lean();
             if (!category_id) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
-            const results: any = await Product.find({ status: true, category_id: category_id._id }).lean().skip(skip).limit(limitNumber).sort({ id: -1 });
+            const results: any = await Product.find({ status: true, admin_approval_status: 1, is_deleted: false, category_id: category_id._id })
+                .lean()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ id: -1 });
             const totalCount = await Product.countDocuments({ status: true });
             const totalPages = Math.ceil(totalCount / limitNumber);
             if (results.length > 0) {
@@ -658,64 +660,52 @@ Complete your profile and receive Rs. ${settings.value.new_registration_topup} i
                 const twentyFourHours = 24 * 60 * 60 * 1000;
                 // Get time difference in milliseconds
                 const timeSinceLastShow = Date.now() - new Date(customer.lastRatingPopupShownAt).getTime();
-                
+
                 if (timeSinceLastShow < twentyFourHours) {
                     // It's been less than 24 hours, so DO NOT SHOW.
                     return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
-                        shouldShow: false 
+                        shouldShow: false,
                     });
                 }
             }
 
             // 3. Get all unlocked offers and ratings for this customer
-            const [unlockedOffers, ratings] = await Promise.all([
-                UnlockOffers.find({ created_by: customerId }).lean(),
-                Rating.find({ customer_id: customerId }).lean()
-            ]);
+            const [unlockedOffers, ratings] = await Promise.all([UnlockOffers.find({ created_by: customerId }).lean(), Rating.find({ customer_id: customerId }).lean()]);
 
             // 4. Find unrated offers
-            const ratedOfferIds = new Set(ratings.map(rating => rating.offer_id.toString()));
-            const unratedOffers = unlockedOffers.filter(offer => 
-                !ratedOfferIds.has(offer.offer_id.toString())
-            );
+            const ratedOfferIds = new Set(ratings.map((rating) => rating.offer_id.toString()));
+            const unratedOffers = unlockedOffers.filter((offer) => !ratedOfferIds.has(offer.offer_id.toString()));
 
             // 5. Check if there are any unrated offers at all
             if (unratedOffers.length === 0) {
                 // All unlocked offers are rated, DO NOT SHOW.
                 return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
-                    shouldShow: false 
+                    shouldShow: false,
                 });
             }
 
             // 6. Check "if any one offer is purchased 24hrs before"
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            
+
             // Check if any of the unrated offers were created more than 24h ago
-            const hasOldUnratedOffer = unratedOffers.some((offer: any) => 
-                new Date(offer.createdAt) < twentyFourHoursAgo
-            );
+            const hasOldUnratedOffer = unratedOffers.some((offer: any) => new Date(offer.createdAt) < twentyFourHoursAgo);
 
             if (hasOldUnratedOffer) {
                 // ALL CONDITIONS MET. SHOW POPUP.
-                
+
                 // 7. Update the customer's `lastRatingPopupShownAt` timestamp
-                await Customer.updateOne(
-                    { _id: customerId }, 
-                    { $set: { lastRatingPopupShownAt: new Date() } }
-                );
+                await Customer.updateOne({ _id: customerId }, { $set: { lastRatingPopupShownAt: new Date() } });
 
                 // 8. Return true
                 return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
-                    shouldShow: true 
+                    shouldShow: true,
                 });
-
             } else {
                 // No unrated offer is old enough, DO NOT SHOW.
                 return serverResponse(res, HttpCodeEnum.OK, "Popup eligibility checked", {
-                    shouldShow: false 
+                    shouldShow: false,
                 });
             }
-
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }

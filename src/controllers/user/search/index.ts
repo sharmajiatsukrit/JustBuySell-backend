@@ -32,7 +32,7 @@ export default class SearchController {
 
             const { keyword, categoryid } = req.query;
 
-            let query: any = {};
+            let query: any = { status: true, admin_approval_status:1,is_deleted:false };
 
             if (keyword) {
                 query.name = { $regex: keyword, $options: 'i' };

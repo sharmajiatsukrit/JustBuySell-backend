@@ -1,7 +1,5 @@
-import { Document, Schema, model } from 'mongoose';
-import { BillingGatewayEnum } from "../enums";
-import { BillingAdressType } from "../interfaces";
-import { autoIncrement } from 'mongoose-plugin-autoinc';
+import { Document, Schema, model } from "mongoose";
+import { autoIncrement } from "mongoose-plugin-autoinc";
 
 interface IProducts extends Document {
     name: string;
@@ -14,32 +12,39 @@ interface IProducts extends Document {
     individual_label: string;
     master_label: string;
     status: boolean;
+    admin_approval_required: boolean;
+    admin_approval_status: number;
     created_by: number;
     updated_by: number;
 }
 
-const productsSchema: Schema = new Schema({
-    name: { type: String, default: '' },
-    description: { type: String, default: '' },
-    search_tags: { type: String, default: '' },
-    attributes: { type: Map, of: Array, default: {} }, // Dynamic attributes
-    variations: { type: [Object], default: [] }, // Allow an array of objects // Dynamic attributes
-    category_id: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
-    product_image: { type: String, default: '' },
-    individual_label: { type: String, default: '' },
-    master_label: { type: String, default: '' },
-    is_deleted: { type: Boolean, default: false },
-    status: { type: Boolean, default: true },
-    created_by: { type: Schema.Types.ObjectId, ref: 'users' },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'users' }
-},
+const productsSchema: Schema = new Schema(
+    {
+        name: { type: String, default: "" },
+        description: { type: String, default: "" },
+        search_tags: { type: String, default: "" },
+        attributes: { type: Map, of: Array, default: {} }, // Dynamic attributes
+        variations: { type: [Object], default: [] }, // Allow an array of objects // Dynamic attributes
+        category_id: [{ type: Schema.Types.ObjectId, ref: "categories" }],
+        product_image: { type: String, default: "" },
+        individual_label: { type: String, default: "" },
+        master_label: { type: String, default: "" },
+        is_deleted: { type: Boolean, default: false },
+        status: { type: Boolean, default: true },
+        admin_approval_required: { type: Boolean, default: true },
+        admin_approval_status: { type: Number, default: 0 }, // 0 = pending, 1 = approved, 2 = rejected
+        product_request_ref: { type: Number, default: 0 },
+        created_by: { type: Schema.Types.ObjectId, ref: "users" },
+        updated_by: { type: Schema.Types.ObjectId, ref: "users" },
+    },
     {
         timestamps: true,
-        versionKey: false
-    });
+        versionKey: false,
+    }
+);
 
-productsSchema.plugin(autoIncrement, { model: 'products', field: 'id', startAt: 1 });
+productsSchema.plugin(autoIncrement, { model: "products", field: "id", startAt: 1 });
 
-const Products = model<IProducts>('products', productsSchema);
+const Products = model<IProducts>("products", productsSchema);
 
 export default Products;

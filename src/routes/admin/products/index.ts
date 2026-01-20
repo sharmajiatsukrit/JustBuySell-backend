@@ -7,6 +7,8 @@ const routes: Router = expres.Router();
 const productController = new ProductController();
 
 routes.get("/list", validateRequest, authAdmin, productController.getList.bind(productController));
+routes.get("/approval-required-list", validateRequest, authAdmin, productController.getApprovalRequiredList.bind(productController));
+routes.put("/product-approval-update/:id", validateRequest, authAdmin, productController.updateProductApproval.bind(productController));
 routes.post("/add", validateRequest, authAdmin, upload.single("product_image"), productController.add.bind(productController));
 routes.put("/update/:id", validateRequest, authAdmin, upload.single("product_image"), productController.update.bind(productController));
 routes.get("/by-id/:id", validateRequest, authAdmin, productController.getById.bind(productController));

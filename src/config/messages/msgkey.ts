@@ -37,6 +37,7 @@ export const MessageKey: IObjectKeys = {
     "product-update": "product-update",
     "product-status": "product-status",
     "product-delete": "product-delete",
+    "product-approval-updated":"product-approval-updated",
     "country-fetched": "country-fetched",
     "country-add": "country-add",
     "country-update": "country-update",

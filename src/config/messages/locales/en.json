@@ -48,6 +48,9 @@
     "product-delete": "Product Deleted successfully",
     "product-status": "Product Status successfully Updated",
     "product-exist": "Product with this name already exists",
+    "product-ref-exist": "Product with this request already exists",
+    "product-approval-updated":"Product Status successfully Updated",
+
     "cannot-delete-product": "Cannot delete - an offer exists related to this product",
     
 

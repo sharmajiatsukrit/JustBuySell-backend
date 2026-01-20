@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ValidationChain } from "express-validator";
 import moment from "moment";
-import { AttributeItem, Category, Offers, Product, ProductVariation, Unit } from "../../../models";
+import { AttributeItem, Category, Customer, Offers, Product, ProductRequest, ProductVariation, Unit } from "../../../models";
 import { removeObjectKeys, serverResponse, serverErrorHandler, removeSpace, constructResponseMsg, serverInvalidRequest, groupByDate } from "../../../utils";
 import { HttpCodeEnum } from "../../../enums/server";
 import validate from "./validate";
@@ -9,7 +9,7 @@ import EmailService from "../../../utils/email";
 import Logger from "../../../utils/logger";
 import ServerMessages, { ServerMessagesEnum } from "../../../config/messages";
 import ProductVariations from "../../../models/product-variations";
-import { prepareNotificationData } from "../../../utils/notification-center";
+import { prepareNotificationData, prepareWhatsAppNotificationData } from "../../../utils/notification-center";
 
 const fileName = "[admin][product][index.ts]";
 export default class ProductController {
@@ -77,7 +77,147 @@ export default class ProductController {
     // }
 
     // Checked
-    
+    public async getApprovalRequiredList(req: Request, res: Response): Promise<any> {
+        try {
+            const { locale, page, limit, search } = req.query;
+            this.locale = (locale as string) || "en";
+
+            const pageNumber = parseInt(page as string) || 1;
+            const limitNumber = parseInt(limit as string) || 10;
+            const skip = (pageNumber - 1) * limitNumber;
+
+            const orConditions: any = [{ name: { $regex: search, $options: "i" } }, { "category.name": { $regex: search, $options: "i" } }];
+
+            const searchAsNumber = Number(search);
+
+            if (!isNaN(searchAsNumber)) {
+                orConditions.push({ id: +searchAsNumber });
+            }
+            let matchQuery: any = { is_deleted: false, admin_approval_required: true, admin_approval_status: 0 };
+
+            if (search) {
+                matchQuery.$or = orConditions;
+            }
+
+            // Aggregation pipeline
+            const pipeline: any[] = [
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category",
+                    },
+                },
+                { $match: matchQuery },
+                { $sort: { _id: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                {
+                    $project: {
+                        id: 1,
+                        name: 1,
+                        description: 1,
+                        product_image: 1,
+                        status: 1,
+                        admin_approval_status: 1,
+                        "category.id": 1,
+                        "category.name": 1,
+                    },
+                },
+            ];
+
+            const results = await Product.aggregate(pipeline);
+            const totalCountResult = await Product.aggregate([
+                { $lookup: { from: "categories", localField: "category_id", foreignField: "_id", as: "category" } },
+                { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+                { $match: matchQuery },
+                { $count: "total" },
+            ]);
+
+            const totalCount = totalCountResult[0]?.total || 0;
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            if (results.length > 0) {
+                const formattedResults = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    category_id:
+                        item.category?.map((cat: any) => ({
+                            id: cat._id,
+                            name: cat.name,
+                        })) || [],
+                    status: item.status,
+                    admin_approval_status: item.admin_approval_status,
+                }));
+
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                    data: formattedResults,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
+            } else {
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+            }
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
+
+    public async updateProductApproval(req: Request, res: Response): Promise<any> {
+        try {
+            const fn = "[statusUpdate]";
+
+            const { id } = req.params;
+            Logger.info(`${fileName + fn} request_id: ${id}`);
+
+            const { locale } = req.query;
+            this.locale = (locale as string) || "en";
+            const { status } = req.body;
+
+            const productData: any = await Product.findOneAndUpdate(
+                { id: id },
+                {
+                    admin_approval_status: status,
+                }
+            );
+
+            // const updatedData: any = await Product.findOne({ id: id }).lean();
+            const requestData: any = await ProductRequest.findOneAndUpdate(
+                { id: productData?.product_request_ref },
+                {
+                    status: status,
+                }
+            );
+            // const requestData: any = await ProductRequest.findOne({ id: updatedData?.product_request_ref }).lean();
+
+            const customerData: any = await Customer.findOne({ _id: requestData?.created_by }).lean();
+            if (productData && status == 1 && productData?.product_request_ref) {
+                const notificationData = {
+                    tmplt_name: "product_add_request_processed",
+                    to: customerData?._id,
+                    dynamicKey: {
+                        product_name: productData?.name,
+                    },
+                };
+                const whatsAppData = {
+                    campaignName: "Product Add Request Processed",
+                    userName: customerData?.name,
+                    destination: "6204591216",
+                    templateParams: [productData?.name],
+                };
+                prepareNotificationData(notificationData);
+                prepareWhatsAppNotificationData(whatsAppData);
+            }
+
+            return serverResponse(res, HttpCodeEnum.OK, constructResponseMsg(this.locale, "product-approval-updated"), {});
+        } catch (err: any) {
+            return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
+        }
+    }
 
     public async getList(req: Request, res: Response): Promise<any> {
         try {
@@ -88,17 +228,14 @@ export default class ProductController {
             const limitNumber = parseInt(limit as string) || 10;
             const skip = (pageNumber - 1) * limitNumber;
 
-            const orConditions:any = [
-                { name: { $regex: search, $options: "i" } },
-                { "category.name": { $regex: search, $options: "i" } },
-            ];
+            const orConditions: any = [{ name: { $regex: search, $options: "i" } }, { "category.name": { $regex: search, $options: "i" } }];
 
             const searchAsNumber = Number(search);
 
             if (!isNaN(searchAsNumber)) {
-                orConditions.push({ id: +searchAsNumber }); 
+                orConditions.push({ id: +searchAsNumber });
             }
-            let matchQuery: any = { is_deleted: false };
+            let matchQuery: any = { is_deleted: false, admin_approval_status: 1 };
 
             if (search) {
                 matchQuery.$or = orConditions;
@@ -108,10 +245,10 @@ export default class ProductController {
             const pipeline: any[] = [
                 {
                     $lookup: {
-                    from: "categories", 
-                    localField: "category_id",
-                    foreignField: "_id",
-                    as: "category",
+                        from: "categories",
+                        localField: "category_id",
+                        foreignField: "_id",
+                        as: "category",
                     },
                 },
                 { $match: matchQuery },
@@ -120,63 +257,56 @@ export default class ProductController {
                 { $limit: limitNumber },
                 {
                     $project: {
-                    id: 1,
-                    name: 1,
-                    description: 1,
-                    product_image: 1,
-                    status: 1,
-                    "category.id": 1,
-                    "category.name": 1,
+                        id: 1,
+                        name: 1,
+                        description: 1,
+                        product_image: 1,
+                        status: 1,
+                        "category.id": 1,
+                        "category.name": 1,
                     },
                 },
             ];
 
             const results = await Product.aggregate(pipeline);
             const totalCountResult = await Product.aggregate([
-            { $lookup: { from: "categories", localField: "category_id", foreignField: "_id", as: "category" } },
-            { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-            { $match: matchQuery },
-            { $count: "total" },
+                { $lookup: { from: "categories", localField: "category_id", foreignField: "_id", as: "category" } },
+                { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+                { $match: matchQuery },
+                { $count: "total" },
             ]);
 
             const totalCount = totalCountResult[0]?.total || 0;
             const totalPages = Math.ceil(totalCount / limitNumber);
 
             if (results.length > 0) {
-            const formattedResults = results.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
-                category_id: item.category?.map((cat: any) => ({
-                id: cat._id,
-                name: cat.name,
-                })) || [],
-                status: item.status,
-            }));
+                const formattedResults = results.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    product_image: `${process.env.RESOURCE_URL}${item.product_image}`,
+                    category_id:
+                        item.category?.map((cat: any) => ({
+                            id: cat._id,
+                            name: cat.name,
+                        })) || [],
+                    status: item.status,
+                }));
 
-            return serverResponse(
-                res,
-                HttpCodeEnum.OK,
-                ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]),
-                {
-                data: formattedResults,
-                totalCount,
-                totalPages,
-                currentPage: pageNumber,
-                }
-            );
+                return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), {
+                    data: formattedResults,
+                    totalCount,
+                    totalPages,
+                    currentPage: pageNumber,
+                });
             } else {
-            throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
+                throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["not-found"]));
             }
         } catch (err: any) {
             return serverErrorHandler(err, res, err.message, HttpCodeEnum.SERVERERROR, {});
         }
     }
 
-    
-    
-    
     public async getById(req: Request, res: Response): Promise<any> {
         try {
             const fn = "[getById]";
@@ -200,6 +330,8 @@ export default class ProductController {
                     master_label: result.master_label,
                     created_by: result.created_by,
                     status: result.status,
+                    admin_approval_status:result.admin_approval_status
+
                 };
                 return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-fetched"]), formattedResult);
             } else {
@@ -217,7 +349,7 @@ export default class ProductController {
             const { locale } = req.query;
             this.locale = (locale as string) || "en";
 
-            const { name, description, category_id, variations, search_tags, individual_label, master_label, status } = req.body;
+            const { name, description, category_id, variations, search_tags, individual_label, master_label, status, admin_approval_required, product_request_ref } = req.body;
             let result: any;
             const variation = JSON.parse(variations);
 
@@ -233,9 +365,18 @@ export default class ProductController {
                 })
             );
             if (categoryObjects) {
-                const existingProduct = await Product.findOne({ name: name });
+                const existingProduct: any = await Product.findOne({
+                    $or: [{ name }, { product_request_ref }],
+                });
+
                 if (existingProduct) {
-                    throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-exist"]));
+                    if (existingProduct.name === name) {
+                        throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-exist"]));
+                    }
+
+                    if (existingProduct?.product_request_ref === +product_request_ref) {
+                        throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-ref-exist"]));
+                    }
                 }
 
                 // Create the main product
@@ -248,6 +389,7 @@ export default class ProductController {
                     individual_label: individual_label,
                     master_label: master_label,
                     status,
+                    product_request_ref: admin_approval_required ? product_request_ref : 0,
                 });
 
                 if (result) {
@@ -363,7 +505,6 @@ export default class ProductController {
 
             if (offersExistWithProduct.length > 0) {
                 throw new Error(ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["cannot-delete-product"]));
-
             }
             await Product.findOneAndUpdate({ id }, { is_deleted: true });
             return serverResponse(res, HttpCodeEnum.OK, ServerMessages.errorMsgLocale(this.locale, ServerMessagesEnum["product-delete"]), {});

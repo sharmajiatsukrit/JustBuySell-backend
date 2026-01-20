@@ -42,6 +42,7 @@ export enum ServerMessagesEnum {
     "product-delete" = "product-delete",
     "product-status" = "product-status",
     "product-exist" = "product-exist",
+    "product-ref-exist" = "product-ref-exist",
     "cannot-delete-product" = "cannot-delete-product",
 
     "country-fetched" = "country-fetched",
