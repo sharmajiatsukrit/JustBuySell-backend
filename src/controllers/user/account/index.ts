@@ -496,6 +496,7 @@ export default class AccountController {
 
             const { name, phone, email, designation } = req.body;
             const existCustomer: any = await Customer.countDocuments({ phone: phone });
+            const parentMember: any = await Customer.findById({ _id: req.customer.object_id });
             if (existCustomer > 0) {
                 return serverResponseHandler(res, HttpCodeEnum.OK, false, "Phone No already exists", {});
             }
@@ -504,6 +505,12 @@ export default class AccountController {
                 phone: phone,
                 email: email,
                 designation: designation,
+                gst: parentMember?.gst,
+                trade_name: parentMember?.trade_name,
+                leagal_name: parentMember?.leagal_name,
+                address_line_1: parentMember?.address_line_1,
+                landmark: parentMember?.landmark,
+                is_gst_verified: parentMember?.is_gst_verified,
                 parent_id: req.customer.object_id,
             });
 
