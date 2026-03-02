@@ -5,7 +5,7 @@ const cronController = new CronController();
 
 //set Timing send write function in cron Controller 0 1 1 * *
 // cron.schedule('* * * * *', cronController.renewCouponBalance);
-cron.schedule('*/5 * * * * *', cronController.updateExpiredOffers);
+// cron.schedule('*/5 * * * * *', cronController.updateExpiredOffers);
 // cron.schedule('* * * * *', cronController.offersExpiringSoon);
 
 // cron.schedule('* * * * *', cronController.generateInvoice); // for running every min(for local testing)
